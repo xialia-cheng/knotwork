@@ -3,9 +3,13 @@ package app.knotwork.design.screens.splash
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.knotwork.design.KnotworkRoborazziOptions
 import app.knotwork.design.a11y.FixedKnotworkA11y
@@ -97,6 +101,45 @@ class SplashContentSnapshotTest {
     }
 
     @Test
+    fun loading_artwork_fills_the_intended_fraction_of_a_phone_screen() {
+        composeTestRule.setContent {
+            KnotworkTheme {
+                CompositionLocalProvider(LocalKnotworkA11y provides FixedKnotworkA11y(reducedMotion = true)) {
+                    SplashContent(appName = "Knotwork Agent", state = SplashPreview.loading())
+                }
+            }
+        }
+        val widthPx = composeTestRule.onNodeWithTag("splash_loading_mark").fetchSemanticsNode().boundsInRoot.width
+        val rootWidthPx = composeTestRule.onRoot().fetchSemanticsNode().boundsInRoot.width
+        // The cropped canvas includes two pixels of padding on each side of the visible artwork.
+        val visibleFraction = widthPx / rootWidthPx * 996f / 1000f
+        assertTrue("Visible artwork should occupy approximately 64% of the screen", visibleFraction in 0.62f..0.65f)
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h640dp-xhdpi")
+    fun small_screen_with_large_text_keeps_artwork_clear_of_the_title() = assertLargeTextFits()
+
+    @Test
+    @Config(qualifiers = "w360dp-h760dp-xhdpi")
+    fun standard_screen_with_large_text_keeps_artwork_clear_of_the_title() = assertLargeTextFits()
+
+    private fun assertLargeTextFits() {
+        composeTestRule.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(
+                LocalDensity provides Density(density.density, fontScale = 1.3f),
+                LocalKnotworkA11y provides FixedKnotworkA11y(reducedMotion = true),
+            ) {
+                KnotworkTheme { SplashContent(appName = "Knotwork Agent", state = SplashPreview.loading()) }
+            }
+        }
+        val mark = composeTestRule.onNodeWithTag("splash_loading_mark").fetchSemanticsNode().boundsInRoot
+        val title = composeTestRule.onNodeWithText("Knotwork Agent").fetchSemanticsNode().boundsInRoot
+        assertTrue("The artwork must stay above the title", mark.bottom < title.top)
+    }
+
+    @Test
     fun thread_reuses_platform_animation_progress_and_clamps_clock_edges() {
         assertEquals(400L, splashThreadElapsed(startMillis = 1_000L, nowMillis = 1_400L))
         assertEquals(1_000L, splashThreadElapsed(startMillis = 1_000L, nowMillis = 5_000L))
@@ -124,12 +167,16 @@ class SplashContentSnapshotTest {
             for (x in 0 until mask.width) {
                 val pixel = mask.getRGB(x, y)
                 val alpha = pixel ushr 24
+                if (alpha > 0) {
+                    assertTrue("Artwork crop must preserve all nontransparent pixels", x in 127 until 1127)
+                    assertTrue("Artwork crop must preserve all nontransparent pixels", y in 416 until 892)
+                    val dx = (x - mask.width / 2.0) * 75.5 / mask.width
+                    val dy = (y - mask.height / 2.0) * 75.5 / mask.height
+                    maxRadius = maxOf(maxRadius, kotlin.math.hypot(dx, dy))
+                }
                 if (alpha < 128) continue
                 minX = minOf(minX, x)
                 maxX = maxOf(maxX, x)
-                val dx = (x - mask.width / 2.0) * 75.5 / mask.width
-                val dy = (y - mask.height / 2.0) * 75.5 / mask.height
-                maxRadius = maxOf(maxRadius, kotlin.math.hypot(dx, dy))
                 if (alpha != 255 || x % 31 != 0 || y % 31 != 0) continue
                 assertSameArtworkColor(source.getRGB(x, y), pixel)
                 samples++

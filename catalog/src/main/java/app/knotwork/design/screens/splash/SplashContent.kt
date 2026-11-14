@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -47,13 +49,21 @@ import app.knotwork.design.tokens.KnotworkTextStyles
 
 /** Maximum content width of the splash column — keeps the layout readable on tablets. */
 private val SplashMaxWidth = 360.dp
-private val PlatformSplashIconSize = 288.dp
 
 // The launcher inset leaves a 75.5 dp bitmap inside its 108 dp viewport.
 private const val MARK_FRACTION = 75.5f / 108f
 private const val THREAD_DURATION_MS = 1000
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
+
+// Bounds of every non-transparent pixel in the original 1254 × 1254 image, with a two-pixel margin.
+private const val LOADING_SOURCE_LEFT = 127
+private const val LOADING_SOURCE_TOP = 416
+private const val LOADING_SOURCE_WIDTH = 1000
+private const val LOADING_SOURCE_HEIGHT = 476
+private val LoadingMarkSourceOffset = IntOffset(LOADING_SOURCE_LEFT, LOADING_SOURCE_TOP)
+private val LoadingMarkSourceSize = IntSize(LOADING_SOURCE_WIDTH, LOADING_SOURCE_HEIGHT)
+private const val LOADING_MARK_WIDTH_FRACTION = 0.64f
 
 /**
  * Stateless Knotwork splash surface. Renders the brand mark + app name +
@@ -86,8 +96,18 @@ fun SplashContent(
         contentAlignment = Alignment.Center,
     ) {
         if (starting) {
-            val markSize = minOf(PlatformSplashIconSize, maxHeight * MARK_MAX_HEIGHT_FRACTION)
-            SplashThread(splashAnimationStartMillis, Modifier.size(markSize))
+            val width = minOf(
+                maxWidth * LOADING_MARK_WIDTH_FRACTION,
+                (maxWidth - 48.dp).coerceAtLeast(0.dp),
+                320.dp,
+                maxHeight * MARK_MAX_HEIGHT_FRACTION * LoadingMarkSourceSize.width / LoadingMarkSourceSize.height,
+            )
+            val height = width * LoadingMarkSourceSize.height / LoadingMarkSourceSize.width
+            SplashThread(
+                splashAnimationStartMillis,
+                Modifier.width(width).height(height).testTag("splash_loading_mark"),
+                cropToArtwork = true,
+            )
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -151,7 +171,11 @@ private fun SplashDetails(
 
 /** Renders the original artwork mask without delaying initialization. */
 @Composable
-private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier = Modifier) {
+private fun SplashThread(
+    splashAnimationStartMillis: Long?,
+    modifier: Modifier = Modifier,
+    cropToArtwork: Boolean = false,
+) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val progress = remember { Animatable(if (reducedMotion) 1f else 0f) }
     val mark = ImageBitmap.imageResource(R.drawable.brand_mark)
@@ -168,6 +192,18 @@ private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier =
         }
     }
     Canvas(modifier) {
+        if (cropToArtwork) {
+            clipRect(right = size.width * progress.value) {
+                drawImage(
+                    image = mark,
+                    srcOffset = LoadingMarkSourceOffset,
+                    srcSize = LoadingMarkSourceSize,
+                    dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+                    colorFilter = if (dark) ColorFilter.tint(ink) else null,
+                )
+            }
+            return@Canvas
+        }
         val markSize = (size.width * MARK_FRACTION).toInt()
         val inset = ((size.width - markSize) / 2f).toInt()
         clipRect(right = size.width * progress.value) {
