@@ -10,12 +10,11 @@
         process boots and Compose installs its first
         frame. `postSplashScreenTheme` swaps to the regular app theme as soon
         as `installSplashScreen()` releases its keep-on-screen condition.
-        The system vector and loading surface use the same ordered strokes.
+        The system icon and loading surface use the same original artwork mask.
     -->
     <style name="Theme.App.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/brand_startup_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_animated_logo</item>
-        <item name="windowSplashScreenAnimationDuration">1000</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.Knotwork</item>
     </style>
 </resources>

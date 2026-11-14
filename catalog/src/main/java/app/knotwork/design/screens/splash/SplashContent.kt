@@ -5,6 +5,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -22,19 +23,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathMeasure
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.knotwork.design.R
 import app.knotwork.design.components.brand.KnotworkLogoSize
@@ -50,23 +49,8 @@ import app.knotwork.design.tokens.KnotworkTextStyles
 private val SplashMaxWidth = 360.dp
 private val PlatformSplashIconSize = 288.dp
 
-// Kept in sync with brand/zhiwen-thread.svg and the adaptive icon.
-internal val BRAND_PATHS = listOf(
-    "M30.16,40.11 L25.36,48.43 Q24.91,49.52 26.19,49.52 L32.08,48.88",
-    "M35.28,51.63 L25.68,57.71 Q25.04,58.93 26.45,58.54 L35.92,56.11",
-    "M25.55,66.67 L35.92,61.87",
-    "M42.64,41.71 L50.38,41.71 Q52.94,41.71 52.94,44.27 L52.94,51.76 Q52.94,54.32 50.38,54.32 " +
-        "L42.64,54.32 Q40.08,54.32 40.08,51.76 L40.08,44.27 Q40.08,41.71 42.64,41.71",
-    "M43.09,59.18 L36.24,67.89",
-    "M49.87,59.25 Q56.08,67.31 58.64,67.31 Q63.38,67.31 63.38,62.51 L63.38,47.54",
-    "M65.1,40.5 L68.18,43.44",
-    "M72.98,41.9 L80.85,41.9 Q82.64,41.9 82.64,43.7 L82.64,64.11 Q82.64,67.31 80.08,67.31 " +
-        "L78.54,67.31",
-    "M70.61,49.71 L74.19,49.71 Q76.24,49.71 76.24,51.76 L76.24,58.29 Q76.24,60.34 74.19,60.34 " +
-        "L70.61,60.34 Q68.56,60.34 68.56,58.29 L68.56,51.76 Q68.56,49.71 70.61,49.71",
-)
-private const val THREAD_VIEWPORT = 108f
-private const val THREAD_STROKE = 3.2f
+// The launcher inset leaves a 75.5 dp bitmap inside its 108 dp viewport.
+private const val MARK_FRACTION = 75.5f / 108f
 private const val THREAD_DURATION_MS = 1000
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
@@ -165,16 +149,13 @@ private fun SplashDetails(
     }
 }
 
-/** Reveals the rounded strokes in order without delaying initialization. */
+/** Renders the original artwork mask without delaying initialization. */
 @Composable
 private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier = Modifier) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val progress = remember { Animatable(if (reducedMotion) 1f else 0f) }
-    val measures = remember {
-        BRAND_PATHS.map { path -> PathMeasure().apply { setPath(PathParser().parsePathString(path).toPath(), false) } }
-    }
-    val totalLength = remember(measures) { measures.sumOf { it.length.toDouble() }.toFloat() }
-    val segment = remember { Path() }
+    val mark = ImageBitmap.imageResource(R.drawable.brand_mark)
+    val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
     LaunchedEffect(reducedMotion, splashAnimationStartMillis) {
         if (reducedMotion) {
@@ -187,25 +168,20 @@ private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier =
         }
     }
     Canvas(modifier) {
-        var remainingLength = totalLength * progress.value
-        scale(size.width / THREAD_VIEWPORT, pivot = Offset.Zero) {
-            measures.forEach { measure ->
-                segment.reset()
-                if (remainingLength > 0f) {
-                    measure.getSegment(0f, minOf(measure.length, remainingLength), segment, true)
-                    drawPath(
-                        segment,
-                        ink,
-                        style = Stroke(width = THREAD_STROKE, cap = StrokeCap.Round, join = StrokeJoin.Round),
-                    )
-                }
-                remainingLength -= measure.length
-            }
+        val markSize = (size.width * MARK_FRACTION).toInt()
+        val inset = ((size.width - markSize) / 2f).toInt()
+        clipRect(right = size.width * progress.value) {
+            drawImage(
+                image = mark,
+                dstOffset = IntOffset(inset, inset),
+                dstSize = IntSize(markSize, markSize),
+                colorFilter = if (dark) ColorFilter.tint(ink) else null,
+            )
         }
     }
 }
 
-/** Uses the platform clock when available; a missing platform timestamp shows the complete mark. */
+/** A static platform icon is complete; standalone previews start from zero. */
 internal fun splashThreadElapsed(startMillis: Long?, nowMillis: Long): Long = when {
     startMillis == null -> 0L // Standalone catalog previews have no platform splash.
     startMillis <= 0L -> THREAD_DURATION_MS.toLong()

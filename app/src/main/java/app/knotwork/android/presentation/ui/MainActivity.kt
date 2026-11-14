@@ -100,9 +100,9 @@ class MainActivity : ComponentActivity() {
         // background and the brand-mark foreground; the post-splash theme
         // declared there takes over when the first Compose frame commits.
         installSplashScreen().setOnExitAnimationListener { splash ->
-            // Transfer the system's clock to Compose before releasing the overlay.
-            // One frame lets Compose paint the matching path segment; navigation
-            // and initialization continue independently and never wait for 1 s.
+            // Transfer the system's icon timing to Compose before releasing the
+            // overlay. With a static icon, Compose shows the completed artwork;
+            // navigation and initialization never wait for an animation.
             splashAnimationStartMillis = splash.iconAnimationStartMillis
             splash.view.postOnAnimation { splash.remove() }
         }

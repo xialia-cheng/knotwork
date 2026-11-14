@@ -2,9 +2,7 @@ package app.knotwork.design.screens.splash
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.toPixelMap
-import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -26,6 +24,8 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
+import java.security.MessageDigest
+import javax.imageio.ImageIO
 import android.graphics.Color as AndroidColor
 
 /**
@@ -106,61 +106,56 @@ class SplashContentSnapshotTest {
     }
 
     @Test
-    fun launcher_and_splash_share_the_centered_safe_strokes() {
-        val source = File("../brand/zhiwen-thread.svg").readText()
-        val svgPaths = Regex("<path id=\"stroke\\d+\" d=\"([^\"]+)\"")
-            .findAll(source).map { it.groupValues[1] }.toList()
-        assertEquals(9, svgPaths.size)
-        assertEquals(svgPaths, BRAND_PATHS)
-        listOf(
-            "ic_launcher_foreground",
-            "ic_launcher_monochrome",
-            "splash_foreground",
-        ).forEach { name ->
-            val xml = File("../app/src/main/res/drawable/$name.xml").readText()
-            val paths = Regex("android:pathData=\"([^\"]+)\"").findAll(xml).map { it.groupValues[1] }.toList()
-            assertEquals(svgPaths, paths)
-            val widths = Regex("android:strokeWidth=\"([^\"]+)\"").findAll(xml).map { it.groupValues[1] }.toList()
-            assertEquals(List(svgPaths.size) { "3.2" }, widths)
-        }
-        val points = Regex("([0-9.]+),([0-9.]+)").findAll(svgPaths.joinToString(" ")).map {
-            it.groupValues[1].toFloat() to it.groupValues[2].toFloat()
-        }.toList()
-        val minX = points.minOf { it.first } - 1.6f
-        val maxX = points.maxOf { it.first } + 1.6f
-        val minY = points.minOf { it.second } - 1.6f
-        val maxY = points.maxOf { it.second } + 1.6f
-        assertTrue(minX >= 21f && maxX <= 87f && minY >= 21f && maxY <= 87f)
-        assertTrue((maxX - minX) / 108f in 0.54f..0.58f)
-        assertTrue(kotlin.math.abs((minX + maxX) / 2f - 54f) < 2f)
-        assertTrue(kotlin.math.abs((minY + maxY) / 2f - 54f) < 2f)
-        svgPaths.forEach { path ->
-            val measure = PathMeasure().apply { setPath(PathParser().parsePathString(path).toPath(), false) }
-            repeat(501) { step ->
-                val point = measure.getPosition(measure.length * step / 500f)
-                val distance = kotlin.math.hypot(point.x - 54f, point.y - 54f)
-                assertTrue("Every stroke must fit the circular safe area", distance + 1.6f <= 33f)
+    fun launcher_and_splash_use_the_original_artwork_within_the_safe_area() {
+        val originalFile = File("../brand/reference-original.jpg")
+        val digest = MessageDigest.getInstance("SHA-256").digest(originalFile.readBytes())
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+        assertEquals("26e338db469052cb18a0030aecd42054521ec329efa469e14056db85eef1d452", digest)
+        val source = ImageIO.read(originalFile)
+        val mask = ImageIO.read(File("src/main/res/drawable-nodpi/brand_mark.png"))
+        assertEquals(source.width, mask.width)
+        assertEquals(source.height, mask.height)
+        assertEquals(0, mask.getRGB(0, 0) ushr 24)
+        var minX = mask.width
+        var maxX = 0
+        var samples = 0
+        var maxRadius = 0.0
+        for (y in 0 until mask.height) {
+            for (x in 0 until mask.width) {
+                val pixel = mask.getRGB(x, y)
+                val alpha = pixel ushr 24
+                if (alpha < 128) continue
+                minX = minOf(minX, x)
+                maxX = maxOf(maxX, x)
+                val dx = (x - mask.width / 2.0) * 75.5 / mask.width
+                val dy = (y - mask.height / 2.0) * 75.5 / mask.height
+                maxRadius = maxOf(maxRadius, kotlin.math.hypot(dx, dy))
+                if (alpha != 255 || x % 31 != 0 || y % 31 != 0) continue
+                assertSameArtworkColor(source.getRGB(x, y), pixel)
+                samples++
             }
         }
-        fun rightEdge(path: String): Float = Regex("([0-9.]+),([0-9.]+)").findAll(path)
-            .maxOf { it.groupValues[1].toFloat() }
-        assertTrue(
-            "The inner box must have a stroke-width gap",
-            rightEdge(svgPaths[7]) - rightEdge(svgPaths[8]) >= 6.39f,
-        )
+        assertTrue("The original drawing must have opaque samples", samples > 20)
+        val widthFraction = (maxX - minX + 1) * 75.5 / mask.width / 108
+        assertTrue("The mark should occupy about 56% of the icon", widthFraction in 0.54..0.57)
+        assertTrue("The artwork must stay inside the circular safe area", maxRadius <= 33.0)
+        listOf("ic_launcher_foreground", "ic_launcher_monochrome").forEach { name ->
+            val xml = File("../app/src/main/res/drawable/$name.xml").readText()
+            assertTrue(xml.contains("@drawable/brand_mark"))
+            assertTrue(xml.contains("16.25dp"))
+        }
+        val night = File("../app/src/main/res/drawable-night/ic_launcher_foreground.xml").readText()
+        assertTrue(night.contains("@drawable/brand_mark"))
+        assertTrue(night.contains("@color/brand_startup_ink"))
+        val theme = File("../app/src/main/res/values/themes.xml").readText()
+        assertTrue(theme.contains("@drawable/ic_launcher_foreground"))
     }
 
-    @Test
-    fun platform_strokes_form_one_second_sequence_without_gaps() {
-        var end = 0
-        for (index in 1..9) {
-            val xml = File("../app/src/main/res/animator/splash_stroke_$index.xml").readText()
-            fun attribute(name: String): Int = requireNotNull(Regex("android:$name=\"(\\d+)\"").find(xml))
-                .groupValues[1].toInt()
-            assertEquals(end, attribute("startOffset"))
-            end += attribute("duration")
+    private fun assertSameArtworkColor(original: Int, pixel: Int) {
+        for (shift in listOf(0, 8, 16)) {
+            val diff = kotlin.math.abs((pixel shr shift and 255) - (original shr shift and 255))
+            assertTrue("Opaque artwork pixels must preserve the original color", diff <= 3)
         }
-        assertEquals(1_000, end)
     }
 
     @Test
