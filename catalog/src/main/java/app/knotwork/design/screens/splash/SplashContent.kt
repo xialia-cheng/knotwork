@@ -1,5 +1,7 @@
 package app.knotwork.design.screens.splash
 
+import android.provider.Settings
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -20,20 +22,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.knotwork.design.R
 import app.knotwork.design.components.brand.KnotworkLogoSize
@@ -44,6 +44,8 @@ import app.knotwork.design.components.dialogs.TypedConfirmDialogState
 import app.knotwork.design.components.text.Text
 import app.knotwork.design.theme.KnotworkTheme
 import app.knotwork.design.tokens.KnotworkTextStyles
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /** Maximum content width of the splash column — keeps the layout readable on tablets. */
 private val SplashMaxWidth = 360.dp
@@ -51,8 +53,6 @@ private val SplashMaxWidth = 360.dp
 // Calibrated against the visible system mark in API 34/36 cold-start recordings.
 private val DefaultPlatformSplashIconSize = 328.dp
 
-// The launcher inset leaves a 75.5 dp bitmap inside its 108 dp viewport.
-private const val MARK_FRACTION = 75.5f / 108f
 private const val THREAD_DURATION_MS = 1000
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
@@ -162,39 +162,39 @@ private fun SplashDetails(
 @Composable
 private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier = Modifier) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
+    val context = LocalContext.current
+    val systemScale = Settings.Global.getFloat(
+        context.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    )
     val progress = remember { Animatable(if (reducedMotion) 1f else 0f) }
-    val mark = ImageBitmap.imageResource(R.drawable.brand_mark)
+    val painter by produceState<PixelStrokePainter?>(initialValue = null, context.resources) {
+        value = withContext(Dispatchers.Default) { PixelStrokePainter.load(context.resources) }
+    }
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
-    LaunchedEffect(reducedMotion, splashAnimationStartMillis) {
-        if (reducedMotion) {
+    LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale) {
+        if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
         } else {
-            val elapsed = splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis())
+            val elapsed = splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale)
             progress.snapTo(elapsed.toFloat() / THREAD_DURATION_MS)
             val remaining = THREAD_DURATION_MS - elapsed.toInt()
             if (remaining > 0) progress.animateTo(1f, tween(remaining, easing = LinearEasing))
         }
     }
     Canvas(modifier) {
-        val markSize = (size.width * MARK_FRACTION).toInt()
-        val inset = ((size.width - markSize) / 2f).toInt()
-        clipRect(right = size.width * progress.value) {
-            drawImage(
-                image = mark,
-                dstOffset = IntOffset(inset, inset),
-                dstSize = IntSize(markSize, markSize),
-                colorFilter = if (dark) ColorFilter.tint(ink) else null,
-            )
-        }
+        painter?.draw(this, progress.value, if (dark) ink.toArgb() else null)
     }
 }
 
 /** A static platform icon is complete; standalone previews start from zero. */
-internal fun splashThreadElapsed(startMillis: Long?, nowMillis: Long): Long = when {
+internal fun splashThreadElapsed(startMillis: Long?, nowMillis: Long, scale: Float = 1f): Long = when {
+    scale <= 0f -> THREAD_DURATION_MS.toLong()
     startMillis == null -> 0L // Standalone catalog previews have no platform splash.
     startMillis <= 0L -> THREAD_DURATION_MS.toLong()
-    else -> (nowMillis - startMillis).coerceIn(0, THREAD_DURATION_MS.toLong())
+    else -> ((nowMillis - startMillis).coerceAtLeast(0) / scale).toLong().coerceAtMost(THREAD_DURATION_MS.toLong())
 }
 
 @Composable
