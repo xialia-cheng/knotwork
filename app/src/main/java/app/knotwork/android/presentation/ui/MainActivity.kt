@@ -10,13 +10,26 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,6 +54,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import app.knotwork.design.R as DesignR
 
 /**
  * The main activity of the application, serving as the entry point.
@@ -204,19 +218,43 @@ class MainActivity : ComponentActivity() {
                     if (restartRequested) ProcessPhoenix.triggerRebirth(applicationContext)
                 }
 
-                AppShellScaffold(
-                    navController = navController,
-                    transientMessageRelay = transientMessageRelay,
-                ) { innerPadding ->
-                    AppNavGraph(
+                var splashContentReady by remember { mutableStateOf(false) }
+                Box(Modifier.fillMaxSize()) {
+                    AppShellScaffold(
                         navController = navController,
-                        showOnboarding = !hasCompletedOnboarding,
-                        pendingDeepLink = pendingDeepLink,
-                        chatEntryRequestRelay = chatEntryRequestRelay,
-                        splashAnimationStartMillis = splashAnimationStartMillis,
-                        onSplashContentReady = splashExitCoordinator::onContentReady,
-                        modifier = Modifier.padding(innerPadding),
-                    )
+                        transientMessageRelay = transientMessageRelay,
+                    ) { innerPadding ->
+                        AppNavGraph(
+                            navController = navController,
+                            showOnboarding = !hasCompletedOnboarding,
+                            pendingDeepLink = pendingDeepLink,
+                            chatEntryRequestRelay = chatEntryRequestRelay,
+                            splashAnimationStartMillis = splashAnimationStartMillis,
+                            onSplashContentReady = {
+                                splashContentReady = true
+                                splashExitCoordinator.onContentReady()
+                            },
+                            modifier = Modifier.padding(innerPadding),
+                        )
+                    }
+                    if (!splashContentReady) {
+                        BoxWithConstraints(
+                            Modifier.fillMaxSize().background(colorResource(DesignR.color.brand_startup_background)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            val size = minOf(288.dp, maxWidth, maxHeight * .45f) * (75.5f / 108f)
+                            Image(
+                                painter = painterResource(DesignR.drawable.brand_mark),
+                                contentDescription = null,
+                                modifier = Modifier.size(size),
+                                colorFilter = if (isSystemInDarkTheme()) {
+                                    ColorFilter.tint(colorResource(DesignR.color.brand_startup_ink))
+                                } else {
+                                    null
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
