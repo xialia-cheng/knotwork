@@ -10,6 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/** Verifies platform timing conversion and Compose animation scaling at supported system speeds. */
 class SplashTimingTest {
     @Test
     fun platformElapsedUsesWallTimeDividedByDurationScale() {

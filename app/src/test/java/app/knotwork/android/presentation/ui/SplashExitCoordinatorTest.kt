@@ -3,6 +3,7 @@ package app.knotwork.android.presentation.ui
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/** Verifies splash handoff ordering for slow startup and immediately completed initialization. */
 class SplashExitCoordinatorTest {
     @Test
     fun loadingOverlayRemainsUntilTheMarkIsReady() {

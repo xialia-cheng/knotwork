@@ -99,6 +99,9 @@ Only Kotlin files appear inside the generated blocks.
       - `SettingsScreenRestartRequiredTest.kt` - Covers the restart-required banner on the Settings surface (`compose/screens/README.md §C5 · Settings`).
       - `SettingsScreenTogglesTest.kt` - Covers a representative toggle row on the Background category sub-screen, exercising the clickable-row wiring that connects the catalog `IconToggleRow` to its ViewModel callback through the `SettingsCallbacks` bag.
       - `SettingsViewModelMockFactory.kt` - Mocked `SettingsViewModel` for screen tests, plus a no-op `SettingsNavActions` for tests that assert no navigation.
+    - `splash/` - Device coverage for splash frame handoff, short screens, and recovery actions.
+      - `SplashFrameDeviceTest.kt` - Confirms a hardware frame is committed and that its ink clears the short-screen footer.
+      - `SplashRecoveryDeviceTest.kt` - Exercises the actual Compose loading and recovery surfaces on the emulator.
     - `tools/` - Compose tests for the Tools surface.
       - `ToolDetailScreenTest.kt` - Tests for `ToolDetailScreen`.
       - `ToolsScreenLocalToolsTest.kt` - Covers the built-in (AppFunctions) section of the Tools screen: row names render with their per-risk pill, and tapping the row click target invokes the ViewModel's toggle hook with the inverted enabled flag.
