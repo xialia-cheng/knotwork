@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  织问 逐笔开屏动画候选资源（日间 / light）
+  =====================================================================
+  * 顶层根元素是 <animated-vector>：SplashScreen API 只在顶层 drawable 是
+    Animatable 时才会播放动画，任何 <inset>/<layer-list>/<adaptive-icon>
+    包装都会让它退化成静态位图（见 00-制作报告.md 与调研笔记）。
+  * 16.25dp 的四边留白已经烘进 108dp 坐标系，不需要外层 inset。
+  * 每个 <path> 静态 trimPathEnd="1"（完整字标），动画把它从 0 拉到 1：
+    系统不播放动画 / 动画器缩放为 0 时看到的是完整静态字标。
+  * 笔画顺序、时长、宽度由 01-源文件/strokes.json 生成，勿手改本文件。
+  * 总时长 1000ms；路径数据来自用户原图的骨架，未重新打字。
+-->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+
+    <aapt:attr name="android:drawable">
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <path
+                android:name="s01"
+                android:pathData="M31.904,42.982C31.833,43.073,31.787,43.114,31.692,43.256C31.598,43.397,31.581,43.42,31.338,43.831C31.095,44.242,30.602,45.122,30.235,45.722C29.868,46.323,29.651,46.654,29.136,47.434C28.622,48.215,27.5,49.857,27.148,50.404C26.797,50.95,27.104,50.415,27.027,50.715C26.95,51.014,26.744,51.924,26.686,52.199C26.628,52.474,26.666,52.283,26.679,52.365C26.692,52.448,26.735,52.613,26.763,52.692C26.791,52.771,26.813,52.794,26.848,52.837C26.882,52.88,26.897,52.914,26.97,52.95C27.043,52.987,26.76,53.042,27.287,53.057C27.815,53.071,29.575,53.045,30.135,53.037C30.696,53.028,30.515,52.99,30.65,53.005C30.785,53.02,30.873,53.102,30.945,53.126C31.017,53.15,31.037,53.155,31.083,53.149C31.129,53.143,31.105,53.164,31.222,53.091C31.34,53.018,31.537,52.907,31.788,52.712C32.038,52.516,32.451,52.182,32.723,51.917C32.995,51.652,33.233,51.346,33.42,51.122C33.606,50.898,33.692,50.783,33.842,50.574C33.991,50.365,34.198,50.03,34.317,49.868C34.435,49.707,34.474,49.693,34.553,49.605"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.772"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s02"
+                android:pathData="M31.001,53.217C30.82,53.866,30.578,54.791,30.459,55.163C30.34,55.536,30.561,55.085,30.288,55.454C30.014,55.823,29.141,56.938,28.816,57.377C28.491,57.815,28.501,57.668,28.339,58.083C28.176,58.498,27.918,59.516,27.841,59.867C27.763,60.218,27.853,60.113,27.873,60.189C27.894,60.266,27.928,60.289,27.965,60.325C28.003,60.362,28.051,60.39,28.1,60.408C28.15,60.426,28.033,60.448,28.263,60.434C28.494,60.419,28.994,60.377,29.483,60.322C29.973,60.266,30.424,60.263,31.2,60.101C31.977,59.939,33.547,59.508,34.144,59.349C34.742,59.19,34.576,59.226,34.784,59.147C34.993,59.068,35.192,58.967,35.396,58.877"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.601"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s03"
+                android:pathData="M25.582,67.125C26.104,66.927,26.748,66.66,27.147,66.53C27.546,66.399,27.784,66.392,27.974,66.34C28.164,66.289,28.019,66.304,28.288,66.222C28.556,66.141,28.782,66.103,29.584,65.852C30.385,65.6,32.359,64.973,33.097,64.713C33.835,64.454,33.707,64.435,34.011,64.295"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.77"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s04"
+                android:pathData="M35.516,68.269C35.611,68.207,35.551,68.28,35.799,68.082C36.047,67.883,36.699,67.353,37.006,67.08C37.314,66.807,37.422,66.682,37.643,66.443C37.865,66.205,38.033,66.034,38.337,65.649C38.64,65.264,39.099,64.673,39.464,64.134C39.83,63.594,40.191,62.993,40.53,62.413C40.868,61.832,41.298,60.989,41.496,60.651C41.694,60.312,41.644,60.471,41.718,60.382"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.915"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s05"
+                android:pathData="M39.851,45.21C39.781,45.301,39.716,45.365,39.64,45.484C39.564,45.604,39.487,45.662,39.396,45.926C39.304,46.19,39.167,46.647,39.093,47.068C39.018,47.49,38.973,47.954,38.949,48.457C38.925,48.96,38.958,49.729,38.948,50.087C38.938,50.444,38.888,50.402,38.888,50.605C38.888,50.808,38.937,51.037,38.948,51.304C38.959,51.571,38.925,51.827,38.952,52.208C38.979,52.589,39.07,53.306,39.11,53.591C39.15,53.876,39.149,53.786,39.19,53.92C39.232,54.053,39.306,54.264,39.36,54.393C39.414,54.521,39.455,54.595,39.517,54.69C39.578,54.785,39.659,54.872,39.731,54.963"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.742"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s06"
+                android:pathData="M39.851,45.21C39.939,45.129,39.998,45.053,40.113,44.968C40.229,44.883,40.339,44.786,40.544,44.697C40.749,44.609,41.067,44.502,41.342,44.437C41.616,44.372,41.935,44.34,42.193,44.308C42.452,44.277,42.685,44.257,42.892,44.246C43.099,44.236,43.258,44.256,43.435,44.246C43.612,44.236,43.263,44.196,43.953,44.186C44.642,44.177,46.824,44.173,47.572,44.19C48.319,44.207,48.209,44.253,48.437,44.287C48.664,44.32,48.774,44.346,48.937,44.389C49.101,44.432,49.287,44.492,49.416,44.545C49.545,44.598,49.617,44.642,49.711,44.705C49.806,44.769,49.883,44.82,49.982,44.925C50.082,45.03,50.216,45.16,50.306,45.334C50.396,45.508,50.46,45.662,50.524,45.968C50.587,46.273,50.651,46.85,50.689,47.167C50.726,47.483,50.738,47.659,50.749,47.866C50.759,48.073,50.741,48.231,50.751,48.408C50.761,48.585,50.799,48.328,50.809,48.927C50.819,49.526,50.836,51.231,50.809,52.004C50.782,52.778,50.694,53.224,50.647,53.566C50.601,53.909,50.567,53.925,50.528,54.06C50.489,54.195,50.486,54.224,50.413,54.374C50.339,54.525,50.195,54.767,50.087,54.963"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.649"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s07"
+                android:pathData="M39.731,54.963C39.82,55.039,39.906,55.123,39.999,55.191C40.091,55.26,40.075,55.299,40.285,55.375C40.496,55.45,40.924,55.584,41.26,55.646C41.597,55.708,41.89,55.729,42.306,55.746C42.722,55.763,43.428,55.736,43.756,55.746C44.084,55.756,43.826,55.796,44.274,55.806C44.723,55.816,46,55.816,46.449,55.806C46.898,55.796,46.791,55.756,46.968,55.746C47.145,55.736,47.277,55.763,47.511,55.746C47.746,55.729,48.064,55.696,48.376,55.646C48.687,55.595,49.162,55.502,49.38,55.445C49.598,55.388,49.566,55.383,49.684,55.303C49.801,55.223,49.952,55.077,50.087,54.963"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.714"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s08"
+                android:pathData="M47.979,60.502C48.1,60.633,48.214,60.736,48.34,60.893C48.467,61.051,48.504,61.096,48.738,61.45C48.972,61.803,49.433,62.513,49.745,63.015C50.057,63.516,50.301,63.986,50.611,64.458C50.92,64.931,51.313,65.489,51.603,65.85C51.893,66.21,52.114,66.402,52.352,66.621C52.589,66.839,52.792,67.008,53.029,67.161C53.266,67.314,53.569,67.452,53.774,67.538C53.979,67.623,54.067,67.627,54.259,67.672C54.451,67.717,54.67,67.77,54.924,67.808C55.177,67.845,55.437,67.91,55.779,67.899C56.122,67.888,56.696,67.792,56.976,67.743C57.256,67.694,57.302,67.66,57.46,67.607C57.619,67.554,57.8,67.483,57.926,67.426C58.053,67.369,58.055,67.375,58.22,67.266C58.386,67.157,58.716,66.969,58.917,66.773C59.119,66.577,59.281,66.328,59.43,66.091C59.579,65.853,59.71,65.606,59.811,65.348C59.913,65.09,59.984,64.788,60.042,64.542C60.099,64.295,60.121,64.154,60.158,63.869C60.195,63.584,60.235,63.12,60.262,62.831C60.289,62.542,60.31,64.113,60.32,62.134C60.33,60.156,60.311,52.91,60.322,50.962C60.332,49.014,60.372,50.652,60.382,50.446C60.392,50.24,60.382,49.966,60.382,49.725"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.939"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s09"
+                android:pathData="M61.646,43.283C61.757,43.266,61.896,43.231,61.978,43.231C62.06,43.231,62.087,43.257,62.138,43.281C62.188,43.305,62.149,43.253,62.279,43.374C62.409,43.495,62.745,43.844,62.918,44.007C63.091,44.17,63.016,44.06,63.316,44.351C63.616,44.641,64.25,45.285,64.717,45.752"
+                android:strokeColor="#30238A"
+                android:strokeWidth="3.065"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s10"
+                android:pathData="M69.293,44.487C69.405,44.467,69.514,44.439,69.63,44.427C69.745,44.416,69.755,44.438,69.988,44.418C70.221,44.398,70.371,44.325,71.027,44.307C71.683,44.288,73.353,44.317,73.922,44.307C74.49,44.297,73.75,44.256,74.439,44.246C75.129,44.236,77.309,44.234,78.058,44.246C78.806,44.259,78.7,44.297,78.93,44.324C79.16,44.35,79.245,44.366,79.438,44.407C79.632,44.448,79.932,44.525,80.094,44.572C80.256,44.618,80.306,44.643,80.409,44.686C80.511,44.728,80.57,44.733,80.711,44.828C80.853,44.923,81.113,45.115,81.258,45.254C81.404,45.393,81.503,45.545,81.585,45.662C81.668,45.778,81.694,45.828,81.752,45.954C81.811,46.081,81.872,46.206,81.936,46.421C82,46.636,82.077,46.845,82.137,47.242C82.197,47.64,82.271,48.182,82.297,48.804C82.324,49.426,82.287,50.527,82.297,50.975C82.307,51.423,82.348,49.417,82.358,51.493C82.368,53.569,82.374,61.269,82.358,63.433C82.341,65.597,82.303,64.134,82.257,64.477C82.211,64.82,82.133,65.24,82.081,65.49C82.03,65.74,82.001,65.818,81.946,65.976C81.891,66.135,81.814,66.314,81.753,66.439C81.691,66.564,81.69,66.596,81.578,66.729C81.466,66.861,81.287,67.079,81.083,67.234C80.879,67.389,80.611,67.55,80.354,67.659C80.098,67.768,79.997,67.816,79.544,67.888C79.092,67.959,78.046,68.055,77.638,68.089C77.229,68.122,77.477,68.112,77.095,68.089C76.712,68.065,75.771,68.008,75.344,67.948C74.916,67.888,74.802,67.801,74.531,67.727"
+                android:strokeColor="#30238A"
+                android:strokeWidth="3.048"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s11"
+                android:pathData="M66.824,52.134C66.727,52.273,66.593,52.457,66.533,52.552C66.473,52.647,66.504,52.6,66.463,52.702C66.421,52.805,66.326,53.035,66.282,53.167C66.239,53.298,66.242,53.24,66.202,53.493C66.162,53.746,66.078,54.34,66.041,54.684C66.005,55.028,65.991,55.082,65.981,55.557C65.971,56.032,65.955,56.946,65.981,57.534C66.008,58.121,66.092,58.715,66.142,59.084C66.192,59.452,66.24,59.582,66.282,59.744C66.325,59.906,66.352,59.955,66.396,60.056C66.441,60.158,66.489,60.257,66.551,60.352C66.612,60.446,66.693,60.532,66.764,60.623"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.825"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s12"
+                android:pathData="M66.824,52.134C67.015,52.014,67.223,51.861,67.397,51.773C67.571,51.686,67.709,51.655,67.87,51.608C68.031,51.561,68.05,51.534,68.363,51.491C68.676,51.448,69.006,51.374,69.748,51.351C70.49,51.327,72.16,51.337,72.816,51.351C73.472,51.364,73.43,51.393,73.684,51.432C73.939,51.472,74.18,51.543,74.342,51.587C74.504,51.631,74.555,51.654,74.657,51.698C74.759,51.742,74.86,51.788,74.955,51.849C75.05,51.91,75.145,51.983,75.228,52.062C75.311,52.14,75.388,52.229,75.453,52.322C75.517,52.414,75.555,52.46,75.614,52.616C75.674,52.771,75.751,52.95,75.812,53.256C75.872,53.562,75.947,54.162,75.976,54.451C76.004,54.74,75.972,54.813,75.982,54.989C75.992,55.166,76.027,55.091,76.036,55.509C76.045,55.926,76.046,57.077,76.036,57.493C76.026,57.91,75.986,57.864,75.976,58.01C75.966,58.156,75.993,58.167,75.976,58.371C75.959,58.574,75.923,58.951,75.873,59.231C75.823,59.51,75.731,59.864,75.674,60.05C75.616,60.237,75.586,60.255,75.526,60.35C75.466,60.445,75.384,60.532,75.313,60.623"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.71"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+            <path
+                android:name="s13"
+                android:pathData="M66.764,60.623C66.855,60.693,66.942,60.773,67.037,60.834C67.132,60.896,67.176,60.933,67.332,60.992C67.488,61.051,67.666,61.129,67.973,61.188C68.279,61.247,68.73,61.319,69.17,61.345C69.61,61.371,70.256,61.335,70.613,61.345C70.969,61.355,70.983,61.395,71.309,61.406C71.636,61.416,72.131,61.43,72.572,61.406C73.012,61.381,73.587,61.318,73.953,61.257C74.318,61.195,74.58,61.103,74.764,61.037C74.947,60.972,74.961,60.933,75.052,60.864C75.144,60.795,75.226,60.703,75.313,60.623"
+                android:strokeColor="#30238A"
+                android:strokeWidth="2.717"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="@android:color/transparent"
+                android:trimPathStart="0"
+                android:trimPathEnd="1"
+                android:trimPathOffset="0" />
+        </vector>
+    </aapt:attr>
+
+    <target android:name="s01">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="0"
+                android:duration="112"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s02">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="94"
+                android:duration="83"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s03">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="159"
+                android:duration="58"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s04">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="199"
+                android:duration="58"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s05">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="239"
+                android:duration="59"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s06">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="280"
+                android:duration="111"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s07">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="373"
+                android:duration="58"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s08">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="413"
+                android:duration="180"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s09">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="575"
+                android:duration="58"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s10">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="615"
+                android:duration="229"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s11">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="826"
+                android:duration="58"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s12">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="866"
+                android:duration="94"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+    <target android:name="s13">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:startOffset="942"
+                android:duration="58"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType"
+                android:interpolator="@android:interpolator/linear" />
+        </aapt:attr>
+    </target>
+</animated-vector>
