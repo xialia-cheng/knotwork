@@ -70,7 +70,8 @@ capture() {
   adb shell am force-stop "$package"
   adb shell input keyevent HOME
   adb shell rm -f "$remote"
-  adb shell screenrecord --time-limit 5 --bit-rate 2000000 "$remote" > "$out_dir/${label}-record.log" 2>&1 &
+  # The first emulator launch can take over five seconds; keep recording through the app handoff.
+  adb shell screenrecord --time-limit 12 --bit-rate 2000000 "$remote" > "$out_dir/${label}-record.log" 2>&1 &
   recorder=$!
   sleep 1
   printf 'launch_requested_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)" >> "$out_dir/${label}.txt"
