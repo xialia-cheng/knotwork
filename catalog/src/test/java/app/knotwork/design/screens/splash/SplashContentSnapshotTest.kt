@@ -110,7 +110,7 @@ class SplashContentSnapshotTest {
             }
         }
         val widthPx = composeTestRule.onNodeWithTag("splash_loading_mark").fetchSemanticsNode().boundsInRoot.width
-        assertEquals(288f, widthPx / composeTestRule.density.density, 0.5f)
+        assertEquals(328f, widthPx / composeTestRule.density.density, 0.5f)
     }
 
     @Test

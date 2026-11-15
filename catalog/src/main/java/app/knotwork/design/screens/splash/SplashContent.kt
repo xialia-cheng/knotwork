@@ -47,7 +47,9 @@ import app.knotwork.design.tokens.KnotworkTextStyles
 
 /** Maximum content width of the splash column — keeps the layout readable on tablets. */
 private val SplashMaxWidth = 360.dp
-private val DefaultPlatformSplashIconSize = 288.dp
+
+// Calibrated against the visible system mark in API 34/36 cold-start recordings.
+private val DefaultPlatformSplashIconSize = 328.dp
 
 // The launcher inset leaves a 75.5 dp bitmap inside its 108 dp viewport.
 private const val MARK_FRACTION = 75.5f / 108f
