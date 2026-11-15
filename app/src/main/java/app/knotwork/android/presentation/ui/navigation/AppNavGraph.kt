@@ -115,6 +115,7 @@ import app.knotwork.design.screens.settings.SettingsCategoryId
  *        into `selectThread` / `createNewSessionWithPipeline`.
  * @param modifier Inset-padding passthrough from [AppShellScaffold].
  * @param splashAnimationStartMillis Platform splash icon animation start time, in epoch milliseconds.
+ * @param onSplashContentReady Releases the platform overlay when content or navigation is ready.
  */
 @Composable
 fun AppNavGraph(
@@ -124,6 +125,7 @@ fun AppNavGraph(
     chatEntryRequestRelay: ChatEntryRequestRelay,
     modifier: Modifier = Modifier,
     splashAnimationStartMillis: Long? = null,
+    onSplashContentReady: () -> Unit = {},
 ) {
     NavHost(
         navController = navController,
@@ -133,7 +135,9 @@ fun AppNavGraph(
         composable(NavRoutes.SPLASH) {
             SplashScreen(
                 splashAnimationStartMillis = splashAnimationStartMillis,
+                onSplashContentReady = onSplashContentReady,
                 onInitialized = {
+                    onSplashContentReady()
                     val next = if (showOnboarding) NavRoutes.ONBOARDING else NavRoutes.CHAT_TAB
                     navController.navigate(next) {
                         popUpTo(NavRoutes.SPLASH) { inclusive = true }

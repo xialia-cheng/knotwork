@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import app.knotwork.design.R
 import java.nio.ByteBuffer
 
-private const val MARK_FRACTION = 75.5f / 108f
+internal const val MARK_FRACTION = 75.5f / 108f
 private const val BYTE_MASK = 0xff
 
 /** Experimental original-pixel reveal. The timestamp textures store high/low milliseconds. */

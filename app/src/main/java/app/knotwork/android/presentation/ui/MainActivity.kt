@@ -51,6 +51,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     private var splashAnimationStartMillis by mutableStateOf<Long?>(null)
+    private val splashExitCoordinator = SplashExitCoordinator()
 
     @Inject lateinit var appStateSettings: AppStateSettings
 
@@ -104,7 +105,9 @@ class MainActivity : ComponentActivity() {
             // overlay. Compose resumes the remaining timeline without delaying
             // navigation or initialization.
             splashAnimationStartMillis = splash.iconAnimationStartMillis
-            splash.view.postOnAnimation { splash.remove() }
+            splashExitCoordinator.onPlatformExit {
+                splash.view.postOnAnimation { splash.remove() }
+            }
         }
         super.onCreate(savedInstanceState)
 
@@ -211,6 +214,7 @@ class MainActivity : ComponentActivity() {
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
                         splashAnimationStartMillis = splashAnimationStartMillis,
+                        onSplashContentReady = splashExitCoordinator::onContentReady,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }

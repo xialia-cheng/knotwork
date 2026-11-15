@@ -1,6 +1,7 @@
 package app.knotwork.design.screens.splash
 
 import android.provider.Settings
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -27,15 +28,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.knotwork.design.R
 import app.knotwork.design.components.brand.KnotworkLogoSize
@@ -46,6 +52,7 @@ import app.knotwork.design.components.dialogs.TypedConfirmDialogState
 import app.knotwork.design.components.text.Text
 import app.knotwork.design.theme.KnotworkTheme
 import app.knotwork.design.tokens.KnotworkTextStyles
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -73,6 +80,7 @@ private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
  * @param modifier optional layout modifier applied to the root box.
  * @param callbacks one-shot callback bundle (Retry).
  * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
+ * @param onMarkReady Called after the loading mark or its failure fallback is ready to draw.
  */
 @Composable
 fun SplashContent(
@@ -82,6 +90,7 @@ fun SplashContent(
     retryLabel: String = stringResource(R.string.knotwork_splash_retry),
     callbacks: SplashCallbacks = noopSplashCallbacks(),
     splashAnimationStartMillis: Long? = null,
+    onMarkReady: () -> Unit = {},
 ) {
     val starting = state is SplashViewState.Initializing || state is SplashViewState.Loading
     val startupInk = colorResource(R.color.brand_startup_ink)
@@ -102,6 +111,7 @@ fun SplashContent(
             SplashThread(
                 splashAnimationStartMillis,
                 Modifier.size(markSize).testTag("splash_loading_mark"),
+                onMarkReady,
             )
             Column(
                 modifier = Modifier
@@ -123,7 +133,7 @@ fun SplashContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp6),
             ) {
-                SplashThread(splashAnimationStartMillis, Modifier.size(KnotworkLogoSize.Lg.size))
+                SplashThread(splashAnimationStartMillis, Modifier.size(KnotworkLogoSize.Lg.size), onMarkReady)
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
         }
@@ -166,7 +176,11 @@ private fun SplashDetails(
 
 /** Renders the original artwork mask without delaying initialization. */
 @Composable
-private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier = Modifier) {
+private fun SplashThread(
+    splashAnimationStartMillis: Long?,
+    modifier: Modifier = Modifier,
+    onMarkReady: () -> Unit = {},
+) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
     val systemScale = Settings.Global.getFloat(
@@ -175,11 +189,23 @@ private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier =
         1f,
     )
     val progress = remember { Animatable(if (reducedMotion) 1f else 0f) }
-    val painter by produceState<PixelStrokePainter?>(initialValue = null, context.resources) {
-        value = withContext(Dispatchers.Default) { PixelStrokePainter.load(context.resources) }
+    val painterResult by produceState<Result<PixelStrokePainter>?>(initialValue = null, context.resources) {
+        value = try {
+            Result.success(withContext(Dispatchers.Default) { PixelStrokePainter.load(context.resources) })
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.e("SplashThread", "Could not load stroke animation", error)
+            Result.failure(error)
+        }
     }
+    val painter = painterResult?.getOrNull()
+    val fallback = if (painterResult?.isFailure == true) ImageBitmap.imageResource(R.drawable.brand_mark) else null
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
+    LaunchedEffect(painterResult) {
+        if (painterResult != null) onMarkReady()
+    }
     LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale) {
         if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
@@ -191,7 +217,18 @@ private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier =
         }
     }
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
-        painter?.draw(this, progress.value, if (dark) ink.toArgb() else null)
+        if (painter != null) {
+            painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
+        } else if (fallback != null) {
+            val markSize = (size.width * MARK_FRACTION).toInt()
+            val inset = ((size.width - markSize) / 2f).toInt()
+            drawImage(
+                image = fallback,
+                dstOffset = IntOffset(inset, inset),
+                dstSize = IntSize(markSize, markSize),
+                colorFilter = if (dark) ColorFilter.tint(ink) else null,
+            )
+        }
     }
 }
 
