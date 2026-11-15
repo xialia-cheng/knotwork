@@ -149,5 +149,4 @@ class PixelStrokePainterTest {
             reader.close()
         }
     }
-
 }
