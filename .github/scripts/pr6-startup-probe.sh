@@ -36,6 +36,7 @@ adb shell pm grant "$package" android.permission.POST_NOTIFICATIONS >/dev/null
 adb shell wm dismiss-keyguard >/dev/null
 adb shell input keyevent 82 >/dev/null
 
+original_night="$(adb shell cmd uimode night | tr -d '\r')"
 keys=(window_animation_scale transition_animation_scale animator_duration_scale)
 original=()
 for key in "${keys[@]}"; do
@@ -52,6 +53,11 @@ restore_settings() {
       adb shell settings put global "$key" "$value" >/dev/null || true
     fi
   done
+  case "$original_night" in
+    *yes*) adb shell cmd uimode night yes >/dev/null 2>&1 || true ;;
+    *no*) adb shell cmd uimode night no >/dev/null 2>&1 || true ;;
+    *auto*) adb shell cmd uimode night auto >/dev/null 2>&1 || true ;;
+  esac
   adb shell am force-stop "$package" >/dev/null 2>&1 || true
 }
 trap restore_settings EXIT
@@ -97,4 +103,8 @@ capture double 2 2 2
 capture animator_off 1 1 0
 capture transition_off 1 0 1
 capture all_off 0 0 0
+# Explicitly exercise the matching drawable-night and the app's light tint.
+adb shell cmd uimode night yes > "$out_dir/dark-mode-command.txt"
+capture dark_normal 1 1 1
+capture dark_animator_off 1 1 0
 adb logcat -d -v threadtime > "$out_dir/logcat.txt"

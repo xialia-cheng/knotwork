@@ -1,0 +1,8 @@
+# 制作与校验脚本的依赖（版本为实际使用的版本）
+# 运行环境：Python 3.12.15，Linux aarch64（Android 手机上的 Ubuntu 24.04 proot）
+numpy==2.5.4
+scipy==1.18.1
+opencv-python-headless==5.0.0.93
+scikit-image==0.26.0
+Pillow==13.0.0
+# 可选：ffmpeg 6.1.1 —— 仅用于把序列帧合成 GIF/MP4；本包不包含任何预览视频

@@ -101,8 +101,8 @@ class MainActivity : ComponentActivity() {
         // declared there takes over when the first Compose frame commits.
         installSplashScreen().setOnExitAnimationListener { splash ->
             // Transfer the system's icon timing to Compose before releasing the
-            // overlay. With a static icon, Compose shows the completed artwork;
-            // navigation and initialization never wait for an animation.
+            // overlay. Compose resumes the remaining timeline without delaying
+            // navigation or initialization.
             splashAnimationStartMillis = splash.iconAnimationStartMillis
             splash.view.postOnAnimation { splash.remove() }
         }
