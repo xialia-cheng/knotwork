@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.InsetDrawable
 import androidx.test.core.app.ApplicationProvider
 import app.knotwork.android.R
 import org.junit.Assert.assertEquals
@@ -40,7 +41,14 @@ class LauncherForegroundScalingTest {
                             icon.setBounds(0, 0, size, size)
                             val foreground = if (monochrome) icon.monochrome else icon.foreground
                             assertNotNull("Adaptive foreground must exist", foreground)
-                            measure(requireNotNull(foreground), size)
+                            val inset = requireNotNull(foreground) as InsetDrawable
+                            assertEquals(
+                                "Foreground viewport must be 60dp inside the 108dp design viewport",
+                                60f / 108f,
+                                requireNotNull(inset.drawable).bounds.width().toFloat() / inset.bounds.width(),
+                                0.025f,
+                            )
+                            measure(inset, size)
                         }
                         results.forEach { result ->
                             result.zip(results.last()).forEach { (actual, expected) ->

@@ -223,6 +223,7 @@ class SplashContentSnapshotTest {
         var opaque = 0
         var differences = 0
         var maxRadius = 0.0
+        var outsideRoundedDesign = 0
         for (y in 0 until foreground.height) {
             for (x in 0 until foreground.width) {
                 val pixel = foreground.getRGB(x, y)
@@ -231,6 +232,12 @@ class SplashContentSnapshotTest {
                 val dx = (x - foreground.width / 2.0) * 60.0 / foreground.width
                 val dy = (y - foreground.height / 2.0) * 60.0 / foreground.height
                 maxRadius = maxOf(maxRadius, kotlin.math.hypot(dx, dy))
+                // Map the 108dp design viewport to 96px, then test the largest allowed 20px corner.
+                val designX = 48.0 + dx * 96.0 / 108.0
+                val designY = 48.0 + dy * 96.0 / 108.0
+                val nearestX = designX.coerceIn(20.0, 76.0)
+                val nearestY = designY.coerceIn(20.0, 76.0)
+                if (kotlin.math.hypot(designX - nearestX, designY - nearestY) > 20.0) outsideRoundedDesign++
                 if (alpha != 255) continue
                 opaque++
                 if ((pixel and 0xffffff) != (original.getRGB(x, y) and 0xffffff)) differences++
@@ -238,7 +245,8 @@ class SplashContentSnapshotTest {
         }
         assertTrue("The new drawing must include opaque pixels", opaque > 20)
         assertEquals("Opaque pixels must retain their original RGB", 0, differences)
-        assertTrue("All visible pixels must remain in the icon safe circle", maxRadius <= 33.0)
+        assertTrue("All visible pixels must remain in the 66dp safe circle", maxRadius <= 33.0)
+        assertEquals("Artwork must fit the 96px reference with 20px corners", 0, outsideRoundedDesign)
         listOf("ic_launcher_foreground", "ic_launcher_monochrome").forEach { name ->
             val xml = File("../app/src/main/res/drawable/$name.xml").readText()
             assertTrue(xml.contains("@drawable/launcher_mark"))
