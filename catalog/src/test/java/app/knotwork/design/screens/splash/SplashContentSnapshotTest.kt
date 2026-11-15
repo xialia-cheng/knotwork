@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -207,7 +208,7 @@ class SplashContentSnapshotTest {
         assertTrue(night.contains("@drawable/brand_mark"))
         assertTrue(night.contains("@color/brand_startup_ink"))
         val theme = File("../app/src/main/res/values/themes.xml").readText()
-        assertTrue(theme.contains("@drawable/brand_startup_foreground"))
+        assertTrue(theme.contains("@drawable/brand_startup_mark_animated"))
     }
 
     @Test
@@ -292,6 +293,7 @@ class SplashContentSnapshotTest {
                 }
             }
         }
+        waitForStrokePainter()
         val theme = if (dark) "dark" else "light"
         val frames = mutableListOf<IntArray>()
         composeTestRule.mainClock.advanceTimeByFrame()
@@ -307,6 +309,13 @@ class SplashContentSnapshotTest {
         assertFalse("The thread should continue until its end", frames[1].contentEquals(frames[2]))
     }
 
+    private fun waitForStrokePainter() {
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            composeTestRule.onAllNodes(SemanticsMatcher.expectValue(StrokePainterReady, true))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     private fun snapshot(name: String, dark: Boolean, content: @Composable () -> Unit) {
         composeTestRule.setContent {
             KnotworkTheme(darkTheme = dark) {
@@ -315,6 +324,7 @@ class SplashContentSnapshotTest {
                 }
             }
         }
+        waitForStrokePainter()
         val themeTag = if (dark) "dark" else "light"
         composeTestRule.onRoot().captureRoboImage(
             roborazziOptions = KnotworkRoborazziOptions,

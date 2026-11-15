@@ -9,11 +9,14 @@ import android.graphics.BlendModeColorFilter
 import android.graphics.Paint
 import android.graphics.RuntimeShader
 import android.graphics.Shader
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import app.knotwork.design.R
 import java.nio.ByteBuffer
+
+private const val MARK_FRACTION = 75.5f / 108f
+private const val BYTE_MASK = 0xff
 
 /** Experimental original-pixel reveal. The timestamp textures store high/low milliseconds. */
 internal class PixelStrokePainter private constructor(
@@ -23,14 +26,14 @@ internal class PixelStrokePainter private constructor(
 ) {
     fun draw(scope: DrawScope, progress: Float, darkInk: Int?) = with(scope) {
         if (progress <= 0f) return@with
-        shader.setFloatUniform("timeMs", progress.coerceIn(0f, 1f) * 1000f)
+        shader.setFloatUniform("timeMs", progress.coerceIn(0f, 1f) * THREAD_DURATION_MS.toFloat())
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             this.shader = this@PixelStrokePainter.shader
             colorFilter = darkInk?.let { BlendModeColorFilter(it, BlendMode.SRC_IN) }
         }
         drawIntoCanvas { canvas ->
             val native = canvas.nativeCanvas
-            val markSize = size.width * (75.5f / 108f)
+            val markSize = size.width * MARK_FRACTION
             val inset = (size.width - markSize) / 2f
             val save = native.save()
             native.translate(inset, inset)
@@ -81,7 +84,7 @@ internal class PixelStrokePainter private constructor(
                 val bytes = ByteArray(rowBytes * height)
                 for (y in 0 until height) {
                     for (x in 0 until width) {
-                        bytes[y * rowBytes + x] = (pixels[y * width + x] and 0xff).toByte()
+                        bytes[y * rowBytes + x] = (pixels[y * width + x] and BYTE_MASK).toByte()
                     }
                 }
                 copyPixelsFromBuffer(ByteBuffer.wrap(bytes))

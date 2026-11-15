@@ -2,7 +2,10 @@
 # The emulator action executes script input line by line; keep orchestration in one shell process.
 set -euo pipefail
 bash .github/scripts/run-instrumented.sh
+catalog_result=0
 if [[ "${PR6_STARTUP_PROBE:-false}" == true ]]; then
+  # Exercise the original-pixel time textures on the emulator before recording playback.
+  ./gradlew :catalog:connectedDebugAndroidTest --no-daemon --max-workers=2 || catalog_result=$?
   # Gradle uninstalls the app after connected tests, including its external files.
   # Reinstall the same APKs and rerun only the renderer before pulling its evidence.
   adb install -r app/build/outputs/apk/foss/debug/app-foss-debug.apk
@@ -19,4 +22,9 @@ if [[ "${PR6_STARTUP_PROBE:-false}" == true ]]; then
     echo probe > "${LOG_DIR:?}/failure-class.txt"
     exit 1
   fi
+fi
+
+if [[ "$catalog_result" -ne 0 ]]; then
+  echo test > "${LOG_DIR:?}/failure-class.txt"
+  exit "$catalog_result"
 fi

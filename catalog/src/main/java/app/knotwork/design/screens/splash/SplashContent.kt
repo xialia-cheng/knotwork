@@ -1,7 +1,6 @@
 package app.knotwork.design.screens.splash
 
 import android.provider.Settings
-
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -33,6 +32,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.knotwork.design.R
@@ -50,12 +52,16 @@ import kotlinx.coroutines.withContext
 /** Maximum content width of the splash column — keeps the layout readable on tablets. */
 private val SplashMaxWidth = 360.dp
 
-// Calibrated against the visible system mark in API 34/36 cold-start recordings.
-private val DefaultPlatformSplashIconSize = 328.dp
+// API 34/36 recordings scaled to 360 px wide: system mark 139 px versus 159 px at 328 dp.
+// The adjusted size still needs handoff verification on both devices.
+private val DefaultPlatformSplashIconSize = 288.dp
 
-private const val THREAD_DURATION_MS = 1000
+internal const val THREAD_DURATION_MS = 1000
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
+
+internal val StrokePainterReady = SemanticsPropertyKey<Boolean>("StrokePainterReady")
+private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
 
 /**
  * Stateless Knotwork splash surface. Renders the brand mark + app name +
@@ -184,7 +190,7 @@ private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier =
             if (remaining > 0) progress.animateTo(1f, tween(remaining, easing = LinearEasing))
         }
     }
-    Canvas(modifier) {
+    Canvas(modifier.semantics { strokePainterReady = painter != null }) {
         painter?.draw(this, progress.value, if (dark) ink.toArgb() else null)
     }
 }

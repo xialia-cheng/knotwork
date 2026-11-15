@@ -15,6 +15,35 @@ capture() {
 if adb shell am start -a android.settings.APPLICATION_DETAILS_SETTINGS -d "package:$package" \
   > "$out_dir/settings-launch.txt" 2>&1; then
   capture settings
+  # Preserve the original launcher ANR evidence; dismiss only this exact system
+  # dialog on the disposable emulator, then capture a separate clean view.
+  if grep -q "Pixel Launcher isn't responding" "$out_dir/settings-ui.xml"; then
+    coordinates="$(python3 - "$out_dir/settings-ui.xml" <<'PYCODE'
+import re
+import sys
+import xml.etree.ElementTree as ET
+text = open(sys.argv[1], encoding="utf-8").read()
+root = ET.fromstring(text[:text.rfind(">") + 1])
+for node in root.iter("node"):
+    if node.get("resource-id") == "android:id/aerr_close":
+        bounds = list(map(int, re.findall(r"\d+", node.get("bounds", ""))))
+        if len(bounds) == 4:
+            print((bounds[0] + bounds[2]) // 2, (bounds[1] + bounds[3]) // 2)
+            break
+PYCODE
+)"
+    if [[ -n "$coordinates" ]]; then
+      read -r close_x close_y <<< "$coordinates"
+      adb shell input tap "$close_x" "$close_y" > "$out_dir/settings-anr-dismissal.txt" 2>&1
+      capture settings-clean
+      if grep -q "isn't responding" "$out_dir/settings-clean-ui.xml"; then
+        printf '%s\n' 'An ANR dialog remained; clean app-info evidence is unavailable.' > "$out_dir/settings-clean-unavailable.txt"
+      fi
+    fi
+  else
+    cp "$out_dir/settings.png" "$out_dir/settings-clean.png"
+    cp "$out_dir/settings-ui.xml" "$out_dir/settings-clean-ui.xml"
+  fi
 else
   printf '%s\n' 'Could not open application details.' > "$out_dir/settings-unavailable.txt"
 fi

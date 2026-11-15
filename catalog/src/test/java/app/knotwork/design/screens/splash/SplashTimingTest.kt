@@ -21,7 +21,7 @@ class SplashTimingTest {
 
     @Test
     fun composeScalesOnlyTheRemainingTimelineOnce() {
-        for (factor in listOf(.5f, 1f, 2f)) {
+        for (factor in listOf(0f, .5f, 1f, 2f)) {
             var nowNanos = 0L
             val clock = object : MonotonicFrameClock {
                 override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {

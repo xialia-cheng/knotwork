@@ -84,6 +84,7 @@ capture() {
   fi
   printf 'launch_returned_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)" >> "$out_dir/${label}.txt"
   wait "$recorder"
+  adb shell dumpsys meminfo "$package" > "$out_dir/${label}-meminfo.txt" 2>&1 || true
   adb pull "$remote" "$out_dir/${label}.mp4" >/dev/null
   test -s "$out_dir/${label}.mp4"
   adb shell rm -f "$remote"
