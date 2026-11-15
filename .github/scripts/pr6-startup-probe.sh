@@ -103,6 +103,24 @@ capture double 2 2 2
 capture animator_off 1 1 0
 capture transition_off 1 0 1
 capture all_off 0 0 0
+# Recreate the activity with a live process to look for handoff before the
+# system animation completes. Preserve the observed PIDs rather than assuming
+# that Android kept the process alive.
+adb shell settings put global window_animation_scale 1
+adb shell settings put global transition_animation_scale 1
+adb shell settings put global animator_duration_scale 1
+adb shell input keyevent HOME
+adb shell rm -f /sdcard/pr6-startup-warm.mp4
+adb shell pidof "$package" > "$out_dir/warm-pid-before.txt" || true
+adb shell screenrecord --time-limit 12 --bit-rate 2000000 /sdcard/pr6-startup-warm.mp4 \
+  > "$out_dir/warm-record.log" 2>&1 &
+warm_recorder=$!
+sleep 1
+adb shell am start -W -f 0x10008000 -n "$component" > "$out_dir/warm.txt"
+adb shell pidof "$package" > "$out_dir/warm-pid-after.txt" || true
+wait "$warm_recorder"
+adb pull /sdcard/pr6-startup-warm.mp4 "$out_dir/warm.mp4" >/dev/null
+adb shell rm -f /sdcard/pr6-startup-warm.mp4
 # Explicitly exercise the matching drawable-night and the app's light tint.
 adb shell cmd uimode night yes > "$out_dir/dark-mode-command.txt"
 capture dark_normal 1 1 1

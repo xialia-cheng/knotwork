@@ -4,7 +4,12 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
+import android.graphics.HardwareRenderer
 import android.graphics.Paint
+import android.graphics.PixelFormat
+import android.graphics.RenderNode
+import android.hardware.HardwareBuffer
+import android.media.ImageReader
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
@@ -17,6 +22,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.nio.ByteBuffer
 import kotlin.math.abs
 
 /** Device-side check of the exported time textures and shader, not an AVD playback test. */
@@ -35,8 +41,8 @@ class PixelStrokePainterTest {
         val inset = (side - markSize) / 2f
         for (time in listOf(250, 500, 750, 1000)) {
             for (night in listOf(false, true)) {
-                val target = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
-                val native = android.graphics.Canvas(target)
+                val node = RenderNode("pixel_stroke_test").apply { setPosition(0, 0, side, side) }
+                val native = node.beginRecording()
                 val tint = if (night) 0xffd2ccff.toInt() else null
                 val reference = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
                 val referenceCanvas = android.graphics.Canvas(reference)
@@ -54,6 +60,8 @@ class PixelStrokePainterTest {
                 ) {
                     painter.draw(this, time / 1000f, tint)
                 }
+                node.endRecording()
+                val target = renderHardware(node, side)
                 var samples = 0
                 for (y in 1 until original.height - 1 step 3) {
                     for (x in 1 until original.width - 1 step 3) {
@@ -92,4 +100,42 @@ class PixelStrokePainterTest {
             }
         }
     }
+    private fun renderHardware(node: RenderNode, side: Int): Bitmap {
+        val usage = HardwareBuffer.USAGE_GPU_COLOR_OUTPUT or HardwareBuffer.USAGE_CPU_READ_OFTEN
+        val reader = ImageReader.newInstance(side, side, PixelFormat.RGBA_8888, 2, usage)
+        val renderer = HardwareRenderer()
+        try {
+            renderer.setOpaque(false)
+            renderer.setSurface(reader.surface)
+            renderer.setContentRoot(node)
+            assertEquals(HardwareRenderer.SYNC_OK, renderer.createRenderRequest().setWaitForPresent(true).syncAndDraw())
+            var acquired = reader.acquireLatestImage()
+            repeat(100) {
+                if (acquired == null) {
+                    Thread.sleep(10)
+                    acquired = reader.acquireLatestImage()
+                }
+            }
+            val frame = requireNotNull(acquired) { "No hardware frame was produced" }
+            try {
+                val plane = frame.planes.single()
+                assertEquals(4, plane.pixelStride)
+                val rowBytes = side * plane.pixelStride
+                val pixels = ByteArray(rowBytes * side)
+                for (y in 0 until side) {
+                    plane.buffer.position(y * plane.rowStride)
+                    plane.buffer.get(pixels, y * rowBytes, rowBytes)
+                }
+                return Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).apply {
+                    copyPixelsFromBuffer(ByteBuffer.wrap(pixels))
+                }
+            } finally {
+                frame.close()
+            }
+        } finally {
+            renderer.destroy()
+            reader.close()
+        }
+    }
+
 }
