@@ -9,7 +9,8 @@ Install the pinned Python generation-only dependencies in `generator/requirement
 Run `PR6_WORKDIR=/path/to/a/writable/directory scripts/pr6/rebuild.sh` from the
 repository. The script validates the source image hash, rebuilds float fields,
 exports complete original-pixel ownership, verifies endpoints and night tint,
-updates the two compact time textures, and exports both AVD resources.
+updates the two compact time textures, exports both AVD resources, and clips
+overlapping slices to the source silhouette to prevent visible seams.
 
 The AVD traces the alpha threshold in 20 ms slices and uses a solid color; it is
 not an exact pixel/RGB reproduction. The Compose candidate samples the original
