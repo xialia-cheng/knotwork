@@ -24,12 +24,15 @@ internal class PixelStrokePainter private constructor(
     private val height: Int,
     private val shader: RuntimeShader,
 ) {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = this@PixelStrokePainter.shader }
+    private var lastInk: Int? = null
+
     fun draw(scope: DrawScope, progress: Float, darkInk: Int?) = with(scope) {
         if (progress <= 0f) return@with
         shader.setFloatUniform("timeMs", progress.coerceIn(0f, 1f) * THREAD_DURATION_MS.toFloat())
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            this.shader = this@PixelStrokePainter.shader
-            colorFilter = darkInk?.let { BlendModeColorFilter(it, BlendMode.SRC_IN) }
+        if (darkInk != lastInk) {
+            paint.colorFilter = darkInk?.let { BlendModeColorFilter(it, BlendMode.SRC_IN) }
+            lastInk = darkInk
         }
         drawIntoCanvas { canvas ->
             val native = canvas.nativeCanvas

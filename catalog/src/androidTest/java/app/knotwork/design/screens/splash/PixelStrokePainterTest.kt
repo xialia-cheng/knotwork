@@ -2,6 +2,9 @@ package app.knotwork.design.screens.splash
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
+import android.graphics.Paint
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
@@ -35,6 +38,14 @@ class PixelStrokePainterTest {
                 val target = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
                 val native = android.graphics.Canvas(target)
                 val tint = if (night) 0xffd2ccff.toInt() else null
+                val reference = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+                val referenceCanvas = android.graphics.Canvas(reference)
+                referenceCanvas.translate(inset, inset)
+                referenceCanvas.scale(markSize / original.width, markSize / original.height)
+                val referencePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+                    colorFilter = tint?.let { BlendModeColorFilter(it, BlendMode.SRC_IN) }
+                }
+                referenceCanvas.drawBitmap(original, 0f, 0f, referencePaint)
                 CanvasDrawScope().draw(
                     Density(1f),
                     LayoutDirection.Ltr,
@@ -66,7 +77,7 @@ class PixelStrokePainterTest {
                             assertEquals("unexpected ink at $x,$y t=$time", 0, actual ushr 24)
                         } else {
                             assertTrue("missing ink at $x,$y t=$time", actual ushr 24 >= 240)
-                            val expected = tint ?: src
+                            val expected = reference.getPixel(actualX, actualY)
                             for (shift in listOf(0, 8, 16)) {
                                 val difference = abs(((actual ushr shift) and 255) - ((expected ushr shift) and 255))
                                 assertTrue("color differs at $x,$y t=$time", difference <= 8)
@@ -77,6 +88,7 @@ class PixelStrokePainterTest {
                 }
                 assertTrue("not enough source samples", samples > 1000)
                 target.recycle()
+                reference.recycle()
             }
         }
     }
