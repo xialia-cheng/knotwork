@@ -85,6 +85,28 @@ class SplashContentSnapshotTest {
     fun splash_weave_dark_frames() = weaveFrames(dark = true)
 
     @Test
+    fun platform_underlay_remains_visible_before_platform_timing_is_known() {
+        composeTestRule.setContent {
+            KnotworkTheme {
+                SplashContent(
+                    appName = "Knotwork Agent",
+                    state = SplashPreview.loading(),
+                    platformUnderlay = true,
+                )
+            }
+        }
+        waitForStrokePainter()
+        val pixels = composeTestRule.onNodeWithTag("splash_loading_mark").captureToImage().toPixelMap().buffer
+        val inkPixels = pixels.count { pixel ->
+            val red = pixel shr 16 and 0xff
+            val green = pixel shr 8 and 0xff
+            val blue = pixel and 0xff
+            red < 160 && blue > red + 20 && blue > green + 20
+        }
+        assertTrue("The original wordmark must remain visible under the platform splash", inkPixels > 100)
+    }
+
+    @Test
     fun splash_reduced_motion_does_not_animate() {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
