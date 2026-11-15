@@ -2,6 +2,7 @@ package app.knotwork.design.screens.splash
 
 import android.provider.Settings
 import android.util.Log
+import android.view.View
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.imageResource
@@ -55,6 +57,7 @@ import app.knotwork.design.tokens.KnotworkTextStyles
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Maximum content width of the splash column — keeps the layout readable on tablets. */
 private val SplashMaxWidth = 360.dp
@@ -80,7 +83,7 @@ private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
  * @param modifier optional layout modifier applied to the root box.
  * @param callbacks one-shot callback bundle (Retry).
  * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
- * @param onMarkReady Called after the loading mark or its failure fallback is ready to draw.
+ * @param onMarkReady Called after the loading mark or its failure fallback is committed to a frame.
  */
 @Composable
 fun SplashContent(
@@ -183,6 +186,8 @@ private fun SplashThread(
 ) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
+    val view = LocalView.current
+    val readyRegistered = remember(view) { AtomicBoolean(false) }
     val systemScale = Settings.Global.getFloat(
         context.contentResolver,
         Settings.Global.ANIMATOR_DURATION_SCALE,
@@ -203,9 +208,6 @@ private fun SplashThread(
     val fallback = if (painterResult?.isFailure == true) ImageBitmap.imageResource(R.drawable.brand_mark) else null
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
-    LaunchedEffect(painterResult) {
-        if (painterResult != null) onMarkReady()
-    }
     LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale) {
         if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
@@ -219,6 +221,7 @@ private fun SplashThread(
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
         if (painter != null) {
             painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
+            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
         } else if (fallback != null) {
             val markSize = (size.width * MARK_FRACTION).toInt()
             val inset = ((size.width - markSize) / 2f).toInt()
@@ -228,7 +231,18 @@ private fun SplashThread(
                 dstSize = IntSize(markSize, markSize),
                 colorFilter = if (dark) ColorFilter.tint(ink) else null,
             )
+            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
         }
+    }
+}
+
+private fun notifyWhenFrameCommitted(view: View, registered: AtomicBoolean, onReady: () -> Unit) {
+    if (!registered.compareAndSet(false, true)) return
+    val observer = view.viewTreeObserver
+    if (view.isHardwareAccelerated && observer.isAlive) {
+        observer.registerFrameCommitCallback { view.post { onReady() } }
+    } else {
+        view.post { onReady() }
     }
 }
 
