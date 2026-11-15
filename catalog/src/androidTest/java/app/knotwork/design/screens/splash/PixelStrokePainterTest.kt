@@ -45,14 +45,17 @@ class PixelStrokePainterTest {
                 val native = node.beginRecording()
                 native.drawColor(android.graphics.Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR)
                 val tint = if (night) 0xffd2ccff.toInt() else null
-                val reference = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
-                val referenceCanvas = android.graphics.Canvas(reference)
+                val referenceNode = RenderNode("source_reference").apply { setPosition(0, 0, side, side) }
+                val referenceCanvas = referenceNode.beginRecording()
+                referenceCanvas.drawColor(android.graphics.Color.TRANSPARENT, android.graphics.PorterDuff.Mode.CLEAR)
                 referenceCanvas.translate(inset, inset)
                 referenceCanvas.scale(markSize / original.width, markSize / original.height)
                 val referencePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
                     colorFilter = tint?.let { BlendModeColorFilter(it, BlendMode.SRC_IN) }
                 }
                 referenceCanvas.drawBitmap(original, 0f, 0f, referencePaint)
+                referenceNode.endRecording()
+                val reference = renderHardware(referenceNode, side)
                 CanvasDrawScope().draw(
                     Density(1f),
                     LayoutDirection.Ltr,
@@ -74,7 +77,10 @@ class PixelStrokePainterTest {
                             val actualY = (inset + (y + .5f) * markSize / original.height).toInt()
                             val expectedAlpha = reference.getPixel(actualX, actualY) ushr 24
                             val actualAlpha = target.getPixel(actualX, actualY) ushr 24
-                            assertTrue("source alpha differs at $x,$y", abs(actualAlpha - expectedAlpha) <= 8)
+                            assertTrue(
+                                "source alpha at $x,$y: actual=$actualAlpha expected=$expectedAlpha",
+                                abs(actualAlpha - expectedAlpha) <= 8,
+                            )
                             edgeSamples++
                         }
                         if (sourceAlpha < 250) continue
