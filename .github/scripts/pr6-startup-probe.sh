@@ -24,6 +24,8 @@ fi
   printf 'recording=emulator screenrecord; elapsed times are approximate host timestamps\n'
   printf 'limitation=recordings show actual launch, not an automated animation or reduced-motion verdict\n'
 } > "$out_dir/metadata.txt"
+# Make the built APK hash visible in the CI log as well as in the evidence artifact.
+cat "$out_dir/metadata.txt"
 
 # connectedAndroidTest may uninstall its target; reinstall precisely the tested APK if needed.
 if ! adb shell pm path "$package" | grep -q '^package:'; then
