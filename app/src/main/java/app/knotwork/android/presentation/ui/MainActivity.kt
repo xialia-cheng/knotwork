@@ -100,15 +100,10 @@ class MainActivity : ComponentActivity() {
         // attempts to draw. `Theme.App.Splash` supplies the light or dark
         // background and the brand-mark foreground; the post-splash theme
         // declared there takes over when the first Compose frame commits.
-        installSplashScreen().setOnExitAnimationListener { splash ->
-            // Transfer the system's icon timing to Compose before releasing the
-            // overlay. Compose resumes the remaining timeline without delaying
-            // navigation or initialization.
-            splashAnimationStartMillis = splash.iconAnimationStartMillis
-            splashExitCoordinator.onPlatformExit {
-                splash.view.postOnAnimation { splash.remove() }
-            }
-        }
+        // Experiment only: allow the platform to remove its splash directly.
+        // This approximates the icon start and requires real handoff validation.
+        splashAnimationStartMillis = System.currentTimeMillis()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         if (ContextCompat.checkSelfPermission(
