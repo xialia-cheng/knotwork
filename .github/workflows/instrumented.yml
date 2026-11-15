@@ -184,14 +184,7 @@ jobs:
           disable-spellchecker: true
           emulator-boot-timeout: 900
           force-avd-creation: true
-          script: |
-            bash .github/scripts/run-instrumented.sh &&
-            if [ "$PR6_STARTUP_PROBE" = true ]; then
-              if ! bash .github/scripts/pr6-startup-probe.sh; then
-                echo probe > "$LOG_DIR/failure-class.txt"
-                exit 1
-              fi
-            fi
+          script: bash .github/scripts/run-instrumented-with-pr6-probe.sh
 
       - name: Upload PR6 real startup evidence
         if: ${{ !cancelled() && github.event_name == 'pull_request' && github.head_ref == 'stage4a-icon-splash' }}
