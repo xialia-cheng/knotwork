@@ -223,12 +223,16 @@ class SplashContentSnapshotTest {
         val widthFraction = (maxX - minX + 1) * 75.5 / mask.width / 108
         assertTrue("The mark should occupy about 56% of the icon", widthFraction in 0.54..0.57)
         assertTrue("The artwork must stay inside the circular safe area", maxRadius <= 33.0)
-        val day = File("../app/src/main/res/drawable/brand_startup_foreground.xml").readText()
-        assertTrue(day.contains("@drawable/brand_mark"))
-        assertTrue(day.contains("16.25dp"))
-        val night = File("../app/src/main/res/drawable-night/brand_startup_foreground.xml").readText()
-        assertTrue(night.contains("@drawable/brand_mark"))
-        assertTrue(night.contains("@color/brand_startup_ink"))
+        listOf("drawable" to "values", "drawable-night" to "values-night").forEach { (drawable, values) ->
+            val animated = File("../app/src/main/res/$drawable/brand_startup_mark_animated.xml").readText()
+            val colors = File("src/main/res/$values/brand_startup.xml").readText()
+            val ink = requireNotNull(Regex("<color name=\"brand_startup_ink\">([^<]+)</color>").find(colors))
+                .groupValues[1]
+            assertTrue(animated.contains("android:viewportWidth=\"108\""))
+            assertTrue(animated.contains("android:viewportHeight=\"108\""))
+            assertTrue(animated.contains("android:fillColor=\"$ink\""))
+            assertTrue(animated.contains("<clip-path"))
+        }
         val theme = File("../app/src/main/res/values/themes.xml").readText()
         assertTrue(theme.contains("@drawable/brand_startup_mark_animated"))
     }
