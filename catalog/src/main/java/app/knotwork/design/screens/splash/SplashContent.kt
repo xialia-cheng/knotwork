@@ -193,15 +193,6 @@ private fun SplashThread(
         Settings.Global.ANIMATOR_DURATION_SCALE,
         1f,
     )
-    val progress = remember(reducedMotion, splashAnimationStartMillis, systemScale) {
-        val initial = if (reducedMotion) {
-            1f
-        } else {
-            splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale).toFloat() /
-                THREAD_DURATION_MS
-        }
-        Animatable(initial)
-    }
     val painterResult by produceState<Result<PixelStrokePainter>?>(initialValue = null, context.resources) {
         value = try {
             Result.success(withContext(Dispatchers.Default) { PixelStrokePainter.load(context.resources) })
@@ -212,11 +203,21 @@ private fun SplashThread(
             Result.failure(error)
         }
     }
+    val progress = remember(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
+        val initial = if (reducedMotion) {
+            1f
+        } else {
+            splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale).toFloat() /
+                THREAD_DURATION_MS
+        }
+        Animatable(initial)
+    }
     val painter = painterResult?.getOrNull()
     val fallback = if (painterResult?.isFailure == true) ImageBitmap.imageResource(R.drawable.brand_mark) else null
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
-    LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale) {
+    LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
+        if (painterResult == null) return@LaunchedEffect
         if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
         } else {

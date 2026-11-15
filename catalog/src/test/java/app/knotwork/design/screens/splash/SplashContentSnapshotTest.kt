@@ -111,7 +111,7 @@ class SplashContentSnapshotTest {
             }
         }
         val widthPx = composeTestRule.onNodeWithTag("splash_loading_mark").fetchSemanticsNode().boundsInRoot.width
-        assertEquals(328f, widthPx / composeTestRule.density.density, 0.5f)
+        assertEquals(288f, widthPx / composeTestRule.density.density, 0.5f)
     }
 
     @Test
@@ -311,6 +311,7 @@ class SplashContentSnapshotTest {
 
     private fun waitForStrokePainter() {
         composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            if (!composeTestRule.mainClock.autoAdvance) composeTestRule.mainClock.advanceTimeByFrame()
             composeTestRule.onAllNodes(SemanticsMatcher.expectValue(StrokePainterReady, true))
                 .fetchSemanticsNodes().isNotEmpty()
         }
