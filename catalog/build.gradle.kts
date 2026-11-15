@@ -165,6 +165,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 
     testImplementation(libs.junit)
     testImplementation(platform(libs.androidx.compose.bom))
