@@ -29,6 +29,12 @@ if [[ "${PR6_STARTUP_PROBE:-false}" == true ]]; then
     me.lcfuns.zhiwen.debug.test/androidx.test.runner.AndroidJUnitRunner \
     | tee build/pr6-startup-evidence/recovery/instrumentation.txt || catalog_result=1
   grep -q 'OK (1 test)' build/pr6-startup-evidence/recovery/instrumentation.txt || catalog_result=1
+  mkdir -p build/pr6-startup-evidence/first-frame
+  adb shell am instrument -w -e class \
+    app.knotwork.android.presentation.ui.splash.SplashFrameDeviceTest \
+    me.lcfuns.zhiwen.debug.test/androidx.test.runner.AndroidJUnitRunner \
+    | tee build/pr6-startup-evidence/first-frame/instrumentation.txt || catalog_result=1
+  grep -q 'OK (1 test)' build/pr6-startup-evidence/first-frame/instrumentation.txt || catalog_result=1
   mkdir -p build/pr6-startup-evidence/icon-render
   adb shell am instrument -w -e class \
     app.knotwork.android.presentation.icon.LauncherIconRenderingTest \
