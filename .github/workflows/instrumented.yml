@@ -155,7 +155,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         env:
           GRADLE_TASK: ':app:connected${{ matrix.flavour }}DebugAndroidTest'
-          PR6_STARTUP_PROBE: ${{ (github.event_name == 'pull_request' && github.head_ref == 'stage4a-icon-splash') || (github.event_name == 'workflow_dispatch' && github.ref_name == 'pr6-animation-isolated') }}
+          PR6_STARTUP_PROBE: ${{ (github.event_name == 'pull_request' && github.head_ref == 'stage4a-icon-splash') || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["pr6-animation-isolated","pr6-outline-experiment"]'), github.ref_name)) }}
           PR6_API_LEVEL: ${{ matrix.api }}
           PR6_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           # The instrumented exclusion list. Classes carrying this annotation
@@ -187,7 +187,7 @@ jobs:
           script: bash .github/scripts/run-instrumented-with-pr6-probe.sh
 
       - name: Upload PR6 real startup evidence
-        if: ${{ !cancelled() && ((github.event_name == 'pull_request' && github.head_ref == 'stage4a-icon-splash') || (github.event_name == 'workflow_dispatch' && github.ref_name == 'pr6-animation-isolated')) }}
+        if: ${{ !cancelled() && ((github.event_name == 'pull_request' && github.head_ref == 'stage4a-icon-splash') || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["pr6-animation-isolated","pr6-outline-experiment"]'), github.ref_name))) }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pr6-real-startup-api${{ matrix.api }}
@@ -198,7 +198,7 @@ jobs:
         if: >-
           ${{ !cancelled() && matrix.api == '34' &&
               ((github.event_name == 'pull_request' && github.head_ref == 'stage4a-icon-splash') ||
-               (github.event_name == 'workflow_dispatch' && github.ref_name == 'pr6-animation-isolated')) }}
+               (github.event_name == 'workflow_dispatch' && contains(fromJSON('["pr6-animation-isolated","pr6-outline-experiment"]'), github.ref_name))) }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: pr6-foss-debug-apk
