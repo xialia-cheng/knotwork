@@ -83,7 +83,7 @@ private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
  * @param modifier optional layout modifier applied to the root box.
  * @param callbacks one-shot callback bundle (Retry).
  * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
- * @param onMarkReady Called after the loading mark or its failure fallback is committed to a frame.
+ * @param onMarkReady Called after a frame with known platform timing is committed.
  */
 @Composable
 fun SplashContent(
@@ -187,13 +187,21 @@ private fun SplashThread(
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
     val view = LocalView.current
-    val readyRegistered = remember(view) { AtomicBoolean(false) }
+    val readyRegistered = remember(view, splashAnimationStartMillis) { AtomicBoolean(false) }
     val systemScale = Settings.Global.getFloat(
         context.contentResolver,
         Settings.Global.ANIMATOR_DURATION_SCALE,
         1f,
     )
-    val progress = remember { Animatable(if (reducedMotion) 1f else 0f) }
+    val progress = remember(reducedMotion, splashAnimationStartMillis, systemScale) {
+        val initial = if (reducedMotion) {
+            1f
+        } else {
+            splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale).toFloat() /
+                THREAD_DURATION_MS
+        }
+        Animatable(initial)
+    }
     val painterResult by produceState<Result<PixelStrokePainter>?>(initialValue = null, context.resources) {
         value = try {
             Result.success(withContext(Dispatchers.Default) { PixelStrokePainter.load(context.resources) })
@@ -221,7 +229,7 @@ private fun SplashThread(
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
         if (painter != null) {
             painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
-            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            if (splashAnimationStartMillis != null) notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
         } else if (fallback != null) {
             val markSize = (size.width * MARK_FRACTION).toInt()
             val inset = ((size.width - markSize) / 2f).toInt()
@@ -231,7 +239,7 @@ private fun SplashThread(
                 dstSize = IntSize(markSize, markSize),
                 colorFilter = if (dark) ColorFilter.tint(ink) else null,
             )
-            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            if (splashAnimationStartMillis != null) notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
         }
     }
 }
