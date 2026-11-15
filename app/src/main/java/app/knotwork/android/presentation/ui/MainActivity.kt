@@ -51,6 +51,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     private var splashAnimationStartMillis by mutableStateOf<Long?>(null)
+    private val splashExitCoordinator = SplashExitCoordinator()
 
     @Inject lateinit var appStateSettings: AppStateSettings
 
@@ -101,10 +102,12 @@ class MainActivity : ComponentActivity() {
         // declared there takes over when the first Compose frame commits.
         installSplashScreen().setOnExitAnimationListener { splash ->
             // Transfer the system's icon timing to Compose before releasing the
-            // overlay. With a static icon, Compose shows the completed artwork;
-            // navigation and initialization never wait for an animation.
+            // overlay. Compose resumes the remaining timeline without delaying
+            // navigation or initialization.
             splashAnimationStartMillis = splash.iconAnimationStartMillis
-            splash.view.postOnAnimation { splash.remove() }
+            splashExitCoordinator.onPlatformExit {
+                splash.view.postOnAnimation { splash.remove() }
+            }
         }
         super.onCreate(savedInstanceState)
 
@@ -211,6 +214,7 @@ class MainActivity : ComponentActivity() {
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
                         splashAnimationStartMillis = splashAnimationStartMillis,
+                        onSplashContentReady = splashExitCoordinator::onContentReady,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }

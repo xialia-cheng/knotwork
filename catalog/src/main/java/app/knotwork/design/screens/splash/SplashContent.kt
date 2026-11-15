@@ -1,5 +1,8 @@
 package app.knotwork.design.screens.splash
 
+import android.provider.Settings
+import android.util.Log
+import android.view.View
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -20,17 +23,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -44,18 +55,24 @@ import app.knotwork.design.components.dialogs.TypedConfirmDialogState
 import app.knotwork.design.components.text.Text
 import app.knotwork.design.theme.KnotworkTheme
 import app.knotwork.design.tokens.KnotworkTextStyles
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Maximum content width of the splash column — keeps the layout readable on tablets. */
 private val SplashMaxWidth = 360.dp
 
-// Calibrated against the visible system mark in API 34/36 cold-start recordings.
-private val DefaultPlatformSplashIconSize = 328.dp
+// API 34/36 recordings scaled to 360 px wide: system mark 139 px versus 159 px at 328 dp.
+// The adjusted size still needs handoff verification on both devices.
+private val DefaultPlatformSplashIconSize = 288.dp
 
-// The launcher inset leaves a 75.5 dp bitmap inside its 108 dp viewport.
-private const val MARK_FRACTION = 75.5f / 108f
-private const val THREAD_DURATION_MS = 1000
+internal const val THREAD_DURATION_MS = 1000
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
+
+internal val StrokePainterReady = SemanticsPropertyKey<Boolean>("StrokePainterReady")
+private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
 
 /**
  * Stateless Knotwork splash surface. Renders the brand mark + app name +
@@ -67,6 +84,8 @@ private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
  * @param modifier optional layout modifier applied to the root box.
  * @param callbacks one-shot callback bundle (Retry).
  * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
+ * @param onMarkReady Called after a frame with known platform timing is committed.
+ * @param platformUnderlay Draws the original mark underneath the platform splash until timing is known.
  */
 @Composable
 fun SplashContent(
@@ -76,6 +95,8 @@ fun SplashContent(
     retryLabel: String = stringResource(R.string.knotwork_splash_retry),
     callbacks: SplashCallbacks = noopSplashCallbacks(),
     splashAnimationStartMillis: Long? = null,
+    onMarkReady: () -> Unit = {},
+    platformUnderlay: Boolean = false,
 ) {
     val starting = state is SplashViewState.Initializing || state is SplashViewState.Loading
     val startupInk = colorResource(R.color.brand_startup_ink)
@@ -96,6 +117,8 @@ fun SplashContent(
             SplashThread(
                 splashAnimationStartMillis,
                 Modifier.size(markSize).testTag("splash_loading_mark"),
+                onMarkReady,
+                platformUnderlay,
             )
             Column(
                 modifier = Modifier
@@ -117,7 +140,12 @@ fun SplashContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp6),
             ) {
-                SplashThread(splashAnimationStartMillis, Modifier.size(KnotworkLogoSize.Lg.size))
+                SplashThread(
+                    splashAnimationStartMillis,
+                    Modifier.size(KnotworkLogoSize.Lg.size),
+                    onMarkReady,
+                    platformUnderlay,
+                )
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
         }
@@ -160,41 +188,98 @@ private fun SplashDetails(
 
 /** Renders the original artwork mask without delaying initialization. */
 @Composable
-private fun SplashThread(splashAnimationStartMillis: Long?, modifier: Modifier = Modifier) {
+private fun SplashThread(
+    splashAnimationStartMillis: Long?,
+    modifier: Modifier = Modifier,
+    onMarkReady: () -> Unit = {},
+    platformUnderlay: Boolean = false,
+) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
-    val progress = remember { Animatable(if (reducedMotion) 1f else 0f) }
-    val mark = ImageBitmap.imageResource(R.drawable.brand_mark)
+    val context = LocalContext.current
+    val resources = LocalResources.current
+    val view = LocalView.current
+    val readyRegistered = remember(view, splashAnimationStartMillis) { AtomicBoolean(false) }
+    val systemScale = Settings.Global.getFloat(
+        context.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    )
+    val painterResult by produceState<Result<PixelStrokePainter>?>(initialValue = null, resources) {
+        value = try {
+            Result.success(withContext(Dispatchers.Default) { PixelStrokePainter.load(resources) })
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.e("SplashThread", "Could not load stroke animation", error)
+            Result.failure(error)
+        }
+    }
+    val progress = remember(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
+        val initial = if (reducedMotion) {
+            1f
+        } else {
+            splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale).toFloat() /
+                THREAD_DURATION_MS
+        }
+        Animatable(initial)
+    }
+    val painter = painterResult?.getOrNull()
+    // Android can briefly transfer its splash icon surface after the activity's
+    // first frame. Keep the original artwork underneath while the shader loads.
+    val useFallback = painter == null || (platformUnderlay && splashAnimationStartMillis == null)
+    val fallback = if (useFallback) ImageBitmap.imageResource(R.drawable.brand_mark) else null
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
-    LaunchedEffect(reducedMotion, splashAnimationStartMillis) {
-        if (reducedMotion) {
+    LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
+        if (painterResult == null) return@LaunchedEffect
+        if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
         } else {
-            val elapsed = splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis())
+            val elapsed = splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale)
             progress.snapTo(elapsed.toFloat() / THREAD_DURATION_MS)
             val remaining = THREAD_DURATION_MS - elapsed.toInt()
             if (remaining > 0) progress.animateTo(1f, tween(remaining, easing = LinearEasing))
         }
     }
-    Canvas(modifier) {
-        val markSize = (size.width * MARK_FRACTION).toInt()
-        val inset = ((size.width - markSize) / 2f).toInt()
-        clipRect(right = size.width * progress.value) {
+    Canvas(modifier.semantics { strokePainterReady = painter != null }) {
+        if (painter != null && !useFallback) {
+            painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
+            if (splashAnimationStartMillis != null) notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+        } else if (fallback != null) {
+            val markSize = (size.width * MARK_FRACTION).toInt()
+            val inset = ((size.width - markSize) / 2f).toInt()
             drawImage(
-                image = mark,
+                image = fallback,
                 dstOffset = IntOffset(inset, inset),
                 dstSize = IntSize(markSize, markSize),
                 colorFilter = if (dark) ColorFilter.tint(ink) else null,
             )
+            if (painterResult?.isFailure == true && splashAnimationStartMillis != null) {
+                notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            }
         }
     }
 }
 
+private fun notifyWhenFrameCommitted(view: View, registered: AtomicBoolean, onReady: () -> Unit) {
+    if (!registered.compareAndSet(false, true)) return
+    val observer = view.viewTreeObserver
+    if (view.isHardwareAccelerated && observer.isAlive) {
+        observer.registerFrameCommitCallback { view.post { onReady() } }
+        // A completed animation can be completely static; request a frame so
+        // the one-shot callback still runs when no other content invalidates.
+        view.postInvalidateOnAnimation()
+    } else {
+        view.post { onReady() }
+    }
+}
+
 /** A static platform icon is complete; standalone previews start from zero. */
-internal fun splashThreadElapsed(startMillis: Long?, nowMillis: Long): Long = when {
+internal fun splashThreadElapsed(startMillis: Long?, nowMillis: Long, scale: Float = 1f): Long = when {
+    scale <= 0f -> THREAD_DURATION_MS.toLong()
     startMillis == null -> 0L // Standalone catalog previews have no platform splash.
     startMillis <= 0L -> THREAD_DURATION_MS.toLong()
-    else -> (nowMillis - startMillis).coerceIn(0, THREAD_DURATION_MS.toLong())
+    else -> ((nowMillis - startMillis).coerceAtLeast(0) / scale).toLong().coerceAtMost(THREAD_DURATION_MS.toLong())
 }
 
 @Composable

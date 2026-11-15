@@ -778,6 +778,7 @@ Only Kotlin files appear inside the generated blocks.
     - `splash/` - Tests for the splash and initialisation path.
       - `SplashStateMappingTest.kt` - Verifies the `SplashUiState.toViewState(...)` mapper that bridges the app-side cold-start projection to the catalog `SplashViewState` consumed by `SplashContent`.
       - `SplashViewModelTest.kt` - Verifies that `SplashViewModel` folds `InitProgress` emissions into the UI state correctly across the success path, the failed path, the retry path, and the data-locked recovery flow (typed-confirm full reset).
+    - `SplashExitCoordinatorTest.kt` - Verifies splash handoff ordering for slow startup and immediately completed initialization.
     - `taskmonitor/` - Tests for the task monitor.
       - `TaskMonitorViewModelTest.kt` - Tests for TaskMonitorViewModel.
     - `tools/` - Tests for the Tools surface, the MCP server editor and the domain allowlist.

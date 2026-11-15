@@ -36,6 +36,9 @@ adb shell pm grant "$package" android.permission.POST_NOTIFICATIONS >/dev/null
 adb shell wm dismiss-keyguard >/dev/null
 adb shell input keyevent 82 >/dev/null
 
+original_night="$(adb shell cmd uimode night | tr -d '\r')"
+original_font_scale="$(adb shell settings get system font_scale | tr -d '\r')"
+original_override_size="$(adb shell wm size | tr -d '\r' | sed -n 's/^Override size: //p')"
 keys=(window_animation_scale transition_animation_scale animator_duration_scale)
 original=()
 for key in "${keys[@]}"; do
@@ -52,6 +55,21 @@ restore_settings() {
       adb shell settings put global "$key" "$value" >/dev/null || true
     fi
   done
+  if [[ "$original_font_scale" == null ]]; then
+    adb shell settings delete system font_scale >/dev/null || true
+  else
+    adb shell settings put system font_scale "$original_font_scale" >/dev/null || true
+  fi
+  if [[ -n "$original_override_size" ]]; then
+    adb shell wm size "$original_override_size" >/dev/null || true
+  else
+    adb shell wm size reset >/dev/null || true
+  fi
+  case "$original_night" in
+    *yes*) adb shell cmd uimode night yes >/dev/null 2>&1 || true ;;
+    *no*) adb shell cmd uimode night no >/dev/null 2>&1 || true ;;
+    *auto*) adb shell cmd uimode night auto >/dev/null 2>&1 || true ;;
+  esac
   adb shell am force-stop "$package" >/dev/null 2>&1 || true
 }
 trap restore_settings EXIT
@@ -84,6 +102,7 @@ capture() {
   fi
   printf 'launch_returned_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)" >> "$out_dir/${label}.txt"
   wait "$recorder"
+  adb shell dumpsys meminfo "$package" > "$out_dir/${label}-meminfo.txt" 2>&1 || true
   adb pull "$remote" "$out_dir/${label}.mp4" >/dev/null
   test -s "$out_dir/${label}.mp4"
   adb shell rm -f "$remote"
@@ -96,4 +115,40 @@ capture double 2 2 2
 capture animator_off 1 1 0
 capture transition_off 1 0 1
 capture all_off 0 0 0
+# Recreate the activity with a live process to look for handoff before the
+# system animation completes. Preserve the observed PIDs rather than assuming
+# that Android kept the process alive.
+adb shell settings put global window_animation_scale 1
+adb shell settings put global transition_animation_scale 1
+adb shell settings put global animator_duration_scale 1
+adb shell input keyevent HOME
+adb shell rm -f /sdcard/pr6-startup-warm.mp4
+adb shell pidof "$package" > "$out_dir/warm-pid-before.txt" || true
+adb shell screenrecord --time-limit 12 --bit-rate 2000000 /sdcard/pr6-startup-warm.mp4 \
+  > "$out_dir/warm-record.log" 2>&1 &
+warm_recorder=$!
+sleep 1
+adb shell am start -W -f 0x10008000 -n "$component" > "$out_dir/warm.txt"
+adb shell pidof "$package" > "$out_dir/warm-pid-after.txt" || true
+wait "$warm_recorder"
+adb pull /sdcard/pr6-startup-warm.mp4 "$out_dir/warm.mp4" >/dev/null
+adb shell rm -f /sdcard/pr6-startup-warm.mp4
+# Capture a short display with a large system font; restore both afterwards.
+adb shell wm size 720x1280
+adb shell settings put system font_scale 1.5
+capture short_large_font 1 1 1
+if [[ -n "$original_override_size" ]]; then
+  adb shell wm size "$original_override_size"
+else
+  adb shell wm size reset
+fi
+if [[ "$original_font_scale" == null ]]; then
+  adb shell settings delete system font_scale
+else
+  adb shell settings put system font_scale "$original_font_scale"
+fi
+# Explicitly exercise the matching drawable-night and the app's light tint.
+adb shell cmd uimode night yes > "$out_dir/dark-mode-command.txt"
+capture dark_normal 1 1 1
+capture dark_animator_off 1 1 0
 adb logcat -d -v threadtime > "$out_dir/logcat.txt"

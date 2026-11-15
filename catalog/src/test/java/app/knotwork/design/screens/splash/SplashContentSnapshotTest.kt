@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -84,6 +85,28 @@ class SplashContentSnapshotTest {
     fun splash_weave_dark_frames() = weaveFrames(dark = true)
 
     @Test
+    fun platform_underlay_remains_visible_before_platform_timing_is_known() {
+        composeTestRule.setContent {
+            KnotworkTheme {
+                SplashContent(
+                    appName = "Knotwork Agent",
+                    state = SplashPreview.loading(),
+                    platformUnderlay = true,
+                )
+            }
+        }
+        waitForStrokePainter()
+        val pixels = composeTestRule.onNodeWithTag("splash_loading_mark").captureToImage().toPixelMap().buffer
+        val inkPixels = pixels.count { pixel ->
+            val red = pixel shr 16 and 0xff
+            val green = pixel shr 8 and 0xff
+            val blue = pixel and 0xff
+            red < 160 && blue > red + 20 && blue > green + 20
+        }
+        assertTrue("The original wordmark must remain visible under the platform splash", inkPixels > 100)
+    }
+
+    @Test
     fun splash_reduced_motion_does_not_animate() {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
@@ -110,7 +133,7 @@ class SplashContentSnapshotTest {
             }
         }
         val widthPx = composeTestRule.onNodeWithTag("splash_loading_mark").fetchSemanticsNode().boundsInRoot.width
-        assertEquals(328f, widthPx / composeTestRule.density.density, 0.5f)
+        assertEquals(288f, widthPx / composeTestRule.density.density, 0.5f)
     }
 
     @Test
@@ -200,14 +223,18 @@ class SplashContentSnapshotTest {
         val widthFraction = (maxX - minX + 1) * 75.5 / mask.width / 108
         assertTrue("The mark should occupy about 56% of the icon", widthFraction in 0.54..0.57)
         assertTrue("The artwork must stay inside the circular safe area", maxRadius <= 33.0)
-        val day = File("../app/src/main/res/drawable/brand_startup_foreground.xml").readText()
-        assertTrue(day.contains("@drawable/brand_mark"))
-        assertTrue(day.contains("16.25dp"))
-        val night = File("../app/src/main/res/drawable-night/brand_startup_foreground.xml").readText()
-        assertTrue(night.contains("@drawable/brand_mark"))
-        assertTrue(night.contains("@color/brand_startup_ink"))
+        listOf("drawable" to "values", "drawable-night" to "values-night").forEach { (drawable, values) ->
+            val animated = File("../app/src/main/res/$drawable/brand_startup_mark_animated.xml").readText()
+            val colors = File("src/main/res/$values/brand_startup.xml").readText()
+            val ink = requireNotNull(Regex("<color name=\"brand_startup_ink\">([^<]+)</color>").find(colors))
+                .groupValues[1]
+            assertTrue(animated.contains("android:viewportWidth=\"108\""))
+            assertTrue(animated.contains("android:viewportHeight=\"108\""))
+            assertTrue(animated.contains("android:fillColor=\"$ink\""))
+            assertTrue(animated.contains("<clip-path"))
+        }
         val theme = File("../app/src/main/res/values/themes.xml").readText()
-        assertTrue(theme.contains("@drawable/brand_startup_foreground"))
+        assertTrue(theme.contains("@drawable/brand_startup_mark_animated"))
     }
 
     @Test
@@ -292,6 +319,7 @@ class SplashContentSnapshotTest {
                 }
             }
         }
+        waitForStrokePainter()
         val theme = if (dark) "dark" else "light"
         val frames = mutableListOf<IntArray>()
         composeTestRule.mainClock.advanceTimeByFrame()
@@ -307,6 +335,14 @@ class SplashContentSnapshotTest {
         assertFalse("The thread should continue until its end", frames[1].contentEquals(frames[2]))
     }
 
+    private fun waitForStrokePainter() {
+        composeTestRule.waitUntil(timeoutMillis = 10_000) {
+            if (!composeTestRule.mainClock.autoAdvance) composeTestRule.mainClock.advanceTimeByFrame()
+            composeTestRule.onAllNodes(SemanticsMatcher.expectValue(StrokePainterReady, true))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     private fun snapshot(name: String, dark: Boolean, content: @Composable () -> Unit) {
         composeTestRule.setContent {
             KnotworkTheme(darkTheme = dark) {
@@ -315,6 +351,7 @@ class SplashContentSnapshotTest {
                 }
             }
         }
+        waitForStrokePainter()
         val themeTag = if (dark) "dark" else "light"
         composeTestRule.onRoot().captureRoboImage(
             roborazziOptions = KnotworkRoborazziOptions,
