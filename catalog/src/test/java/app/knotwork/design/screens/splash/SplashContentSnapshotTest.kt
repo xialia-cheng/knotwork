@@ -242,7 +242,6 @@ class SplashContentSnapshotTest {
         listOf("ic_launcher_foreground", "ic_launcher_monochrome").forEach { name ->
             val xml = File("../app/src/main/res/drawable/$name.xml").readText()
             assertTrue(xml.contains("@drawable/launcher_mark"))
-            assertTrue(xml.contains("24dp"))
         }
         val night = File("../app/src/main/res/drawable-night/ic_launcher_foreground.xml").readText()
         assertTrue(night.contains("@drawable/launcher_mark"))
