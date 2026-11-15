@@ -1,0 +1,9 @@
+uniform shader art;
+uniform shader highTime;
+uniform shader lowTime;
+uniform float timeMs;
+half4 main(float2 xy) {
+    float hi = floor(float(highTime.eval(xy).a) * 255.0 + 0.5);
+    float lo = floor(float(lowTime.eval(xy).a) * 255.0 + 0.5);
+    return art.eval(xy) * half(step(hi * 256.0 + lo, timeMs));
+}

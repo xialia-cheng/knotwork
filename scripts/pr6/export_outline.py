@@ -43,10 +43,16 @@ for folder, color in [('drawable', '#30238A'), ('drawable-night', '#D2CCFF')]:
     for lower, start, _ in slices:
         lines.extend([f'    <target android:name="part_{lower}">',
                       '        <aapt:attr name="android:animation">',
-                      '            <objectAnimator android:propertyName="fillAlpha"',
-                      f'                android:startOffset="{start}" android:duration="1"',
-                      '                android:valueFrom="0" android:valueTo="1"',
-                      '                android:valueType="floatType" />',
+                      '            <set android:ordering="together">',
+                      '                <objectAnimator android:propertyName="fillAlpha"',
+                      f'                    android:startOffset="{start}" android:duration="1"',
+                      '                    android:valueFrom="0" android:valueTo="1"',
+                      '                    android:valueType="floatType" />',
+                      '                <objectAnimator android:propertyName="strokeAlpha"',
+                      f'                    android:startOffset="{start}" android:duration="1"',
+                      '                    android:valueFrom="0" android:valueTo="1"',
+                      '                    android:valueType="floatType" />',
+                      '            </set>',
                       '        </aapt:attr>', '    </target>'])
     lines.append('</animated-vector>')
     path = root / 'app/src/main/res' / folder / 'brand_startup_mark_animated.xml'

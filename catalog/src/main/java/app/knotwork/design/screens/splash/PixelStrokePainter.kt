@@ -54,19 +54,8 @@ internal class PixelStrokePainter private constructor(
             val lo = decodeAlpha(resources, R.drawable.brand_stroke_time_lo)
             require(hi.width == source.width && hi.height == source.height)
             require(lo.width == source.width && lo.height == source.height)
-            val shader = RuntimeShader(
-                """
-                uniform shader art;
-                uniform shader highTime;
-                uniform shader lowTime;
-                uniform float timeMs;
-                half4 main(float2 xy) {
-                    float hi = floor(float(highTime.eval(xy).a) * 255.0 + 0.5);
-                    float lo = floor(float(lowTime.eval(xy).a) * 255.0 + 0.5);
-                    return art.eval(xy) * half(step(hi * 256.0 + lo, timeMs));
-                }
-                """.trimIndent(),
-            )
+            val sourceCode = resources.openRawResource(R.raw.brand_stroke_shader).bufferedReader().use { it.readText() }
+            val shader = RuntimeShader(sourceCode)
             shader.setInputShader("art", bitmapShader(source, false))
             shader.setInputShader("highTime", bitmapShader(hi, true))
             shader.setInputShader("lowTime", bitmapShader(lo, true))

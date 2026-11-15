@@ -60,410 +60,716 @@
     </aapt:attr>
     <target android:name="part_0">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="19" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="19" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="19" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_20">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="39" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="39" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="39" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_40">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="59" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="59" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="59" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_60">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="79" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="79" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="79" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_80">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="99" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="99" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="99" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_100">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="119" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="119" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="119" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_120">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="139" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="139" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="139" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_140">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="159" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="159" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="159" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_160">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="179" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="179" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="179" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_180">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="199" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="199" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="199" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_200">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="219" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="219" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="219" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_220">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="239" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="239" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="239" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_240">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="259" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="259" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="259" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_260">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="279" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="279" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="279" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_280">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="299" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="299" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="299" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_300">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="319" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="319" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="319" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_320">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="339" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="339" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="339" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_340">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="359" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="359" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="359" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_360">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="379" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="379" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="379" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_380">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="399" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="399" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="399" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_400">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="419" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="419" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="419" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_420">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="439" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="439" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="439" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_440">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="459" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="459" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="459" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_460">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="479" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="479" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="479" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_480">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="499" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="499" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="499" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_500">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="519" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="519" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="519" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_520">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="539" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="539" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="539" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_540">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="559" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="559" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="559" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_560">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="579" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="579" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="579" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_580">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="599" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="599" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="599" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_600">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="619" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="619" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="619" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_620">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="639" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="639" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="639" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_640">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="659" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="659" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="659" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_660">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="679" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="679" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="679" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_680">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="699" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="699" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="699" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_700">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="719" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="719" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="719" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_720">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="739" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="739" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="739" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_740">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="759" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="759" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="759" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_760">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="779" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="779" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="779" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_780">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="799" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="799" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="799" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_800">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="819" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="819" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="819" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_820">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="839" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="839" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="839" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_840">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="859" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="859" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="859" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_860">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="879" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="879" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="879" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_880">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="899" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="899" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="899" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_900">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="919" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="919" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="919" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_920">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="939" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="939" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="939" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_940">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="959" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="959" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="959" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_960">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="979" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="979" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="979" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_980">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="999" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="999" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="999" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
     <target android:name="part_1000">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="fillAlpha"
-                android:startOffset="999" android:duration="1"
-                android:valueFrom="0" android:valueTo="1"
-                android:valueType="floatType" />
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="fillAlpha"
+                    android:startOffset="999" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+                <objectAnimator android:propertyName="strokeAlpha"
+                    android:startOffset="999" android:duration="1"
+                    android:valueFrom="0" android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
         </aapt:attr>
     </target>
 </animated-vector>

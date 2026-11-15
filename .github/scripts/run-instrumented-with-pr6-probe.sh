@@ -23,6 +23,12 @@ if [[ "${PR6_STARTUP_PROBE:-false}" == true ]]; then
   # Reinstall the same APKs and rerun only the renderer before pulling its evidence.
   adb install -r app/build/outputs/apk/foss/debug/app-foss-debug.apk
   adb install -r -t app/build/outputs/apk/androidTest/foss/debug/app-foss-debug-androidTest.apk
+  mkdir -p build/pr6-startup-evidence/recovery
+  adb shell am instrument -w -e class \
+    app.knotwork.android.presentation.ui.splash.SplashRecoveryDeviceTest \
+    me.lcfuns.zhiwen.debug.test/androidx.test.runner.AndroidJUnitRunner \
+    | tee build/pr6-startup-evidence/recovery/instrumentation.txt || catalog_result=1
+  grep -q 'OK (1 test)' build/pr6-startup-evidence/recovery/instrumentation.txt || catalog_result=1
   mkdir -p build/pr6-startup-evidence/icon-render
   adb shell am instrument -w -e class \
     app.knotwork.android.presentation.icon.LauncherIconRenderingTest \
