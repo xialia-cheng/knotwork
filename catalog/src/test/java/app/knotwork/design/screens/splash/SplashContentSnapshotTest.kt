@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.knotwork.design.KnotworkRoborazziOptions
 import app.knotwork.design.a11y.FixedKnotworkA11y
@@ -101,7 +102,7 @@ class SplashContentSnapshotTest {
     }
 
     @Test
-    fun loading_artwork_fills_the_intended_fraction_of_a_phone_screen() {
+    fun loading_artwork_defaults_to_the_platform_icon_size() {
         composeTestRule.setContent {
             KnotworkTheme {
                 CompositionLocalProvider(LocalKnotworkA11y provides FixedKnotworkA11y(reducedMotion = true)) {
@@ -110,10 +111,24 @@ class SplashContentSnapshotTest {
             }
         }
         val widthPx = composeTestRule.onNodeWithTag("splash_loading_mark").fetchSemanticsNode().boundsInRoot.width
-        val rootWidthPx = composeTestRule.onRoot().fetchSemanticsNode().boundsInRoot.width
-        // The cropped canvas includes two pixels of padding on each side of the visible artwork.
-        val visibleFraction = widthPx / rootWidthPx * 996f / 1000f
-        assertTrue("Visible artwork should occupy approximately 64% of the screen", visibleFraction in 0.62f..0.65f)
+        assertEquals(288f, widthPx / composeTestRule.density.density, 0.5f)
+    }
+
+    @Test
+    fun loading_artwork_uses_the_measured_platform_icon_size() {
+        composeTestRule.setContent {
+            KnotworkTheme {
+                CompositionLocalProvider(LocalKnotworkA11y provides FixedKnotworkA11y(reducedMotion = true)) {
+                    SplashContent(
+                        appName = "Knotwork Agent",
+                        state = SplashPreview.loading(),
+                        platformSplashIconSize = 220.dp,
+                    )
+                }
+            }
+        }
+        val widthPx = composeTestRule.onNodeWithTag("splash_loading_mark").fetchSemanticsNode().boundsInRoot.width
+        assertEquals(220f, widthPx / composeTestRule.density.density, 0.5f)
     }
 
     @Test
@@ -168,8 +183,8 @@ class SplashContentSnapshotTest {
                 val pixel = mask.getRGB(x, y)
                 val alpha = pixel ushr 24
                 if (alpha > 0) {
-                    assertTrue("Artwork crop must preserve all nontransparent pixels", x in 127 until 1127)
-                    assertTrue("Artwork crop must preserve all nontransparent pixels", y in 416 until 892)
+                    assertTrue("The original visible artwork bounds must remain unchanged", x in 127 until 1127)
+                    assertTrue("The original visible artwork bounds must remain unchanged", y in 416 until 892)
                     val dx = (x - mask.width / 2.0) * 75.5 / mask.width
                     val dy = (y - mask.height / 2.0) * 75.5 / mask.height
                     maxRadius = maxOf(maxRadius, kotlin.math.hypot(dx, dy))
@@ -214,8 +229,8 @@ class SplashContentSnapshotTest {
                 val pixel = foreground.getRGB(x, y)
                 val alpha = pixel ushr 24
                 if (alpha == 0) continue
-                val dx = (x - foreground.width / 2.0) * 70.0 / foreground.width
-                val dy = (y - foreground.height / 2.0) * 70.0 / foreground.height
+                val dx = (x - foreground.width / 2.0) * 60.0 / foreground.width
+                val dy = (y - foreground.height / 2.0) * 60.0 / foreground.height
                 maxRadius = maxOf(maxRadius, kotlin.math.hypot(dx, dy))
                 if (alpha != 255) continue
                 opaque++
@@ -228,7 +243,7 @@ class SplashContentSnapshotTest {
         listOf("ic_launcher_foreground", "ic_launcher_monochrome").forEach { name ->
             val xml = File("../app/src/main/res/drawable/$name.xml").readText()
             assertTrue(xml.contains("@drawable/launcher_mark"))
-            assertTrue(xml.contains("19dp"))
+            assertTrue(xml.contains("24dp"))
         }
         val night = File("../app/src/main/res/drawable-night/ic_launcher_foreground.xml").readText()
         assertTrue(night.contains("@drawable/launcher_mark"))

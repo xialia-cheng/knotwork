@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.knotwork.android.R
@@ -42,6 +43,7 @@ fun SplashScreen(
     modifier: Modifier = Modifier,
     viewModel: SplashViewModel = hiltViewModel(),
     splashAnimationStartMillis: Long? = null,
+    platformSplashIconSize: Dp? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -87,6 +89,7 @@ fun SplashScreen(
         retryLabel = retryLabel,
         callbacks = callbacks,
         splashAnimationStartMillis = splashAnimationStartMillis,
+        platformSplashIconSize = platformSplashIconSize,
     )
 }
 

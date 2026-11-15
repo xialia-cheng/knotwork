@@ -17,6 +17,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,6 +53,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     private var splashAnimationStartMillis by mutableStateOf<Long?>(null)
+    private var platformSplashIconSize by mutableStateOf<Dp?>(null)
 
     @Inject lateinit var appStateSettings: AppStateSettings
 
@@ -104,6 +107,8 @@ class MainActivity : ComponentActivity() {
             // overlay. With a static icon, Compose shows the completed artwork;
             // navigation and initialization never wait for an animation.
             splashAnimationStartMillis = splash.iconAnimationStartMillis
+            val iconWidth = splash.iconView.width
+            if (iconWidth > 0) platformSplashIconSize = (iconWidth / resources.displayMetrics.density).dp
             splash.view.postOnAnimation { splash.remove() }
         }
         super.onCreate(savedInstanceState)
@@ -211,6 +216,7 @@ class MainActivity : ComponentActivity() {
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
                         splashAnimationStartMillis = splashAnimationStartMillis,
+                        platformSplashIconSize = platformSplashIconSize,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
