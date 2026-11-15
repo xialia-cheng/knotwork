@@ -14,7 +14,7 @@
     -->
     <style name="Theme.App.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/brand_startup_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/brand_startup_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.Knotwork</item>
     </style>
 </resources>

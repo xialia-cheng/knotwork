@@ -149,7 +149,7 @@ class SplashContentSnapshotTest {
     }
 
     @Test
-    fun launcher_and_splash_use_the_original_artwork_within_the_safe_area() {
+    fun splash_uses_the_original_wordmark_within_the_safe_area() {
         val originalFile = File("../brand/reference-original.jpg")
         val digest = MessageDigest.getInstance("SHA-256").digest(originalFile.readBytes())
             .joinToString("") { "%02x".format(it.toInt() and 0xff) }
@@ -186,16 +186,53 @@ class SplashContentSnapshotTest {
         val widthFraction = (maxX - minX + 1) * 75.5 / mask.width / 108
         assertTrue("The mark should occupy about 56% of the icon", widthFraction in 0.54..0.57)
         assertTrue("The artwork must stay inside the circular safe area", maxRadius <= 33.0)
-        listOf("ic_launcher_foreground", "ic_launcher_monochrome").forEach { name ->
-            val xml = File("../app/src/main/res/drawable/$name.xml").readText()
-            assertTrue(xml.contains("@drawable/brand_mark"))
-            assertTrue(xml.contains("16.25dp"))
-        }
-        val night = File("../app/src/main/res/drawable-night/ic_launcher_foreground.xml").readText()
+        val day = File("../app/src/main/res/drawable/brand_startup_foreground.xml").readText()
+        assertTrue(day.contains("@drawable/brand_mark"))
+        assertTrue(day.contains("16.25dp"))
+        val night = File("../app/src/main/res/drawable-night/brand_startup_foreground.xml").readText()
         assertTrue(night.contains("@drawable/brand_mark"))
         assertTrue(night.contains("@color/brand_startup_ink"))
         val theme = File("../app/src/main/res/values/themes.xml").readText()
-        assertTrue(theme.contains("@drawable/ic_launcher_foreground"))
+        assertTrue(theme.contains("@drawable/brand_startup_foreground"))
+    }
+
+    @Test
+    fun launcher_uses_the_new_original_artwork_within_the_safe_area() {
+        val originalFile = File("../brand/launcher-original.png")
+        val digest = MessageDigest.getInstance("SHA-256").digest(originalFile.readBytes())
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+        assertEquals("8a505bee118bcf7bf984b594e8e01bcacd4b963cd7f5859f936caf3e34527bdc", digest)
+        val original = ImageIO.read(originalFile)
+        val foreground = ImageIO.read(File("../app/src/main/res/drawable-nodpi/launcher_mark.png"))
+        assertEquals(original.width, foreground.width)
+        assertEquals(original.height, foreground.height)
+        var opaque = 0
+        var differences = 0
+        var maxRadius = 0.0
+        for (y in 0 until foreground.height) {
+            for (x in 0 until foreground.width) {
+                val pixel = foreground.getRGB(x, y)
+                val alpha = pixel ushr 24
+                if (alpha == 0) continue
+                val dx = (x - foreground.width / 2.0) * 70.0 / foreground.width
+                val dy = (y - foreground.height / 2.0) * 70.0 / foreground.height
+                maxRadius = maxOf(maxRadius, kotlin.math.hypot(dx, dy))
+                if (alpha != 255) continue
+                opaque++
+                if ((pixel and 0xffffff) != (original.getRGB(x, y) and 0xffffff)) differences++
+            }
+        }
+        assertTrue("The new drawing must include opaque pixels", opaque > 20)
+        assertEquals("Opaque pixels must retain their original RGB", 0, differences)
+        assertTrue("All visible pixels must remain in the icon safe circle", maxRadius <= 33.0)
+        listOf("ic_launcher_foreground", "ic_launcher_monochrome").forEach { name ->
+            val xml = File("../app/src/main/res/drawable/$name.xml").readText()
+            assertTrue(xml.contains("@drawable/launcher_mark"))
+            assertTrue(xml.contains("19dp"))
+        }
+        val night = File("../app/src/main/res/drawable-night/ic_launcher_foreground.xml").readText()
+        assertTrue(night.contains("@drawable/launcher_mark"))
+        assertTrue(night.contains("@color/brand_startup_ink"))
     }
 
     private fun assertSameArtworkColor(original: Int, pixel: Int) {

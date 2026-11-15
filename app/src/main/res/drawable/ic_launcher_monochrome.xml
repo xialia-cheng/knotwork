@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
-    android:insetLeft="16.25dp"
-    android:insetTop="16.25dp"
-    android:insetRight="16.25dp"
-    android:insetBottom="16.25dp">
-    <bitmap android:src="@drawable/brand_mark" android:gravity="fill" />
+    android:insetLeft="19dp"
+    android:insetTop="19dp"
+    android:insetRight="19dp"
+    android:insetBottom="19dp">
+    <bitmap android:src="@drawable/launcher_mark" android:gravity="fill" />
 </inset>
