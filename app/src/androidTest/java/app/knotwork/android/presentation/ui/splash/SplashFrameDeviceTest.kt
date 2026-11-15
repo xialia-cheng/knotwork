@@ -63,7 +63,7 @@ class SplashFrameDeviceTest {
             if ((0 until source.width).any { x -> pixels[y * source.width + x] ushr 24 >= 128 }) lastInkRow = y
         }
         val glyphBottomFraction = (1f - MARK_FRACTION) / 2f + MARK_FRACTION * (lastInkRow + 1f) / source.height
-        val glyphBottom = mark.top + mark.height * glyphBottomFraction
+        val glyphBottom = mark.top + (mark.bottom - mark.top) * glyphBottomFraction
         assertTrue("wordmark overlaps the footer", glyphBottom + 4.dp <= title.top)
         source.recycle()
     }
