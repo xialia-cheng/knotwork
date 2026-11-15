@@ -250,6 +250,9 @@ private fun notifyWhenFrameCommitted(view: View, registered: AtomicBoolean, onRe
     val observer = view.viewTreeObserver
     if (view.isHardwareAccelerated && observer.isAlive) {
         observer.registerFrameCommitCallback { view.post { onReady() } }
+        // A completed animation can be completely static; request a frame so
+        // the one-shot callback still runs when no other content invalidates.
+        view.postInvalidateOnAnimation()
     } else {
         view.post { onReady() }
     }
