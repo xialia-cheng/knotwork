@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -125,7 +124,6 @@ fun AppNavGraph(
     chatEntryRequestRelay: ChatEntryRequestRelay,
     modifier: Modifier = Modifier,
     splashAnimationStartMillis: Long? = null,
-    platformSplashIconSize: Dp? = null,
 ) {
     NavHost(
         navController = navController,
@@ -135,7 +133,6 @@ fun AppNavGraph(
         composable(NavRoutes.SPLASH) {
             SplashScreen(
                 splashAnimationStartMillis = splashAnimationStartMillis,
-                platformSplashIconSize = platformSplashIconSize,
                 onInitialized = {
                     val next = if (showOnboarding) NavRoutes.ONBOARDING else NavRoutes.CHAT_TAB
                     navController.navigate(next) {

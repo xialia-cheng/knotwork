@@ -10,7 +10,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.knotwork.design.KnotworkRoborazziOptions
 import app.knotwork.design.a11y.FixedKnotworkA11y
@@ -115,20 +114,20 @@ class SplashContentSnapshotTest {
     }
 
     @Test
-    fun loading_artwork_uses_the_measured_platform_icon_size() {
+    @Config(qualifiers = "w320dp-h480dp-xhdpi")
+    fun loading_artwork_fits_a_short_screen() {
         composeTestRule.setContent {
             KnotworkTheme {
                 CompositionLocalProvider(LocalKnotworkA11y provides FixedKnotworkA11y(reducedMotion = true)) {
                     SplashContent(
                         appName = "Knotwork Agent",
                         state = SplashPreview.loading(),
-                        platformSplashIconSize = 220.dp,
                     )
                 }
             }
         }
         val widthPx = composeTestRule.onNodeWithTag("splash_loading_mark").fetchSemanticsNode().boundsInRoot.width
-        assertEquals(220f, widthPx / composeTestRule.density.density, 0.5f)
+        assertEquals(216f, widthPx / composeTestRule.density.density, 0.5f)
     }
 
     @Test

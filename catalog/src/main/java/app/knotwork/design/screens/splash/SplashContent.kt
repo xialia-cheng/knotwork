@@ -32,7 +32,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -66,7 +65,6 @@ private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
  * @param modifier optional layout modifier applied to the root box.
  * @param callbacks one-shot callback bundle (Retry).
  * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
- * @param platformSplashIconSize Measured platform icon size, when available.
  */
 @Composable
 fun SplashContent(
@@ -76,7 +74,6 @@ fun SplashContent(
     retryLabel: String = stringResource(R.string.knotwork_splash_retry),
     callbacks: SplashCallbacks = noopSplashCallbacks(),
     splashAnimationStartMillis: Long? = null,
-    platformSplashIconSize: Dp? = null,
 ) {
     val starting = state is SplashViewState.Initializing || state is SplashViewState.Loading
     val startupInk = colorResource(R.color.brand_startup_ink)
@@ -90,7 +87,7 @@ fun SplashContent(
     ) {
         if (starting) {
             val markSize = minOf(
-                platformSplashIconSize ?: DefaultPlatformSplashIconSize,
+                DefaultPlatformSplashIconSize,
                 maxWidth,
                 maxHeight * MARK_MAX_HEIGHT_FRACTION,
             )
