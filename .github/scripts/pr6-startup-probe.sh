@@ -37,6 +37,8 @@ adb shell wm dismiss-keyguard >/dev/null
 adb shell input keyevent 82 >/dev/null
 
 original_night="$(adb shell cmd uimode night | tr -d '\r')"
+original_font_scale="$(adb shell settings get system font_scale | tr -d '\r')"
+original_override_size="$(adb shell wm size | tr -d '\r' | sed -n 's/^Override size: //p')"
 keys=(window_animation_scale transition_animation_scale animator_duration_scale)
 original=()
 for key in "${keys[@]}"; do
@@ -53,6 +55,16 @@ restore_settings() {
       adb shell settings put global "$key" "$value" >/dev/null || true
     fi
   done
+  if [[ "$original_font_scale" == null ]]; then
+    adb shell settings delete system font_scale >/dev/null || true
+  else
+    adb shell settings put system font_scale "$original_font_scale" >/dev/null || true
+  fi
+  if [[ -n "$original_override_size" ]]; then
+    adb shell wm size "$original_override_size" >/dev/null || true
+  else
+    adb shell wm size reset >/dev/null || true
+  fi
   case "$original_night" in
     *yes*) adb shell cmd uimode night yes >/dev/null 2>&1 || true ;;
     *no*) adb shell cmd uimode night no >/dev/null 2>&1 || true ;;
@@ -121,6 +133,20 @@ adb shell pidof "$package" > "$out_dir/warm-pid-after.txt" || true
 wait "$warm_recorder"
 adb pull /sdcard/pr6-startup-warm.mp4 "$out_dir/warm.mp4" >/dev/null
 adb shell rm -f /sdcard/pr6-startup-warm.mp4
+# Capture a short display with a large system font; restore both afterwards.
+adb shell wm size 720x1280
+adb shell settings put system font_scale 1.5
+capture short_large_font 1 1 1
+if [[ -n "$original_override_size" ]]; then
+  adb shell wm size "$original_override_size"
+else
+  adb shell wm size reset
+fi
+if [[ "$original_font_scale" == null ]]; then
+  adb shell settings delete system font_scale
+else
+  adb shell settings put system font_scale "$original_font_scale"
+fi
 # Explicitly exercise the matching drawable-night and the app's light tint.
 adb shell cmd uimode night yes > "$out_dir/dark-mode-command.txt"
 capture dark_normal 1 1 1
