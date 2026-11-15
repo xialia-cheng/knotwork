@@ -187,7 +187,10 @@ jobs:
           script: |
             bash .github/scripts/run-instrumented.sh &&
             if [ "$PR6_STARTUP_PROBE" = true ]; then
-              bash .github/scripts/pr6-startup-probe.sh
+              if ! bash .github/scripts/pr6-startup-probe.sh; then
+                echo probe > "$LOG_DIR/failure-class.txt"
+                exit 1
+              fi
             fi
 
       - name: Upload PR6 real startup evidence
@@ -239,6 +242,11 @@ jobs:
                 echo "the job. But read the signature in the log first: one that names"
                 echo "something the repository controls, such as a dependency that cannot"
                 echo "resolve, failing twice is a repository problem, not flakiness."
+                ;;
+              probe)
+                echo "**Startup evidence capture failed.** Inspect the uploaded"
+                echo "PR #6 startup evidence and emulator logs; no startup verdict"
+                echo "can be drawn from this run."
                 ;;
               *)
                 echo "**Failed before the suite could classify itself.** The emulator did"
