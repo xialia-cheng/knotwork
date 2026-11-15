@@ -12,6 +12,8 @@ import android.graphics.Shader
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.withSave
 import app.knotwork.design.R
 import java.nio.ByteBuffer
 
@@ -38,11 +40,17 @@ internal class PixelStrokePainter private constructor(
             val native = canvas.nativeCanvas
             val markSize = size.width * MARK_FRACTION
             val inset = (size.width - markSize) / 2f
-            val save = native.save()
-            native.translate(inset, inset)
-            native.scale(markSize / width, markSize / height)
-            native.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
-            native.restoreToCount(save)
+            native.withSave {
+                native.translate(inset, inset)
+                native.scale(markSize / this@PixelStrokePainter.width, markSize / this@PixelStrokePainter.height)
+                native.drawRect(
+                    0f,
+                    0f,
+                    this@PixelStrokePainter.width.toFloat(),
+                    this@PixelStrokePainter.height.toFloat(),
+                    paint,
+                )
+            }
         }
     }
 
@@ -72,7 +80,7 @@ internal class PixelStrokePainter private constructor(
             val bitmap = requireNotNull(BitmapFactory.decodeResource(resources, resource, options))
             val pixels = IntArray(bitmap.width * bitmap.height)
             bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-            return Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ALPHA_8).apply {
+            return createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ALPHA_8).apply {
                 val bytes = ByteArray(rowBytes * height)
                 for (y in 0 until height) {
                     for (x in 0 until width) {

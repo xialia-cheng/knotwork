@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
@@ -195,6 +196,7 @@ private fun SplashThread(
 ) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
+    val resources = LocalResources.current
     val view = LocalView.current
     val readyRegistered = remember(view, splashAnimationStartMillis) { AtomicBoolean(false) }
     val systemScale = Settings.Global.getFloat(
@@ -202,9 +204,9 @@ private fun SplashThread(
         Settings.Global.ANIMATOR_DURATION_SCALE,
         1f,
     )
-    val painterResult by produceState<Result<PixelStrokePainter>?>(initialValue = null, context.resources) {
+    val painterResult by produceState<Result<PixelStrokePainter>?>(initialValue = null, resources) {
         value = try {
-            Result.success(withContext(Dispatchers.Default) { PixelStrokePainter.load(context.resources) })
+            Result.success(withContext(Dispatchers.Default) { PixelStrokePainter.load(resources) })
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
