@@ -156,3 +156,53 @@ PYCODE
     printf '%s\n' 'App drawer entry or home target missing.' > "$out_dir/folder-from-drawer-unavailable.txt"
   fi
 fi
+# Some launchers pin the dragged drawer icon but move the target aside. If so,
+# retry using the newly pinned icon and target positions from the fresh UI tree.
+if [[ -f "$out_dir/folder-from-drawer-unavailable.txt" && -s "$out_dir/folder-from-drawer-ui.xml" ]]; then
+  coordinates="$(python3 - "$out_dir/folder-from-drawer-ui.xml" <<'PYCODE'
+import re
+import sys
+import xml.etree.ElementTree as ET
+text = open(sys.argv[1], encoding="utf-8").read()
+root = ET.fromstring(text[:text.rfind(">") + 1])
+def center(label):
+    for node in root.iter("node"):
+        if node.get("text") == label and node.get("content-desc") == label and node.get("clickable") == "true":
+            values = list(map(int, re.findall(r"\d+", node.get("bounds", ""))))
+            if len(values) == 4:
+                return (values[0] + values[2]) // 2, (values[1] + values[3]) // 2
+    return None
+source, target = center("织问 Debug"), center("Gmail")
+if source and target:
+    print(*source, *target)
+PYCODE
+)"
+  if [[ -n "$coordinates" ]]; then
+    read -r source_x source_y target_x target_y <<< "$coordinates"
+    adb shell input draganddrop "$source_x" "$source_y" "$target_x" "$target_y" 1000
+    capture folder-from-pinned
+    folder_coordinates="$(python3 - "$out_dir/folder-from-pinned-ui.xml" <<'PYCODE'
+import re
+import sys
+import xml.etree.ElementTree as ET
+text = open(sys.argv[1], encoding="utf-8").read()
+root = ET.fromstring(text[:text.rfind(">") + 1])
+for node in root.iter("node"):
+    if "folder" in node.get("content-desc", "").lower() and node.get("clickable") == "true":
+        values = list(map(int, re.findall(r"\d+", node.get("bounds", ""))))
+        if len(values) == 4:
+            print((values[0] + values[2]) // 2, (values[1] + values[3]) // 2)
+            break
+PYCODE
+)"
+    if [[ -n "$folder_coordinates" ]]; then
+      read -r folder_x folder_y <<< "$folder_coordinates"
+      adb shell input tap "$folder_x" "$folder_y"
+      capture folder-from-pinned-open
+    else
+      printf '%s\n' 'No folder node found after dragging the pinned icon.' > "$out_dir/folder-from-pinned-unavailable.txt"
+    fi
+  else
+    printf '%s\n' 'Pinned icon or target not found in the home hierarchy.' > "$out_dir/folder-from-pinned-unavailable.txt"
+  fi
+fi
