@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Knotwork" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Knotwork" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/brand_startup_window</item>
+    </style>
 
     <!--
         Platform splash theme (Android 12+ splash screen API).
