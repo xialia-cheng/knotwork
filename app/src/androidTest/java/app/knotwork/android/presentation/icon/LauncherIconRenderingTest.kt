@@ -15,6 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 
+/** Verifies PackageManager launcher icons and records Android framework renderings at several sizes. */
 @RunWith(AndroidJUnit4::class)
 class LauncherIconRenderingTest {
     @Test

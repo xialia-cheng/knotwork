@@ -38,6 +38,8 @@ Only Kotlin files appear inside the generated blocks.
     - `MemoryLifecycleIntegrationTest.kt` - End-to-end integration coverage for the **whole long-term memory lifecycle**, wiring the real domain components over an in-memory Room database: auto-extraction → embedding/storage → cross-session retrieval → injection into a node's `--- Long-Term Memory ---` context block → survival across a background compaction pass.
 - `ExampleInstrumentedTest.kt` - Example instrumentation test.
 - `presentation/` - Instrumented tests for the presentation layer.
+  - `icon/` - Tests for launcher icon rendering and proportional scaling.
+    - `LauncherIconRenderingTest.kt` - Verifies PackageManager launcher icons and records Android framework renderings at several sizes.
   - `ui/` - Compose UI tests, one package per screen.
     - `chat/` - Compose tests for the chat surface.
       - `archive/` - Compose tests for the chat archive.

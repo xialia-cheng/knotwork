@@ -613,6 +613,8 @@ Only Kotlin files appear inside the generated blocks.
     - `ImportProblemTextTest.kt` - The sentences a refused import, export or input becomes.
     - `JsonLayoutLosslessTest.kt` - Guard: laying JSON out never changes what it says, and text that is not JSON is shown as it came.
     - `JsonLayoutTest.kt` - Cases of the shared JSON layout one by one; `JsonLayoutLosslessTest` holds the rule over generated documents.
+  - `icon/` - Tests for launcher icon rendering and proportional scaling.
+    - `LauncherForegroundScalingTest.kt` - Checks that adaptive icon foreground artwork scales proportionally across bounds, densities and themes.
   - `notifications/` - Tests for the notification channels and notifiers.
     - `ApprovalNotificationManagerTest.kt` - Robolectric coverage for `ApprovalNotificationManager` — the Human-in-the-loop gate that surfaces tool-approval prompts in the system shade when the user is not actively viewing the requesting chat session.
     - `ClarificationNotificationManagerTest.kt` - Robolectric coverage for `ClarificationNotificationManager`: the parked run's question is the model's, written from the conversation, so where the system hides sensitive content the notification shows its title alone.
