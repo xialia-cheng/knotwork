@@ -90,6 +90,7 @@ fun SplashScreen(
         callbacks = callbacks,
         splashAnimationStartMillis = splashAnimationStartMillis,
         onMarkReady = onSplashContentReady,
+        platformUnderlay = true,
     )
 }
 

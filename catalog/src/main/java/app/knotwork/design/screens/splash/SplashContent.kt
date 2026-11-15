@@ -84,6 +84,7 @@ private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
  * @param callbacks one-shot callback bundle (Retry).
  * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
  * @param onMarkReady Called after a frame with known platform timing is committed.
+ * @param platformUnderlay Draws the original mark underneath the platform splash until timing is known.
  */
 @Composable
 fun SplashContent(
@@ -94,6 +95,7 @@ fun SplashContent(
     callbacks: SplashCallbacks = noopSplashCallbacks(),
     splashAnimationStartMillis: Long? = null,
     onMarkReady: () -> Unit = {},
+    platformUnderlay: Boolean = false,
 ) {
     val starting = state is SplashViewState.Initializing || state is SplashViewState.Loading
     val startupInk = colorResource(R.color.brand_startup_ink)
@@ -115,6 +117,7 @@ fun SplashContent(
                 splashAnimationStartMillis,
                 Modifier.size(markSize).testTag("splash_loading_mark"),
                 onMarkReady,
+                platformUnderlay,
             )
             Column(
                 modifier = Modifier
@@ -136,7 +139,12 @@ fun SplashContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp6),
             ) {
-                SplashThread(splashAnimationStartMillis, Modifier.size(KnotworkLogoSize.Lg.size), onMarkReady)
+                SplashThread(
+                    splashAnimationStartMillis,
+                    Modifier.size(KnotworkLogoSize.Lg.size),
+                    onMarkReady,
+                    platformUnderlay,
+                )
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
         }
@@ -183,6 +191,7 @@ private fun SplashThread(
     splashAnimationStartMillis: Long?,
     modifier: Modifier = Modifier,
     onMarkReady: () -> Unit = {},
+    platformUnderlay: Boolean = false,
 ) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
@@ -213,7 +222,10 @@ private fun SplashThread(
         Animatable(initial)
     }
     val painter = painterResult?.getOrNull()
-    val fallback = if (painterResult?.isFailure == true) ImageBitmap.imageResource(R.drawable.brand_mark) else null
+    // Android can briefly transfer its splash icon surface after the activity's
+    // first frame. Keep the original artwork underneath while the shader loads.
+    val useFallback = painter == null || (platformUnderlay && splashAnimationStartMillis == null)
+    val fallback = if (useFallback) ImageBitmap.imageResource(R.drawable.brand_mark) else null
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
     LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
@@ -228,7 +240,7 @@ private fun SplashThread(
         }
     }
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
-        if (painter != null) {
+        if (painter != null && !useFallback) {
             painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
             if (splashAnimationStartMillis != null) notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
         } else if (fallback != null) {
@@ -240,7 +252,9 @@ private fun SplashThread(
                 dstSize = IntSize(markSize, markSize),
                 colorFilter = if (dark) ColorFilter.tint(ink) else null,
             )
-            if (splashAnimationStartMillis != null) notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            if (painterResult?.isFailure == true && splashAnimationStartMillis != null) {
+                notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            }
         }
     }
 }
