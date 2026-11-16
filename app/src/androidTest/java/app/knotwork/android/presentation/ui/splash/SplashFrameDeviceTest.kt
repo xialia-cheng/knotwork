@@ -68,6 +68,30 @@ class SplashFrameDeviceTest {
         source.recycle()
     }
 
+    /**
+     * Production passes no platform clock any more: the platform stage is a bare
+     * launch colour, so the loading page has to announce its own first frame.
+     * Gating that announcement on a non-null clock left the platform overlay up
+     * until initialization finished — this case is the one that catches it.
+     */
+    @Test
+    fun firstFrameCommitsWithoutAPlatformClock() {
+        compose.setContent {
+            KnotworkTheme {
+                Box(Modifier.size(width = 274.dp, height = 487.dp)) {
+                    SplashContent(
+                        appName = "织问",
+                        state = SplashViewState.Loading("Preparing", .5f),
+                        splashAnimationStartMillis = null,
+                        onMarkReady = { markReady = true },
+                    )
+                }
+            }
+        }
+        compose.waitUntil(timeoutMillis = 20_000) { markReady }
+        compose.onNodeWithTag("splash_loading_mark").assertIsDisplayed()
+    }
+
     private companion object {
         const val MARK_FRACTION = 75.5f / 108f
     }
