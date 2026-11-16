@@ -178,6 +178,9 @@ controlled_component="$package/app.knotwork.android.debug.SplashHandoffProbeActi
 adb shell settings put global window_animation_scale 1
 adb shell settings put global transition_animation_scale 1
 adb shell settings put global animator_duration_scale 1
+# The preceding disabled-animation case left its process alive. Start a fresh
+# process after setting the scale, then retain it for controlled warm launches.
+adb shell am force-stop "$package"
 adb shell am start -W -f 0x10008000 -n "$controlled_component" > "$out_dir/controlled-prewarm.txt"
 adb shell input keyevent BACK
 controlled_failed=false
