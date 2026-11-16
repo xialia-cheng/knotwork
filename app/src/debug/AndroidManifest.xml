@@ -21,6 +21,11 @@
     </queries>
 
     <application>
+        <!-- Controlled handoff probe; this activity is present only in the debug APK. -->
+        <activity
+            android:name="app.knotwork.android.debug.SplashHandoffProbeActivity"
+            android:exported="true"
+            android:theme="@style/Theme.App.Splash" />
         <!--
           Intentionally exported so `adb shell am broadcast` (shell uid) can reach
           it. Safe because this receiver is compiled only into debuggable builds
