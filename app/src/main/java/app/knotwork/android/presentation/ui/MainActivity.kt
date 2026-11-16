@@ -112,8 +112,21 @@ class MainActivity : ComponentActivity() {
             splashAnimationStartMillis = splash.iconAnimationStartMillis
             splashExitCoordinator.onPlatformExit {
                 handoffTrace("remove_requested")
-                splash.view.postOnAnimation {
-                    handoffTrace("remove_execute")
+                val view = splash.view
+                val observer = view.viewTreeObserver
+                if (view.isHardwareAccelerated && observer.isAlive) {
+                    observer.registerFrameCommitCallback {
+                        handoffTrace("transparent_frame_commit")
+                        view.post {
+                            handoffTrace("remove_execute")
+                            splash.remove()
+                        }
+                    }
+                    handoffTrace("transparent_frame_requested")
+                    view.alpha = 0f
+                    view.postInvalidateOnAnimation()
+                } else {
+                    handoffTrace("remove_execute_no_hardware")
                     splash.remove()
                 }
             }

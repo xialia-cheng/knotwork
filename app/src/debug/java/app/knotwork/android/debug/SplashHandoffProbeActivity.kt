@@ -33,8 +33,21 @@ class SplashHandoffProbeActivity : ComponentActivity() {
             startEpochMs = splash.iconAnimationStartMillis
             val release = {
                 trace("controlled_remove_requested")
-                splash.view.postOnAnimation {
-                    trace("controlled_remove_execute")
+                val view = splash.view
+                val observer = view.viewTreeObserver
+                if (view.isHardwareAccelerated && observer.isAlive) {
+                    observer.registerFrameCommitCallback {
+                        trace("controlled_transparent_frame_commit")
+                        view.post {
+                            trace("controlled_remove_execute")
+                            splash.remove()
+                        }
+                    }
+                    trace("controlled_transparent_frame_requested")
+                    view.alpha = 0f
+                    view.postInvalidateOnAnimation()
+                } else {
+                    trace("controlled_remove_execute_no_hardware")
                     splash.remove()
                 }
                 Unit
