@@ -47,7 +47,7 @@ internal object NavIcons {
 // The bubble outline is one closed path: top edge, right corner, right edge, bottom-right
 // corner, bottom edge up to the tail, the tail itself, then the two left corners. Kept as
 // two string pieces because the whole path does not fit one ktlint-width line.
-private val NavChatPath: String =
+private const val NavChatPath: String =
     "M7 4h10a3.5 3.5 0 0 1 3.5 3.5v5a3.5 3.5 0 0 1-3.5 3.5h-5.5L7.5 20V16H7a3.5 3.5 0 0 1-3.5-3.5v-5" +
         "A3.5 3.5 0 0 1 7 4Z"
 
