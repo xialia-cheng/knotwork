@@ -139,6 +139,23 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+      - name: Record the nav and icon baselines (this branch only)
+        run: >
+          ./gradlew :app:recordRoborazziFossDebug :catalog:recordRoborazziDebug
+          --tests 'app.knotwork.android.presentation.screenshots.BottomNavigationSnapshotTest'
+          --tests 'app.knotwork.design.icons.IconCatalogPageSnapshotTest'
+          --stacktrace --no-daemon
+
+      - name: Upload the recorded baselines
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nav-baselines
+          path: |
+            app/src/test/snapshots/**
+            catalog/src/test/snapshots/**
+          if-no-files-found: warn
+
       - name: Build and check FOSS
         run: >
           ./gradlew
