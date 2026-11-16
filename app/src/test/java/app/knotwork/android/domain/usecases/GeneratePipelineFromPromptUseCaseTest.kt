@@ -5,7 +5,6 @@ import app.knotwork.android.domain.models.AgentTool
 import app.knotwork.android.domain.models.NodeType
 import app.knotwork.android.domain.models.ToolSource
 import app.knotwork.android.domain.repositories.ToolRepository
-import app.knotwork.android.domain.services.PipelineCompositionValidator
 import app.knotwork.android.domain.services.PipelineGenerationModel
 import io.mockk.coEvery
 import io.mockk.mockk
