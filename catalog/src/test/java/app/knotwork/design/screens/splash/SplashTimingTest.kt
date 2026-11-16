@@ -41,4 +41,18 @@ class SplashTimingTest {
             assertTrue("scale=$factor elapsed=$elapsedMillis", elapsedMillis in expectedMillis..expectedMillis + 16)
         }
     }
+
+    @Test
+    fun `a slow launch starts complete instead of weaving after the wait`() {
+        // Fast launch: weave continues from where the launch clock is.
+        assertEquals(0.1f, initialWeaveProgress(1_000L, 1_100L, reducedMotion = false, scale = 1f), 0.001f)
+        // Slow launch: the bare launch colour already held the screen, so the
+        // mark appears complete rather than animating on top of that wait.
+        assertEquals(1f, initialWeaveProgress(1_000L, 1_900L, reducedMotion = false, scale = 1f), 0.001f)
+        // Reduced motion and a zero animation scale are complete from the start.
+        assertEquals(1f, initialWeaveProgress(1_000L, 1_100L, reducedMotion = true, scale = 1f), 0.001f)
+        assertEquals(1f, initialWeaveProgress(1_000L, 1_100L, reducedMotion = false, scale = 0f), 0.001f)
+        // No launch clock (previews) starts from blank.
+        assertEquals(0f, initialWeaveProgress(null, 1_100L, reducedMotion = false, scale = 1f), 0.001f)
+    }
 }

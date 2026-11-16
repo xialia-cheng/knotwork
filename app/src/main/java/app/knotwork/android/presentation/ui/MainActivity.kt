@@ -50,6 +50,9 @@ class MainActivity : ComponentActivity() {
 
     private val splashExitCoordinator = SplashExitCoordinator()
 
+    /** When this launch began; the loading page uses it to decide whether to weave. */
+    private var launchStartMillis: Long? = null
+
     @Inject lateinit var appStateSettings: AppStateSettings
 
     @Inject lateinit var appearanceSettings: AppearanceSettingsRepository
@@ -97,6 +100,10 @@ class MainActivity : ComponentActivity() {
         // attempts to draw. `Theme.App.Splash` supplies the light or dark
         // background and the brand-mark foreground; the post-splash theme
         // declared there takes over when the first Compose frame commits.
+        // Record the launch clock before the platform splash can spend time on
+        // it: a slow first frame means the user already stared at the launch
+        // colour, and the loading page must not add a weave on top of that.
+        launchStartMillis = System.currentTimeMillis()
         installSplashScreen().setOnExitAnimationListener { splash ->
             // The platform stage is a blank launch colour, so there is no
             // platform animation to resume: the loading page weaves the mark
@@ -212,6 +219,7 @@ class MainActivity : ComponentActivity() {
                         showOnboarding = !hasCompletedOnboarding,
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
+                        launchStartMillis = launchStartMillis,
                         onSplashContentReady = splashExitCoordinator::onContentReady,
                         modifier = Modifier.padding(innerPadding),
                     )
