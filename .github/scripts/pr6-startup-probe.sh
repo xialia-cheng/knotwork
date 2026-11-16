@@ -171,23 +171,32 @@ capture dark_animator_off 1 1 0
 # recordings are controlled APK evidence, not the production MainActivity.
 adb shell cmd uimode night no >/dev/null
 controlled_component="$package/app.knotwork.android.debug.SplashHandoffProbeActivity"
-adb shell am start -W -n "$controlled_component" > "$out_dir/controlled-prewarm.txt"
+adb shell am start -W -f 0x10008000 -n "$controlled_component" > "$out_dir/controlled-prewarm.txt"
 adb shell input keyevent BACK
+controlled_failed=false
 capture_controlled() {
-  local label="$1" scale="$2" fast="$3" remote recorder
+  local label="$1" scale="$2" fast="$3" remote recorder before after
   remote="/sdcard/pr6-controlled-${label}.mp4"
   adb shell settings put global window_animation_scale "$scale"
   adb shell settings put global transition_animation_scale "$scale"
   adb shell settings put global animator_duration_scale "$scale"
   adb shell pidof "$package" > "$out_dir/controlled-${label}-pid-before.txt" || true
+  before=$(adb logcat -d -s 'PR6Handoff:D' '*:S' | grep -c 'controlled_exit' || true)
   adb shell rm -f "$remote"
   adb shell screenrecord --time-limit 8 --bit-rate 2000000 "$remote" > "$out_dir/controlled-${label}-record.log" 2>&1 &
   recorder=$!
   adb shell 'date +%s%3N; cat /proc/uptime' > "$out_dir/controlled-${label}-clock-before.txt"
   sleep 1
-  adb shell am start -W -n "$controlled_component" --ez fast_ready "$fast" > "$out_dir/controlled-${label}.txt"
+  adb shell am start -W -f 0x10008000 -n "$controlled_component" --ez fast_ready "$fast" > "$out_dir/controlled-${label}.txt"
   adb shell pidof "$package" > "$out_dir/controlled-${label}-pid-after.txt" || true
   wait "$recorder"
+  after=$(adb logcat -d -s 'PR6Handoff:D' '*:S' | grep -c 'controlled_exit' || true)
+  printf 'platform_exit_count_before=%s\nplatform_exit_count_after=%s\n' "$before" "$after" \
+    > "$out_dir/controlled-${label}-listener-status.txt"
+  if (( after <= before )); then
+    echo "Controlled $label did not observe a platform exit listener; handoff is unproven" >&2
+    controlled_failed=true
+  fi
   adb pull "$remote" "$out_dir/controlled-${label}.mp4" >/dev/null
   adb shell rm -f "$remote"
   adb shell input keyevent BACK
@@ -198,3 +207,4 @@ capture_controlled double 2 false
 capture_controlled off 0 false
 capture_controlled fast_ready 1 true
 adb logcat -d -v threadtime > "$out_dir/logcat.txt"
+if [[ "$controlled_failed" == true ]]; then exit 1; fi
