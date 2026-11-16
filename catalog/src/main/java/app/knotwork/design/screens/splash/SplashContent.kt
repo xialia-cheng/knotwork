@@ -68,6 +68,9 @@ private val SplashMaxWidth = 360.dp
 private val DefaultPlatformSplashIconSize = 288.dp
 
 internal const val THREAD_DURATION_MS = 1000
+
+/** Launch latency past which the mark starts complete instead of weaving. */
+internal const val WEAVE_SKIP_THRESHOLD_MS = 800L
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
 
