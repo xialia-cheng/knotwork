@@ -17,8 +17,14 @@ import javax.inject.Inject
  * The composition root binds the production implementation
  * ([DeepSeekPipelineGenerationModel]) through
  * `app.knotwork.android.di.LocalToolsModule`.
+ *
+ * A plain interface rather than a `fun interface`: every consumer spells out its own
+ * implementation (the scripted test gateways and the DeepSeek gateway), so there is no
+ * SAM conversion to preserve — and the file map's KDoc-seed rule reads a
+ * `fun interface` declaration's name as `interface`, which would leave this file
+ * without a description seed.
  */
-fun interface PipelineGenerationModel {
+interface PipelineGenerationModel {
 
     /**
      * Runs one completion for [prompt] and returns the model's complete reply.
