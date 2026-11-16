@@ -67,7 +67,13 @@ private val SplashMaxWidth = 360.dp
 // The adjusted size still needs handoff verification on both devices.
 private val DefaultPlatformSplashIconSize = 288.dp
 
-internal const val THREAD_DURATION_MS = 1000
+/**
+ * How long the whole weave takes. The checklist says "about one second"; the
+ * owner asked for a faster reveal after seeing it on a device, so the strokes
+ * are the same and only the clock is shorter. Keep this the single place that
+ * decides the duration.
+ */
+internal const val THREAD_DURATION_MS = 700
 
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
