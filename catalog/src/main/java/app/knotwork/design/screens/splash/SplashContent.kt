@@ -244,7 +244,12 @@ private fun SplashThread(
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
         if (painter != null && !useFallback) {
             painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
-            if (splashAnimationStartMillis != null) notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            // Hand the platform overlay back on the first committed frame of
+            // this surface, whether or not a platform clock was handed over.
+            // The platform stage is a bare launch colour now, so the clock is
+            // null on every production launch; gating readiness on it here left
+            // the overlay up until initialization finished.
+            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
         } else if (fallback != null) {
             val markSize = (size.width * MARK_FRACTION).toInt()
             val inset = ((size.width - markSize) / 2f).toInt()
@@ -254,7 +259,9 @@ private fun SplashThread(
                 dstSize = IntSize(markSize, markSize),
                 colorFilter = if (dark) ColorFilter.tint(ink) else null,
             )
-            if (painterResult?.isFailure == true && splashAnimationStartMillis != null) {
+            // The palette failed to load: this static artwork is all the user
+            // will see, so release the platform overlay here too.
+            if (painterResult?.isFailure == true) {
                 notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
             }
         }
