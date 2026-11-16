@@ -47,7 +47,7 @@ internal object NavIcons {
 // The bubble outline is one closed path: top edge, right corner, right edge, bottom-right
 // corner, bottom edge up to the tail, the tail itself, then the two left corners. Kept as
 // two string pieces because the whole path does not fit one ktlint-width line.
-private const val NavChatPath: String =
+private const val NAV_CHAT_PATH: String =
     "M7 4h10a3.5 3.5 0 0 1 3.5 3.5v5a3.5 3.5 0 0 1-3.5 3.5h-5.5L7.5 20V16H7a3.5 3.5 0 0 1-3.5-3.5v-5" +
         "A3.5 3.5 0 0 1 7 4Z"
 
@@ -62,7 +62,7 @@ private const val NAV_TOOL_HANDLE: String = "M9 9.5V7.5a3 3 0 0 1 6 0v2"
 private const val NAV_TOOL_LID: String = "M3.5 12.5h17"
 
 private fun buildNavChat(strokeWidth: Float): ImageVector = iconBuilder("NavChat")
-    .strokePath(NavChatPath, strokeWidth = strokeWidth)
+    .strokePath(NAV_CHAT_PATH, strokeWidth = strokeWidth)
     .build()
 
 private fun buildNavFlow(strokeWidth: Float): ImageVector = iconBuilder("NavFlow")
