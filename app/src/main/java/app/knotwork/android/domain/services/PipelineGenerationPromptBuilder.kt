@@ -1,6 +1,7 @@
 package app.knotwork.android.domain.services
 
 import app.knotwork.android.domain.models.AgentTool
+import app.knotwork.android.domain.models.ToolSource
 
 /**
  * Renders the prompts the sentence-to-pipeline generator sends to the model.
@@ -126,7 +127,9 @@ object PipelineGenerationPromptBuilder {
 
     /** Renders the connected MCP tools, or states plainly that there are none. */
     private fun renderTools(mcpTools: List<AgentTool>): String {
-        val connected = mcpTools.filter { it.name.isNotBlank() }
+        // Only MCP tools can be wired to a TOOL node: a built-in tool that the
+        // user never connected must not appear in the catalogue the model reads.
+        val connected = mcpTools.filter { it.source == ToolSource.MCP && it.name.isNotBlank() }
         if (connected.isEmpty()) return NO_TOOLS
         return buildString {
             append(TOOLS_HEADER)
