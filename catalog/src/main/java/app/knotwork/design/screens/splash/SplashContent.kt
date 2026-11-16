@@ -187,11 +187,7 @@ private fun SplashDetails(
 
 /** Renders the original artwork mask without delaying initialization. */
 @Composable
-private fun SplashThread(
-    launchStartMillis: Long?,
-    modifier: Modifier = Modifier,
-    onMarkReady: () -> Unit = {},
-) {
+private fun SplashThread(launchStartMillis: Long?, modifier: Modifier = Modifier, onMarkReady: () -> Unit = {}) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
     val resources = LocalResources.current
