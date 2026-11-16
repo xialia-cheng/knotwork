@@ -1,0 +1,45 @@
+name: Record splash baselines
+
+# One-off utility: re-records the SplashContent Roborazzi baselines on the same
+# runner image the verify gate uses, then uploads only those PNGs. Not a gate.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platform-tools'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Record the splash baselines
+        run: >
+          ./gradlew :catalog:recordRoborazziDebug
+          --tests 'app.knotwork.design.screens.splash.SplashContentSnapshotTest'
+          --stacktrace --no-daemon
+
+      - name: Upload the recorded baselines
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: splash-baselines
+          path: catalog/src/test/snapshots/splash_*.png
+          if-no-files-found: error
