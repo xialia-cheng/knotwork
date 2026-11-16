@@ -16,6 +16,8 @@ if [[ "${PR6_STARTUP_PROBE:-false}" == true ]]; then
       app.knotwork.design.test/androidx.test.runner.AndroidJUnitRunner \
       | tee build/pr6-startup-evidence/pixel-render/instrumentation.txt || catalog_result=1
     grep -q 'OK (1 test)' build/pr6-startup-evidence/pixel-render/instrumentation.txt || catalog_result=1
+    adb pull /sdcard/Android/data/app.knotwork.design.test/files/handoff-pixels/. \
+      build/pr6-startup-evidence/pixel-render/ || catalog_result=1
   else
     catalog_result=1
   fi

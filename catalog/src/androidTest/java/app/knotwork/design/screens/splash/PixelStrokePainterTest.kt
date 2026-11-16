@@ -22,6 +22,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 import java.nio.ByteBuffer
 import kotlin.math.abs
 
@@ -66,6 +67,17 @@ class PixelStrokePainterTest {
                 }
                 node.endRecording()
                 val target = renderHardware(node, side)
+                val output = requireNotNull(InstrumentationRegistry.getInstrumentation().context.getExternalFilesDir(null))
+                    .resolve("handoff-pixels").apply { mkdirs() }
+                val mode = if (night) "night" else "day"
+                File(output, "player-${time}ms-$mode.png").outputStream().use {
+                    check(target.compress(Bitmap.CompressFormat.PNG, 100, it))
+                }
+                if (time == 1000) {
+                    File(output, "source-$mode.png").outputStream().use {
+                        check(reference.compress(Bitmap.CompressFormat.PNG, 100, it))
+                    }
+                }
                 var samples = 0
                 var edgeSamples = 0
                 for (y in 1 until original.height - 1 step 3) {
