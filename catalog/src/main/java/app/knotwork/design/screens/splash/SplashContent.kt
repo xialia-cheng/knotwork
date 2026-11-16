@@ -1,6 +1,7 @@
 package app.knotwork.design.screens.splash
 
 import android.provider.Settings
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import androidx.compose.animation.core.Animatable
@@ -28,6 +29,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
@@ -199,12 +201,15 @@ private fun SplashThread(
     val resources = LocalResources.current
     val view = LocalView.current
     val readyRegistered = remember(view, splashAnimationStartMillis) { AtomicBoolean(false) }
+    val firstDrawLogged = remember(view, splashAnimationStartMillis) { AtomicBoolean(false) }
+    val firstPainterLogged = remember(view, splashAnimationStartMillis) { AtomicBoolean(false) }
     val systemScale = Settings.Global.getFloat(
         context.contentResolver,
         Settings.Global.ANIMATOR_DURATION_SCALE,
         1f,
     )
     val painterResult by produceState<Result<PixelStrokePainter>?>(initialValue = null, resources) {
+        handoffTrace("painter_load_start")
         value = try {
             Result.success(withContext(Dispatchers.Default) { PixelStrokePainter.load(resources) })
         } catch (cancelled: CancellationException) {
@@ -213,6 +218,7 @@ private fun SplashThread(
             Log.e("SplashThread", "Could not load stroke animation", error)
             Result.failure(error)
         }
+        handoffTrace("painter_load_finish success=${value?.isSuccess}")
     }
     val progress = remember(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
         val initial = if (reducedMotion) {
@@ -232,6 +238,8 @@ private fun SplashThread(
     val ink = colorResource(R.color.brand_startup_ink)
     LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
         if (painterResult == null) return@LaunchedEffect
+        handoffTrace("animation_start systemScale=$systemScale composeScale=${coroutineContext[MotionDurationScale]?.scaleFactor} " +
+            "platformStartEpochMs=$splashAnimationStartMillis reducedMotion=$reducedMotion")
         if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
         } else {
@@ -242,7 +250,15 @@ private fun SplashThread(
         }
     }
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
+        if (firstDrawLogged.compareAndSet(false, true)) {
+            handoffTrace("canvas_first progress=${progress.value} size=${size.width}x${size.height} " +
+                "painter=${painter != null} fallback=$useFallback platformStartEpochMs=$splashAnimationStartMillis")
+        }
         if (painter != null && !useFallback) {
+            if (firstPainterLogged.compareAndSet(false, true)) {
+                handoffTrace("painter_first_draw progress=${progress.value} size=${size.width}x${size.height} " +
+                    "platformStartEpochMs=$splashAnimationStartMillis")
+            }
             painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
             if (splashAnimationStartMillis != null) notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
         } else if (fallback != null) {
@@ -265,12 +281,22 @@ private fun notifyWhenFrameCommitted(view: View, registered: AtomicBoolean, onRe
     if (!registered.compareAndSet(false, true)) return
     val observer = view.viewTreeObserver
     if (view.isHardwareAccelerated && observer.isAlive) {
-        observer.registerFrameCommitCallback { view.post { onReady() } }
+        handoffTrace("frame_commit_registered")
+        observer.registerFrameCommitCallback {
+            handoffTrace("frame_commit_callback")
+            view.post { onReady() }
+        }
         // A completed animation can be completely static; request a frame so
         // the one-shot callback still runs when no other content invalidates.
         view.postInvalidateOnAnimation()
     } else {
         view.post { onReady() }
+    }
+}
+
+private fun handoffTrace(event: String) {
+    if (Log.isLoggable("PR6Handoff", Log.DEBUG)) {
+        Log.d("PR6Handoff", "elapsedNs=${SystemClock.elapsedRealtimeNanos()} epochMs=${System.currentTimeMillis()} $event")
     }
 }
 

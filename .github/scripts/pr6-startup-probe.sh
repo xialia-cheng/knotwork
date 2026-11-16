@@ -37,6 +37,8 @@ adb shell wm dismiss-keyguard >/dev/null
 adb shell input keyevent 82 >/dev/null
 
 original_night="$(adb shell cmd uimode night | tr -d '\r')"
+original_trace_tag="$(adb shell getprop log.tag.PR6Handoff | tr -d '\r')"
+adb shell setprop log.tag.PR6Handoff DEBUG
 original_font_scale="$(adb shell settings get system font_scale | tr -d '\r')"
 original_override_size="$(adb shell wm size | tr -d '\r' | sed -n 's/^Override size: //p')"
 keys=(window_animation_scale transition_animation_scale animator_duration_scale)
@@ -46,6 +48,8 @@ for key in "${keys[@]}"; do
 done
 restore_settings() {
   local index key value
+  adb shell setprop log.tag.PR6Handoff "$original_trace_tag" >/dev/null 2>&1 || true
+  adb shell atrace --async_stop gfx view wm am >/dev/null 2>&1 || true
   for index in "${!keys[@]}"; do
     key=${keys[$index]}
     value=${original[$index]}
@@ -76,7 +80,7 @@ trap restore_settings EXIT
 
 capture() {
   local label="$1" window="$2" transition="$3" animator="$4"
-  local remote="/sdcard/pr6-startup-${label}.mp4" recorder
+  local remote="/sdcard/pr6-startup-${label}.mp4" recorder trace_started=false
   adb shell settings put global window_animation_scale "$window"
   adb shell settings put global transition_animation_scale "$transition"
   adb shell settings put global animator_duration_scale "$animator"
@@ -93,6 +97,12 @@ capture() {
   # The first emulator launch can take over five seconds; keep recording through the app handoff.
   adb shell screenrecord --time-limit 12 --bit-rate 2000000 "$remote" > "$out_dir/${label}-record.log" 2>&1 &
   recorder=$!
+  if [[ "$label" == normal || "$label" == double || "$label" == dark_normal ]]; then
+    adb shell 'date +%s%3N; cat /proc/uptime' > "$out_dir/${label}-clock-before.txt"
+    if adb shell atrace --async_start -c -b 16384 gfx view wm am > "$out_dir/${label}-trace-start.txt" 2>&1; then
+      trace_started=true
+    fi
+  fi
   sleep 1
   printf 'launch_requested_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)" >> "$out_dir/${label}.txt"
   adb shell am start -W -n "$component" >> "$out_dir/${label}.txt"
@@ -102,6 +112,11 @@ capture() {
   fi
   printf 'launch_returned_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)" >> "$out_dir/${label}.txt"
   wait "$recorder"
+  if [[ "$trace_started" == true ]]; then
+    adb shell atrace --async_stop gfx view wm am > "$out_dir/${label}-system-trace.txt" 2>&1 || true
+    adb shell 'date +%s%3N; cat /proc/uptime' > "$out_dir/${label}-clock-after.txt"
+    adb shell dumpsys SurfaceFlinger --list > "$out_dir/${label}-surface-layers.txt" 2>&1 || true
+  fi
   adb shell dumpsys meminfo "$package" > "$out_dir/${label}-meminfo.txt" 2>&1 || true
   adb pull "$remote" "$out_dir/${label}.mp4" >/dev/null
   test -s "$out_dir/${label}.mp4"

@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.os.SystemClock
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -94,6 +96,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        handoffTrace("activity_onCreate")
         // Platform splash (Android 12+) — must be installed BEFORE
         // `super.onCreate` so the system swaps the activity-theme splash
         // window for the SplashScreen-managed window before any content
@@ -101,12 +104,18 @@ class MainActivity : ComponentActivity() {
         // background and the brand-mark foreground; the post-splash theme
         // declared there takes over when the first Compose frame commits.
         installSplashScreen().setOnExitAnimationListener { splash ->
+            handoffTrace("exit_listener platformStartEpochMs=${splash.iconAnimationStartMillis} " +
+                "platformDurationMs=${splash.iconAnimationDurationMillis} bounds=${splash.view.width}x${splash.view.height}")
             // Transfer the system's icon timing to Compose before releasing the
             // overlay. Compose resumes the remaining timeline without delaying
             // navigation or initialization.
             splashAnimationStartMillis = splash.iconAnimationStartMillis
             splashExitCoordinator.onPlatformExit {
-                splash.view.postOnAnimation { splash.remove() }
+                handoffTrace("remove_requested")
+                splash.view.postOnAnimation {
+                    handoffTrace("remove_execute")
+                    splash.remove()
+                }
             }
         }
         super.onCreate(savedInstanceState)
@@ -214,11 +223,20 @@ class MainActivity : ComponentActivity() {
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
                         splashAnimationStartMillis = splashAnimationStartMillis,
-                        onSplashContentReady = splashExitCoordinator::onContentReady,
+                        onSplashContentReady = {
+                            handoffTrace("content_ready")
+                            splashExitCoordinator.onContentReady()
+                        },
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
             }
         }
+    }
+}
+
+private fun handoffTrace(event: String) {
+    if (Log.isLoggable("PR6Handoff", Log.DEBUG)) {
+        Log.d("PR6Handoff", "elapsedNs=${SystemClock.elapsedRealtimeNanos()} epochMs=${System.currentTimeMillis()} $event")
     }
 }
