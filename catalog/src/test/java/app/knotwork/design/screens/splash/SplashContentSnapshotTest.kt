@@ -176,15 +176,6 @@ class SplashContentSnapshotTest {
     }
 
     @Test
-    fun thread_reuses_platform_animation_progress_and_clamps_clock_edges() {
-        assertEquals(400L, splashThreadElapsed(startMillis = 1_000L, nowMillis = 1_400L))
-        assertEquals(1_000L, splashThreadElapsed(startMillis = 1_000L, nowMillis = 5_000L))
-        assertEquals(0L, splashThreadElapsed(startMillis = 2_000L, nowMillis = 1_000L))
-        assertEquals(1_000L, splashThreadElapsed(startMillis = 0L, nowMillis = 1_000L))
-        assertEquals(0L, splashThreadElapsed(startMillis = null, nowMillis = 1_000L))
-    }
-
-    @Test
     fun splash_uses_the_original_wordmark_within_the_safe_area() {
         val originalFile = File("../brand/reference-original.jpg")
         val digest = MessageDigest.getInstance("SHA-256").digest(originalFile.readBytes())

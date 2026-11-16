@@ -43,7 +43,6 @@ class SplashFrameDeviceTest {
                         SplashContent(
                             appName = "织问",
                             state = SplashViewState.Loading("Preparing", .5f),
-                            launchStartMillis = 0L,
                             onMarkReady = { markReady = true },
                         )
                     }
@@ -82,7 +81,6 @@ class SplashFrameDeviceTest {
                     SplashContent(
                         appName = "织问",
                         state = SplashViewState.Loading("Preparing", .5f),
-                        launchStartMillis = null,
                         onMarkReady = { markReady = true },
                     )
                 }

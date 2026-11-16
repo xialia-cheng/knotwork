@@ -116,7 +116,6 @@ import app.knotwork.design.screens.settings.SettingsCategoryId
  *        open-thread / new-chat request and the `CHAT_TAB` composable drains it
  *        into `selectThread` / `createNewSessionWithPipeline`.
  * @param modifier Inset-padding passthrough from [AppShellScaffold].
- * @param launchStartMillis When the launch began, in epoch milliseconds; null in previews.
  * @param onSplashContentReady Releases the platform overlay when content or navigation is ready.
  */
 @Composable
@@ -126,7 +125,6 @@ fun AppNavGraph(
     pendingDeepLink: Intent?,
     chatEntryRequestRelay: ChatEntryRequestRelay,
     modifier: Modifier = Modifier,
-    launchStartMillis: Long? = null,
     onSplashContentReady: () -> Unit = {},
 ) {
     NavHost(
@@ -152,7 +150,6 @@ fun AppNavGraph(
             },
         ) {
             SplashScreen(
-                launchStartMillis = launchStartMillis,
                 onSplashContentReady = onSplashContentReady,
                 onInitialized = {
                     onSplashContentReady()

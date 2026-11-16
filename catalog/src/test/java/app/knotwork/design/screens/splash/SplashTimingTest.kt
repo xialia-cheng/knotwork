@@ -13,14 +13,6 @@ import org.junit.Test
 /** Verifies platform timing conversion and Compose animation scaling at supported system speeds. */
 class SplashTimingTest {
     @Test
-    fun platformElapsedUsesWallTimeDividedByDurationScale() {
-        assertEquals(400L, splashThreadElapsed(1_000L, 1_200L, .5f))
-        assertEquals(400L, splashThreadElapsed(1_000L, 1_400L, 1f))
-        assertEquals(400L, splashThreadElapsed(1_000L, 1_800L, 2f))
-        assertEquals(1_000L, splashThreadElapsed(1_000L, 1_200L, 0f))
-    }
-
-    @Test
     fun composeScalesOnlyTheRemainingTimelineOnce() {
         for (factor in listOf(0f, .5f, 1f, 2f)) {
             var nowNanos = 0L
@@ -40,19 +32,5 @@ class SplashTimingTest {
             val expectedMillis = (600 * factor).toLong()
             assertTrue("scale=$factor elapsed=$elapsedMillis", elapsedMillis in expectedMillis..expectedMillis + 16)
         }
-    }
-
-    @Test
-    fun `a slow launch starts complete instead of weaving after the wait`() {
-        // Fast launch: weave continues from where the launch clock is.
-        assertEquals(0.1f, initialWeaveProgress(1_000L, 1_100L, reducedMotion = false, scale = 1f), 0.001f)
-        // Slow launch: the bare launch colour already held the screen, so the
-        // mark appears complete rather than animating on top of that wait.
-        assertEquals(1f, initialWeaveProgress(1_000L, 1_900L, reducedMotion = false, scale = 1f), 0.001f)
-        // Reduced motion and a zero animation scale are complete from the start.
-        assertEquals(1f, initialWeaveProgress(1_000L, 1_100L, reducedMotion = true, scale = 1f), 0.001f)
-        assertEquals(1f, initialWeaveProgress(1_000L, 1_100L, reducedMotion = false, scale = 0f), 0.001f)
-        // No launch clock (previews) starts from blank.
-        assertEquals(0f, initialWeaveProgress(null, 1_100L, reducedMotion = false, scale = 1f), 0.001f)
     }
 }
