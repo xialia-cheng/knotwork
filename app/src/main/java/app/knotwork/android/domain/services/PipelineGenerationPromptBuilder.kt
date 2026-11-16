@@ -115,8 +115,10 @@ object PipelineGenerationPromptBuilder {
             append("\n\n补充修改要求：\n")
             append(refinement.take(MAX_DEMAND_CHARS))
         }
-        append("\n\n先规划再输出：在 JSON 的 plan 字段里用 2-4 句中文说明你选哪些节点、为什么这样连线，" +
-            "然后再给出 nodes 和 connections。\n\n")
+        append(
+            "\n\n先规划再输出：在 JSON 的 plan 字段里用 2-4 句中文说明你选哪些节点、为什么这样连线，" +
+                "然后再给出 nodes 和 connections。\n\n",
+        )
         append(NODE_CATALOG)
         append("\n\n")
         append(renderTools(mcpTools))
