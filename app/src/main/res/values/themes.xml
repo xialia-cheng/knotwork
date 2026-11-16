@@ -12,7 +12,8 @@
         platform icon is a 288 dp plate with a 192 dp glyph, the loading page
         draws it at min(288 dp, 45% of the screen height) from 0% opacity —
         The loading page paints `brand_mark.png` through `PixelStrokePainter`;
-        `brand_startup_mark_animated` is no longer mounted by this theme.
+        the platform-stage animated mark is gone, so no second copy of the
+        wordmark exists to disagree with it.
         `postSplashScreenTheme` swaps to the regular app theme as soon as
         `installSplashScreen()` releases its keep-on-screen condition.
     -->

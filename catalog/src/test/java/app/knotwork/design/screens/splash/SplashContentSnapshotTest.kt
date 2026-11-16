@@ -222,16 +222,9 @@ class SplashContentSnapshotTest {
         val widthFraction = (maxX - minX + 1) * 75.5 / mask.width / 108
         assertTrue("The mark should occupy about 56% of the icon", widthFraction in 0.54..0.57)
         assertTrue("The artwork must stay inside the circular safe area", maxRadius <= 33.0)
-        listOf("drawable" to "values", "drawable-night" to "values-night").forEach { (drawable, values) ->
-            val animated = File("../app/src/main/res/$drawable/brand_startup_mark_animated.xml").readText()
-            val colors = File("src/main/res/$values/brand_startup.xml").readText()
-            val ink = requireNotNull(Regex("<color name=\"brand_startup_ink\">([^<]+)</color>").find(colors))
-                .groupValues[1]
-            assertTrue(animated.contains("android:viewportWidth=\"108\""))
-            assertTrue(animated.contains("android:viewportHeight=\"108\""))
-            assertTrue(animated.contains("android:fillColor=\"$ink\""))
-            assertTrue(animated.contains("<clip-path"))
-        }
+        // The platform stage no longer mounts a mark at all, so the animated
+        // platform icon is gone with it; the artwork assertions above keep
+        // guarding the loading page's own pixels.
         // The platform stage is the launch colour and nothing else, so that the
         // wordmark is drawn exactly once — by the loading page, from blank. The
         // artwork checks above still guard the loading page's own pixels.
