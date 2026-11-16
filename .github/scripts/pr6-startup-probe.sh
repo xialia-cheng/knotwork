@@ -18,6 +18,7 @@ fi
   printf 'pull_request_head=%s\n' "${PR6_HEAD_SHA:-unknown}"
   printf 'api_expected=%s\n' "$PR6_API_LEVEL"
   printf 'api_actual=%s\n' "$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
+  printf 'variant=isolated diagnostic; system and app animation timings scaled 8x\n'
   printf 'component=%s\n' "$component"
   printf 'apk_sha256='
   sha256sum "$apk_path"
@@ -189,7 +190,7 @@ capture_controlled() {
   adb shell pidof "$package" > "$out_dir/controlled-${label}-pid-before.txt" || true
   before=$(adb logcat -d -s 'PR6Handoff:D' '*:S' | grep -c 'controlled_exit' || true)
   adb shell rm -f "$remote"
-  adb shell screenrecord --time-limit 8 --bit-rate 2000000 "$remote" > "$out_dir/controlled-${label}-record.log" 2>&1 &
+  adb shell screenrecord --time-limit 20 --bit-rate 2000000 "$remote" > "$out_dir/controlled-${label}-record.log" 2>&1 &
   recorder=$!
   adb shell 'date +%s%3N; cat /proc/uptime' > "$out_dir/controlled-${label}-clock-before.txt"
   sleep 1

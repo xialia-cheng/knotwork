@@ -69,7 +69,8 @@ private val SplashMaxWidth = 360.dp
 // The adjusted size still needs handoff verification on both devices.
 private val DefaultPlatformSplashIconSize = 288.dp
 
-internal const val THREAD_DURATION_MS = 1000
+// Isolated diagnostic variant: 8x slower to expose an in-flight handoff.
+internal const val THREAD_DURATION_MS = 8000
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
 
