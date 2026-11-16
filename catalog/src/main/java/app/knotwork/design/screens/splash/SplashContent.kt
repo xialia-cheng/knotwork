@@ -73,7 +73,7 @@ private val DefaultPlatformSplashIconSize = 288.dp
  * are the same and only the clock is shorter. Keep this the single place that
  * decides the duration.
  */
-internal const val THREAD_DURATION_MS = 700
+internal const val THREAD_DURATION_MS = 850
 
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
