@@ -139,6 +139,23 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
+      - name: Record the splash baselines (this branch only)
+        # TEMPORARY: no JDK/SDK exists on the workstation that authored the
+        # change, so the affected baselines are recorded on this exact runner
+        # image before the gate runs against them.
+        run: >
+          ./gradlew :catalog:recordRoborazziDebug
+          --tests 'app.knotwork.design.screens.splash.SplashContentSnapshotTest'
+          --stacktrace --no-daemon
+
+      - name: Upload the recorded splash baselines
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: splash-baselines
+          path: catalog/src/test/snapshots/splash_*.png
+          if-no-files-found: warn
+
       - name: Build and check FOSS
         run: >
           ./gradlew
