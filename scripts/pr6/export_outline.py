@@ -1,10 +1,17 @@
-"""Generate experimental AVD from bitmap timing contours (not product-ready)."""
+"""Generate the experimental AVD from bitmap timing contours (not product-ready).
+
+Writes to ``AVD_OUT_DIR`` (default: ``$PR6_WORKDIR/02-AVD``), never into
+``app/src/main/res``: the platform stage no longer mounts a mark, so the AVD is
+evidence for experiments only and must not reappear in the production tree.
+"""
+import os
 from pathlib import Path
 import cv2
 import numpy as np
 from PIL import Image
 
 root = Path(__file__).resolve().parents[2]
+out_dir = Path(os.environ.get('AVD_OUT_DIR') or (root / 'build' / 'pr6-avd'))
 assets = root / 'catalog/src/main/res/drawable-nodpi'
 a = np.asarray(Image.open(assets / 'brand_mark.png').convert('RGBA'))
 hi = np.asarray(Image.open(assets / 'brand_stroke_time_hi.png').convert('L'))
@@ -55,6 +62,7 @@ for folder, color in [('drawable', '#30238A'), ('drawable-night', '#D2CCFF')]:
                       '            </set>',
                       '        </aapt:attr>', '    </target>'])
     lines.append('</animated-vector>')
-    path = root / 'app/src/main/res' / folder / 'brand_startup_mark_animated.xml'
+    path = out_dir / folder / 'brand_startup_mark_animated.xml'
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     print(path, path.stat().st_size, 'slices', len(slices))

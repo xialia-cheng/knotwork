@@ -142,7 +142,14 @@ fun AppNavGraph(
         // loading finishes, even before the one-second weave ends.
         composable(
             route = NavRoutes.SPLASH,
-            exitTransition = { ExitTransition.None },
+            exitTransition = {
+                val target = targetState.destination.route
+                if (target == NavRoutes.CHAT_TAB || target == NavRoutes.ONBOARDING) {
+                    ExitTransition.None
+                } else {
+                    null
+                }
+            },
         ) {
             SplashScreen(
                 splashAnimationStartMillis = splashAnimationStartMillis,
@@ -169,7 +176,9 @@ fun AppNavGraph(
 
         composable(
             route = NavRoutes.ONBOARDING,
-            enterTransition = { EnterTransition.None },
+            enterTransition = {
+                if (initialState.destination.route == NavRoutes.SPLASH) EnterTransition.None else null
+            },
         ) {
             OnboardingScreen(
                 onCompleted = {
@@ -194,7 +203,14 @@ fun AppNavGraph(
         // blank chat); MainActivity routes them via DeepLinkRouter.
         composable(
             route = NavRoutes.CHAT_TAB,
-            enterTransition = { EnterTransition.None },
+            // Cut only when the loading page hands over. Returning null for every
+            // other source keeps the NavHost's own transition — and because the
+            // destination defaults its popEnterTransition to enterTransition, an
+            // unconditional None here would also have turned ordinary pops back
+            // into the home into a cut.
+            enterTransition = {
+                if (initialState.destination.route == NavRoutes.SPLASH) EnterTransition.None else null
+            },
         ) {
             val chatHomeViewModel: ChatHomeViewModel = hiltViewModel()
             // Drain entry requests into the one chat home. A request may be
