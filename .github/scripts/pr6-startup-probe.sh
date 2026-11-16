@@ -18,7 +18,7 @@ fi
   printf 'pull_request_head=%s\n' "${PR6_HEAD_SHA:-unknown}"
   printf 'api_expected=%s\n' "$PR6_API_LEVEL"
   printf 'api_actual=%s\n' "$(adb shell getprop ro.build.version.sdk | tr -d '\r')"
-  printf 'variant=isolated diagnostic; system and app animation timings scaled 8x\n'
+  printf 'variant=isolated probe only; no instrumented suite; system and app animation timings scaled 8x\n'
   printf 'component=%s\n' "$component"
   printf 'apk_sha256='
   sha256sum "$apk_path"
