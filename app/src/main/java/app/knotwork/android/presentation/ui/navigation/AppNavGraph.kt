@@ -1,6 +1,8 @@
 package app.knotwork.android.presentation.ui.navigation
 
 import android.content.Intent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -132,7 +134,16 @@ fun AppNavGraph(
         startDestination = NavRoutes.SPLASH,
         modifier = modifier.fillMaxSize(),
     ) {
-        composable(NavRoutes.SPLASH) {
+        // The loading page hands over to the home on the same surface colour, so
+        // the two screens must not cross-fade: the library's default 700 ms fade
+        // drew the chat home under a still-opaque splash ("New chat" showing
+        // through the wordmark for ~250 ms). Cut instead, and do not hold the
+        // user in the splash: the checklist allows entering the home as soon as
+        // loading finishes, even before the one-second weave ends.
+        composable(
+            route = NavRoutes.SPLASH,
+            exitTransition = { ExitTransition.None },
+        ) {
             SplashScreen(
                 splashAnimationStartMillis = splashAnimationStartMillis,
                 onSplashContentReady = onSplashContentReady,
@@ -156,7 +167,10 @@ fun AppNavGraph(
             )
         }
 
-        composable(NavRoutes.ONBOARDING) {
+        composable(
+            route = NavRoutes.ONBOARDING,
+            enterTransition = { EnterTransition.None },
+        ) {
             OnboardingScreen(
                 onCompleted = {
                     navController.navigate(NavRoutes.CHAT_TAB) {
@@ -178,7 +192,10 @@ fun AppNavGraph(
         // app, exactly like a normal launch. Deep links are NOT registered as
         // `navDeepLink`s (auto-handling raced the splash and produced a doubled /
         // blank chat); MainActivity routes them via DeepLinkRouter.
-        composable(route = NavRoutes.CHAT_TAB) {
+        composable(
+            route = NavRoutes.CHAT_TAB,
+            enterTransition = { EnterTransition.None },
+        ) {
             val chatHomeViewModel: ChatHomeViewModel = hiltViewModel()
             // Drain entry requests into the one chat home. A request may be
             // buffered (CONFLATED) from before this collector mounted on a cold

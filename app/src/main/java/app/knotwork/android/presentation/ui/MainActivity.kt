@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -50,7 +48,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private var splashAnimationStartMillis by mutableStateOf<Long?>(null)
     private val splashExitCoordinator = SplashExitCoordinator()
 
     @Inject lateinit var appStateSettings: AppStateSettings
@@ -101,10 +98,12 @@ class MainActivity : ComponentActivity() {
         // background and the brand-mark foreground; the post-splash theme
         // declared there takes over when the first Compose frame commits.
         installSplashScreen().setOnExitAnimationListener { splash ->
-            // Transfer the system's icon timing to Compose before releasing the
-            // overlay. Compose resumes the remaining timeline without delaying
-            // navigation or initialization.
-            splashAnimationStartMillis = splash.iconAnimationStartMillis
+            // The platform stage is a blank launch colour, so there is no
+            // platform animation to resume: the loading page weaves the mark
+            // from its first frame (the checklist's "system stage is the same
+            // colour, the loading page weaves the icon from blank for ~1 s").
+            // Restarting the clock here would skip the first stretch of the
+            // weave and make the mark pop in half-drawn.
             splashExitCoordinator.onPlatformExit {
                 splash.view.postOnAnimation { splash.remove() }
             }
@@ -213,7 +212,6 @@ class MainActivity : ComponentActivity() {
                         showOnboarding = !hasCompletedOnboarding,
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
-                        splashAnimationStartMillis = splashAnimationStartMillis,
                         onSplashContentReady = splashExitCoordinator::onContentReady,
                         modifier = Modifier.padding(innerPadding),
                     )
