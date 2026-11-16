@@ -852,4 +852,3 @@ internal const val GENERATE_REFINE_BUTTON_TEST_TAG = "pipeline_generate_refine"
 
 /** Lines the request field opens with, so a sentence is visible without scrolling. */
 private const val DEFAULT_DEMAND_MIN_LINES = 2
-
