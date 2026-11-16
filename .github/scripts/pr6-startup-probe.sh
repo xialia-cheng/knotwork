@@ -171,6 +171,12 @@ capture dark_animator_off 1 1 0
 # recordings are controlled APK evidence, not the production MainActivity.
 adb shell cmd uimode night no >/dev/null
 controlled_component="$package/app.knotwork.android.debug.SplashHandoffProbeActivity"
+# Start the warm process under a nonzero animation setting. The preceding
+# production probe intentionally disabled animators, and an existing Compose
+# recomposer can otherwise initially retain its previous duration scale.
+adb shell settings put global window_animation_scale 1
+adb shell settings put global transition_animation_scale 1
+adb shell settings put global animator_duration_scale 1
 adb shell am start -W -f 0x10008000 -n "$controlled_component" > "$out_dir/controlled-prewarm.txt"
 adb shell input keyevent BACK
 controlled_failed=false
@@ -204,7 +210,7 @@ capture_controlled() {
 capture_controlled half 0.5 false
 capture_controlled normal 1 false
 capture_controlled double 2 false
-capture_controlled off 0 false
 capture_controlled fast_ready 1 true
+capture_controlled off 0 false
 adb logcat -d -v threadtime > "$out_dir/logcat.txt"
 if [[ "$controlled_failed" == true ]]; then exit 1; fi
