@@ -233,8 +233,19 @@ class SplashContentSnapshotTest {
             assertTrue(animated.contains("android:fillColor=\"$ink\""))
             assertTrue(animated.contains("<clip-path"))
         }
+        // The platform stage is the launch colour and nothing else, so that the
+        // wordmark is drawn exactly once — by the loading page, from blank. The
+        // artwork checks above still guard the loading page's own pixels.
         val theme = File("../app/src/main/res/values/themes.xml").readText()
-        assertTrue(theme.contains("@drawable/brand_startup_mark_animated"))
+        assertTrue(
+            "Theme.App.Splash must mount the blank platform icon",
+            theme.contains("@drawable/splash_icon_blank"),
+        )
+        val blank = File("../app/src/main/res/drawable/splash_icon_blank.xml").readText()
+        assertTrue(
+            "The platform icon must be transparent",
+            blank.contains("@android:color/transparent"),
+        )
     }
 
     @Test

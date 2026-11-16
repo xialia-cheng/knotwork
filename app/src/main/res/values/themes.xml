@@ -11,8 +11,8 @@
         a blank frame. Drawing it in both stages made the hand-off jump — the
         platform icon is a 288 dp plate with a 192 dp glyph, the loading page
         draws it at min(288 dp, 45% of the screen height) from 0% opacity —
-        `brand_startup_mark_animated` stays in the tree for the launcher and
-        for the loading page's underlay.
+        The loading page paints `brand_mark.png` through `PixelStrokePainter`;
+        `brand_startup_mark_animated` is no longer mounted by this theme.
         `postSplashScreenTheme` swaps to the regular app theme as soon as
         `installSplashScreen()` releases its keep-on-screen condition.
     -->
