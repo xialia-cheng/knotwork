@@ -85,7 +85,6 @@ private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
  * @param callbacks one-shot callback bundle (Retry).
  * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
  * @param onMarkReady Called after a frame with known platform timing is committed.
- * @param platformUnderlay Draws the original mark underneath the platform splash until timing is known.
  */
 @Composable
 fun SplashContent(
@@ -96,7 +95,6 @@ fun SplashContent(
     callbacks: SplashCallbacks = noopSplashCallbacks(),
     splashAnimationStartMillis: Long? = null,
     onMarkReady: () -> Unit = {},
-    platformUnderlay: Boolean = false,
 ) {
     val starting = state is SplashViewState.Initializing || state is SplashViewState.Loading
     val startupInk = colorResource(R.color.brand_startup_ink)
@@ -118,7 +116,6 @@ fun SplashContent(
                 splashAnimationStartMillis,
                 Modifier.size(markSize).testTag("splash_loading_mark"),
                 onMarkReady,
-                platformUnderlay,
             )
             Column(
                 modifier = Modifier
@@ -144,7 +141,6 @@ fun SplashContent(
                     splashAnimationStartMillis,
                     Modifier.size(KnotworkLogoSize.Lg.size),
                     onMarkReady,
-                    platformUnderlay,
                 )
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
@@ -192,7 +188,6 @@ private fun SplashThread(
     splashAnimationStartMillis: Long?,
     modifier: Modifier = Modifier,
     onMarkReady: () -> Unit = {},
-    platformUnderlay: Boolean = false,
 ) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
@@ -214,19 +209,19 @@ private fun SplashThread(
             Result.failure(error)
         }
     }
-    val progress = remember(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
-        val initial = if (reducedMotion) {
-            1f
-        } else {
-            splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale).toFloat() /
-                THREAD_DURATION_MS
-        }
-        Animatable(initial)
+    // Keyed only on the things that legitimately restart the animation. Keying it
+    // on the palette load, as it used to be, rebuilt the Animatable at progress
+    // 0 the moment the palette arrived: the static fallback below had already
+    // shown the finished mark, so the user saw "complete mark → one blank frame
+    // → weave restarts".
+    val progress = remember(reducedMotion, systemScale) {
+        Animatable(if (reducedMotion || systemScale <= 0f) 1f else 0f)
     }
     val painter = painterResult?.getOrNull()
-    // Android can briefly transfer its splash icon surface after the activity's
-    // first frame. Keep the original artwork underneath while the shader loads.
-    val useFallback = painter == null || (platformUnderlay && splashAnimationStartMillis == null)
+    // The static artwork is a failure fallback only. Drawing it while the
+    // palette is still loading is what produced the finished mark before the
+    // weave had run a single frame.
+    val useFallback = painterResult?.isFailure == true
     val fallback = if (useFallback) ImageBitmap.imageResource(R.drawable.brand_mark) else null
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
@@ -242,7 +237,7 @@ private fun SplashThread(
         }
     }
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
-        if (painter != null && !useFallback) {
+        if (painter != null) {
             painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
             // Hand the platform overlay back on the first committed frame of
             // this surface, whether or not a platform clock was handed over.
@@ -259,11 +254,7 @@ private fun SplashThread(
                 dstSize = IntSize(markSize, markSize),
                 colorFilter = if (dark) ColorFilter.tint(ink) else null,
             )
-            // The palette failed to load: this static artwork is all the user
-            // will see, so release the platform overlay here too.
-            if (painterResult?.isFailure == true) {
-                notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
-            }
+            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
         }
     }
 }

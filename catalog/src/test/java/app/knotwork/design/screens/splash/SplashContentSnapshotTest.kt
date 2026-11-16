@@ -91,7 +91,6 @@ class SplashContentSnapshotTest {
                 SplashContent(
                     appName = "Knotwork Agent",
                     state = SplashPreview.loading(),
-                    platformUnderlay = true,
                 )
             }
         }
