@@ -54,20 +54,20 @@ internal class PixelStrokePainter private constructor(
         }
     }
 
-    /**
-     * Length of the artwork's own timeline, in milliseconds: the stroke-time
-     * textures encode each stroke's reveal time in `0..STROKE_TIMELINE_MS`.
-     *
-     * It is **not** how long the animation runs. Using the animation duration
-     * here made every stroke encoded past that duration unreachable — at 850 ms
-     * the last strokes of the wordmark (part of the 问 glyph) never appeared, so
-     * the mark settled visibly incomplete. The device test in `androidTest`
-     * caught it as "missing ink"; the shape of the artwork must stay decoupled
-     * from the pacing of the animation.
-     */
-    private const val STROKE_TIMELINE_MS = 1000f
-
     companion object {
+        /**
+         * Length of the artwork's own timeline, in milliseconds: the stroke-time
+         * textures encode each stroke's reveal time in `0..STROKE_TIMELINE_MS`.
+         *
+         * It is **not** how long the animation runs. Using the animation duration
+         * here made every stroke encoded past that duration unreachable — at 850 ms
+         * the last strokes of the wordmark (part of the 问 glyph) never appeared, so
+         * the mark settled visibly incomplete. The device test in `androidTest`
+         * caught it as "missing ink"; the shape of the artwork must stay decoupled
+         * from the pacing of the animation.
+         */
+        private const val STROKE_TIMELINE_MS = 1000f
+
         fun load(resources: Resources): PixelStrokePainter {
             val options = BitmapFactory.Options().apply { inScaled = false }
             val source = requireNotNull(BitmapFactory.decodeResource(resources, R.drawable.brand_mark, options))
