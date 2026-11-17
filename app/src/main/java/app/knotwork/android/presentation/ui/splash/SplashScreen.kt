@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import app.knotwork.android.R
 import app.knotwork.android.domain.models.InitStage
 import app.knotwork.design.screens.splash.SplashCallbacks
@@ -55,7 +56,14 @@ fun SplashScreen(
     // second) and never runs when loading is slower than that.
     var weaveFinished by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.isDone, weaveFinished) {
-        if (uiState.isDone && weaveFinished) onInitialized()
+        if (uiState.isDone && weaveFinished) {
+            // The record showed the last stroke and the chat home in the same
+            // fifth of a second: completing the weave is not the same as the user
+            // seeing it complete. A short, fixed dwell makes the finished mark
+            // readable without turning the splash into a wait.
+            delay(SPLASH_COMPLETE_DWELL_MS)
+            onInitialized()
+        }
     }
 
     val startingMessage = stringResource(R.string.splash_starting)
@@ -186,3 +194,6 @@ internal fun stageLabel(stage: InitStage): Int = when (stage) {
     InitStage.Done -> R.string.splash_stage_ready
     is InitStage.Failed -> stageLabel(stage.failedStage)
 }
+
+/** How long the finished mark stays on screen before the home replaces it. */
+private const val SPLASH_COMPLETE_DWELL_MS = 350L
