@@ -2,11 +2,10 @@ package app.knotwork.design.screens.chat
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.isProgressBar
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,6 +15,7 @@ import app.knotwork.design.a11y.LocalKnotworkA11y
 import app.knotwork.design.components.chips.Risk
 import app.knotwork.design.theme.KnotworkTheme
 import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -292,7 +292,8 @@ class ChatHomeContentSnapshotTest {
      * The cold-start body must draw nothing: a centred progress indicator in the
      * theme's primary used to land a frame or two after the splash's wordmark
      * finished, in the same ink-blue family, and a real launch read as a second
-     * mark drawing itself. A progress-bar node here means that regressed.
+     * mark drawing itself. Any ink in the middle of this frame is that regression
+     * coming back.
      */
     @Test
     fun cold_start_body_draws_no_mark_of_its_own() {
@@ -303,7 +304,21 @@ class ChatHomeContentSnapshotTest {
                 )
             }
         }
-        composeTestRule.onAllNodes(isProgressBar()).assertCountEquals(0)
+        val pixels = composeTestRule.onRoot().captureToImage().toPixelMap()
+        val centreX = pixels.width / 2
+        val centreY = pixels.height / 2
+        val half = 24
+        var darkest = 0f
+        for (y in centreY - half..centreY + half) {
+            for (x in centreX - half..centreX + half) {
+                val pixel = pixels[x, y]
+                val luminance = pixel.red * 0.299f + pixel.green * 0.587f + pixel.blue * 0.114f
+                darkest = minOf(darkest, luminance)
+            }
+        }
+        // The loading surface is a flat neutral; an arc or a glyph pushes one of
+        // these pixels well below it.
+        assertTrue("the cold-start body drew something in the middle: luminance $darkest", darkest > 0.6f)
     }
 
     /**
