@@ -24,8 +24,10 @@ import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -102,7 +104,15 @@ fun SplashContent(
     onMarkReady: () -> Unit = {},
     onWeaveFinished: () -> Unit = {},
 ) {
-    val starting = state is SplashViewState.Initializing || state is SplashViewState.Loading
+    // Once the weave has run to its end the page keeps the finished layout until
+    // it leaves the screen. Re-deriving the layout from the state alone let the
+    // screen switch to the compact variant while navigation was in flight, and
+    // that variant started its own weave from zero — the record showed the full
+    // wordmark, then a small mark drawing itself again under the chat screen.
+    var weaveDone by remember { mutableStateOf(false) }
+    val starting = weaveDone ||
+        state is SplashViewState.Initializing ||
+        state is SplashViewState.Loading
     val startupInk = colorResource(R.color.brand_startup_ink)
     BoxWithConstraints(
         modifier = modifier
@@ -121,7 +131,7 @@ fun SplashContent(
             SplashThread(
                 Modifier.size(markSize).testTag("splash_loading_mark"),
                 onMarkReady,
-                onWeaveFinished,
+                { weaveDone = true; onWeaveFinished() },
             )
             Column(
                 modifier = Modifier
@@ -146,7 +156,7 @@ fun SplashContent(
                 SplashThread(
                     Modifier.size(KnotworkLogoSize.Lg.size),
                     onMarkReady,
-                    onWeaveFinished,
+                    { weaveDone = true; onWeaveFinished() },
                 )
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
