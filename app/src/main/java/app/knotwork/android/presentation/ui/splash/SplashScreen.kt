@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.delay
 import app.knotwork.android.R
 import app.knotwork.android.domain.models.InitStage
 import app.knotwork.design.screens.splash.SplashCallbacks
@@ -20,6 +19,7 @@ import app.knotwork.design.screens.splash.SplashContent
 import app.knotwork.design.screens.splash.SplashResetDialogState
 import app.knotwork.design.screens.splash.SplashViewState
 import app.knotwork.design.R as DesignR
+import kotlinx.coroutines.delay
 
 /**
  * Slim app-side splash mapper. Subscribes to [SplashViewModel.uiState],
