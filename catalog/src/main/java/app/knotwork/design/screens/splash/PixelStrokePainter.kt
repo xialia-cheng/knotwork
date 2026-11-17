@@ -31,7 +31,7 @@ internal class PixelStrokePainter private constructor(
 
     fun draw(scope: DrawScope, progress: Float, darkInk: Int?) = with(scope) {
         if (progress <= 0f) return@with
-        shader.setFloatUniform("timeMs", progress.coerceIn(0f, 1f) * THREAD_DURATION_MS.toFloat())
+        shader.setFloatUniform("timeMs", progress.coerceIn(0f, 1f) * STROKE_TIMELINE_MS)
         if (darkInk != lastInk) {
             paint.colorFilter = darkInk?.let { BlendModeColorFilter(it, BlendMode.SRC_IN) }
             lastInk = darkInk
@@ -53,6 +53,19 @@ internal class PixelStrokePainter private constructor(
             }
         }
     }
+
+    /**
+     * Length of the artwork's own timeline, in milliseconds: the stroke-time
+     * textures encode each stroke's reveal time in `0..STROKE_TIMELINE_MS`.
+     *
+     * It is **not** how long the animation runs. Using the animation duration
+     * here made every stroke encoded past that duration unreachable — at 850 ms
+     * the last strokes of the wordmark (part of the 问 glyph) never appeared, so
+     * the mark settled visibly incomplete. The device test in `androidTest`
+     * caught it as "missing ink"; the shape of the artwork must stay decoupled
+     * from the pacing of the animation.
+     */
+    private const val STROKE_TIMELINE_MS = 1000f
 
     companion object {
         fun load(resources: Resources): PixelStrokePainter {
