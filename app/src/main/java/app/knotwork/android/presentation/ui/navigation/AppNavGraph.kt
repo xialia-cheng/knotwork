@@ -132,12 +132,14 @@ fun AppNavGraph(
         startDestination = NavRoutes.SPLASH,
         modifier = modifier.fillMaxSize(),
     ) {
-        // The loading page hands over to the home on the same surface colour, so
-        // the two screens must not cross-fade: the library's default 700 ms fade
+        // The two screens must not cross-fade: the library's default 700 ms fade
         // drew the chat home under a still-opaque splash ("New chat" showing
-        // through the wordmark for ~250 ms). Cut instead, and do not hold the
-        // user in the splash: the checklist allows entering the home as soon as
-        // loading finishes, even before the one-second weave ends.
+        // through the wordmark for ~250 ms). Cut instead. The surfaces are close
+        // but not equal — the splash paints brand_startup_background while the
+        // home paints colorScheme.surface, except on its cold-start body, which
+        // repeats the startup colour so the cut itself is invisible. The splash
+        // also holds until the weave finishes and dwells briefly, so the mark is
+        // seen whole before the home replaces it.
         composable(
             route = NavRoutes.SPLASH,
             exitTransition = {

@@ -61,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -162,7 +163,14 @@ fun ChatHomeContent(
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             snackbarHost = snackbarHost,
-            containerColor = MaterialTheme.colorScheme.surface,
+            // The cold-start body wears the splash's own background: the two are
+            // one continuous surface across the hand-off, and a cool near-white
+            // after the warm startup cream read as a step in the colour.
+            containerColor = if (state.visualState == ChatHomeVisualState.Loading) {
+                colorResource(R.color.brand_startup_background)
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
             topBar = {
                 app.knotwork.design.components.topbar.KnotworkTopAppBarShell {
                     ChatHomeTopBar(state = state, callbacks = callbacks)
@@ -527,9 +535,9 @@ private fun ChatHomeBody(
  * ink-blue arc a few dozen pixels wide. On a cold start that arc lands right
  * after the splash's wordmark completes, in the same colour family, and the
  * record of a real launch read as "the logo drew itself again and got cut
- * off". The splash already covers this wait, and an empty surface is exactly
- * what the splash leaves behind, so the hand-off stays seamless; the first
- * snapshot replaces this with the empty-state body a frame or two later.
+ * off". The splash already covers this wait, and the surface it leaves behind is
+ * the same one this body paints (see the container colour above), so the only
+ * change at the hand-off is that the first snapshot arrives a frame or two later.
  */
 @Composable
 private fun ChatHomeLoadingBody(padding: PaddingValues) {
