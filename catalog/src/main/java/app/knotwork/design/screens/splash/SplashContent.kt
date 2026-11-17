@@ -131,7 +131,10 @@ fun SplashContent(
             SplashThread(
                 Modifier.size(markSize).testTag("splash_loading_mark"),
                 onMarkReady,
-                { weaveDone = true; onWeaveFinished() },
+                onWeaveFinished = {
+                    weaveDone = true
+                    onWeaveFinished()
+                },
             )
             Column(
                 modifier = Modifier
@@ -156,7 +159,10 @@ fun SplashContent(
                 SplashThread(
                     Modifier.size(KnotworkLogoSize.Lg.size),
                     onMarkReady,
-                    { weaveDone = true; onWeaveFinished() },
+                    onWeaveFinished = {
+                    weaveDone = true
+                    onWeaveFinished()
+                },
                 )
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
