@@ -42,7 +42,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -522,10 +521,15 @@ private fun ChatHomeBody(
 }
 
 /**
- * Cold-start body — a centred [CircularProgressIndicator] on the chat
- * surface. Renders before the chat repository delivers its first snapshot
- * so the user never sees the [ChatHomeEmptyBody] hero flash for a frame
- * on every app launch.
+ * Cold-start body: the bare chat surface, deliberately drawing nothing.
+ *
+ * It used to centre a CircularProgressIndicator in the theme's primary — an
+ * ink-blue arc a few dozen pixels wide. On a cold start that arc lands right
+ * after the splash's wordmark completes, in the same colour family, and the
+ * record of a real launch read as "the logo drew itself again and got cut
+ * off". The splash already covers this wait, and an empty surface is exactly
+ * what the splash leaves behind, so the hand-off stays seamless; the first
+ * snapshot replaces this with the empty-state body a frame or two later.
  */
 @Composable
 private fun ChatHomeLoadingBody(padding: PaddingValues) {
@@ -533,10 +537,7 @@ private fun ChatHomeLoadingBody(padding: PaddingValues) {
         modifier = Modifier
             .fillMaxSize()
             .padding(padding),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-    }
+    )
 }
 
 /**

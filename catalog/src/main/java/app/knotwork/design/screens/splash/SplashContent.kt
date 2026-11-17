@@ -104,11 +104,11 @@ fun SplashContent(
     onMarkReady: () -> Unit = {},
     onWeaveFinished: () -> Unit = {},
 ) {
-    // Once the weave has run to its end the page keeps the finished layout until
-    // it leaves the screen. Re-deriving the layout from the state alone let the
-    // screen switch to the compact variant while navigation was in flight, and
-    // that variant started its own weave from zero — the record showed the full
-    // wordmark, then a small mark drawing itself again under the chat screen.
+    // Pins the starting layout once its weave has finished, so a state change
+    // that lands after the animation (initialization failing right after the
+    // last stroke, most likely) cannot switch to the compact layout and start a
+    // second weave from zero. Only the starting branch may set this: letting the
+    // compact branch set it as well would jump the other way and weave twice.
     var weaveDone by remember { mutableStateOf(false) }
     val starting = weaveDone ||
         state is SplashViewState.Initializing ||
@@ -159,10 +159,7 @@ fun SplashContent(
                 SplashThread(
                     Modifier.size(KnotworkLogoSize.Lg.size),
                     onMarkReady,
-                    onWeaveFinished = {
-                    weaveDone = true
-                    onWeaveFinished()
-                },
+                    onWeaveFinished = onWeaveFinished,
                 )
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
