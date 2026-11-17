@@ -4,7 +4,9 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -45,8 +47,15 @@ fun SplashScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.isDone) {
-        if (uiState.isDone) onInitialized()
+    // The loading page leaves only once the wordmark has finished weaving *and*
+    // initialization is done. Navigating on "done" alone cut the animation
+    // short whenever the app started faster than the weave: the record showed
+    // the mark reaching its last stroke and the chat home replacing it in the
+    // same fifth of a second. The wait is bounded by the weave itself (under a
+    // second) and never runs when loading is slower than that.
+    var weaveFinished by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.isDone, weaveFinished) {
+        if (uiState.isDone && weaveFinished) onInitialized()
     }
 
     val startingMessage = stringResource(R.string.splash_starting)
@@ -87,6 +96,7 @@ fun SplashScreen(
         retryLabel = retryLabel,
         callbacks = callbacks,
         onMarkReady = onSplashContentReady,
+        onWeaveFinished = { weaveFinished = true },
     )
 }
 

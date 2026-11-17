@@ -100,6 +100,7 @@ fun SplashContent(
     retryLabel: String = stringResource(R.string.knotwork_splash_retry),
     callbacks: SplashCallbacks = noopSplashCallbacks(),
     onMarkReady: () -> Unit = {},
+    onWeaveFinished: () -> Unit = {},
 ) {
     val starting = state is SplashViewState.Initializing || state is SplashViewState.Loading
     val startupInk = colorResource(R.color.brand_startup_ink)
@@ -120,6 +121,7 @@ fun SplashContent(
             SplashThread(
                 Modifier.size(markSize).testTag("splash_loading_mark"),
                 onMarkReady,
+                onWeaveFinished,
             )
             Column(
                 modifier = Modifier
@@ -144,6 +146,7 @@ fun SplashContent(
                 SplashThread(
                     Modifier.size(KnotworkLogoSize.Lg.size),
                     onMarkReady,
+                    onWeaveFinished,
                 )
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
@@ -187,7 +190,11 @@ private fun SplashDetails(
 
 /** Renders the original artwork mask without delaying initialization. */
 @Composable
-private fun SplashThread(modifier: Modifier = Modifier, onMarkReady: () -> Unit = {}) {
+private fun SplashThread(
+    modifier: Modifier = Modifier,
+    onMarkReady: () -> Unit = {},
+    onWeaveFinished: () -> Unit = {},
+) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
     val resources = LocalResources.current
@@ -228,12 +235,14 @@ private fun SplashThread(modifier: Modifier = Modifier, onMarkReady: () -> Unit 
         if (painterResult == null) return@LaunchedEffect
         if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
+            onWeaveFinished()
         } else {
             // The weave always runs in full, from the first stroke. A launch that
             // spent seconds on the bare launch colour is followed by the real
             // animation, not by a mark that pops in complete or from half-way.
             progress.snapTo(0f)
             progress.animateTo(1f, tween(THREAD_DURATION_MS, easing = LinearEasing))
+            onWeaveFinished()
         }
     }
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
