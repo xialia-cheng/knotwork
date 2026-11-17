@@ -289,11 +289,6 @@ class ChatHomeContentSnapshotTest {
         }
 
     /**
-     * Wraps the content under the standard test rule, pins reduced-motion +
-     * fontScale via [FixedKnotworkA11y] for determinism, and writes the PNG
-     * to `src/test/snapshots/chat_home_<name>_<theme>.png`.
-     */
-    /**
      * The cold-start body must draw nothing: a centred progress indicator in the
      * theme's primary used to land a frame or two after the splash's wordmark
      * finished, in the same ink-blue family, and a real launch read as a second
@@ -311,6 +306,11 @@ class ChatHomeContentSnapshotTest {
         composeTestRule.onAllNodes(isProgressBar()).assertCountEquals(0)
     }
 
+    /**
+     * Wraps the content under the standard test rule, pins reduced-motion +
+     * fontScale via [FixedKnotworkA11y] for determinism, and writes the PNG
+     * to `src/test/snapshots/chat_home_<name>_<theme>.png`.
+     */
     private fun snapshot(name: String, dark: Boolean, fontScale: Float = 1f, content: @Composable () -> Unit) {
         composeTestRule.setContent {
             // Override LocalDensity so Material text actually renders at the
