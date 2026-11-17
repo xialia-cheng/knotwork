@@ -3,7 +3,10 @@ package app.knotwork.design.screens.chat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.isProgressBar
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodes
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -290,6 +293,24 @@ class ChatHomeContentSnapshotTest {
      * fontScale via [FixedKnotworkA11y] for determinism, and writes the PNG
      * to `src/test/snapshots/chat_home_<name>_<theme>.png`.
      */
+    /**
+     * The cold-start body must draw nothing: a centred progress indicator in the
+     * theme's primary used to land a frame or two after the splash's wordmark
+     * finished, in the same ink-blue family, and a real launch read as a second
+     * mark drawing itself. A progress-bar node here means that regressed.
+     */
+    @Test
+    fun cold_start_body_draws_no_mark_of_its_own() {
+        composeTestRule.setContent {
+            KnotworkTheme {
+                ChatHomeContent(
+                    state = ChatHomePreview.empty().copy(visualState = ChatHomeVisualState.Loading),
+                )
+            }
+        }
+        composeTestRule.onAllNodes(isProgressBar()).assertCountEquals(0)
+    }
+
     private fun snapshot(name: String, dark: Boolean, fontScale: Float = 1f, content: @Composable () -> Unit) {
         composeTestRule.setContent {
             // Override LocalDensity so Material text actually renders at the
