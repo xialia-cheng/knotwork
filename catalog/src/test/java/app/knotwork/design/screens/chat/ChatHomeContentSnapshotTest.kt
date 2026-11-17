@@ -308,17 +308,25 @@ class ChatHomeContentSnapshotTest {
         val centreX = pixels.width / 2
         val centreY = pixels.height / 2
         val half = 24
-        var darkest = 0f
+        var inked = 0
+        var darkest = 1f
         for (y in centreY - half..centreY + half) {
             for (x in centreX - half..centreX + half) {
                 val pixel = pixels[x, y]
+                // Undrawn pixels come back fully transparent; only opaque ones can
+                // be part of a mark.
+                if (pixel.alpha < 0.5f) continue
                 val luminance = pixel.red * 0.299f + pixel.green * 0.587f + pixel.blue * 0.114f
                 darkest = minOf(darkest, luminance)
+                if (luminance < 0.6f) inked++
             }
         }
-        // The loading surface is a flat neutral; an arc or a glyph pushes one of
-        // these pixels well below it.
-        assertTrue("the cold-start body drew something in the middle: luminance $darkest", darkest > 0.6f)
+        // The loading surface is a flat neutral; an arc or a glyph pushes these
+        // pixels well below it.
+        assertTrue(
+            "the cold-start body drew $inked ink pixel(s) in the middle (darkest $darkest)",
+            inked == 0,
+        )
     }
 
     /**
