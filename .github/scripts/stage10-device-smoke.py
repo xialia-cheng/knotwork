@@ -62,6 +62,24 @@ def permission_deny(node):
     ))
 
 
+def enabled_action(node):
+    return node.get("action-enabled") == "true"
+
+
+def ui_nodes(xml):
+    root = ET.fromstring(xml)
+    parents = {child: node for node in root.iter() for child in node}
+    nodes = list(root.iter("node"))
+    for node in nodes:
+        control = node
+        while control is not None and control.get("clickable") != "true":
+            control = parents.get(control)
+        if control is not None:
+            node.set("action-enabled", control.get("enabled", "false"))
+            node.set("action-bounds", control.get("bounds", ""))
+    return nodes
+
+
 class Smoke:
     def __init__(self, evidence):
         self.evidence = evidence
@@ -74,7 +92,7 @@ class Smoke:
         if start == -1 or end == -1:
             raise ValueError(raw.decode(errors="replace")[:250])
         xml = raw[start:end + len(b"</hierarchy>")]
-        return xml, list(ET.fromstring(xml).iter("node"))
+        return xml, ui_nodes(xml)
 
     def screenshot(self, name):
         png = adb("exec-out", "screencap", "-p")
@@ -88,6 +106,12 @@ class Smoke:
         while time.monotonic() < until:
             try:
                 last_xml, nodes = self.snapshot_tree()
+                if any(label(node) == "Pixel Launcher isn't responding" for node in nodes):
+                    close = next((node for node in nodes if node.get("resource-id") == "android:id/aerr_close"), None)
+                    if close is not None:
+                        (self.evidence / f"{name}-launcher-anr.xml").write_bytes(last_xml)
+                        self.tap(close)
+                        continue
                 if deny_again:
                     dialog = next((node for node in nodes if permission_deny(node)), None)
                     if dialog is not None:
@@ -114,8 +138,8 @@ class Smoke:
         raise AssertionError(f"Timed out waiting for {name}. {last_error}")
 
     def tap(self, node):
-        check(node.get("enabled") == "true", f"Disabled target: {label(node)}")
-        x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("bounds", "")))
+        check(node.get("action-enabled", node.get("enabled")) == "true", f"Disabled target: {label(node)}")
+        x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("action-bounds", node.get("bounds", ""))))
         check(x2 > x1 and y2 > y1, "Empty touch bounds")
         shell("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
 
@@ -231,14 +255,14 @@ class Smoke:
         self.click("open-reset-dialog", labeled("Erase data"))
         self.wait_ui("reset-dialog", labeled("Erase your data?"))
         entry, nodes = self.wait_ui("reset-dialog-input", composer)
-        buttons = [node for node in nodes if label(node) == "Erase data"]
-        check(buttons and all(node.get("enabled") == "false" for node in buttons),
+        buttons = [node for node in nodes if label(node) == "Erase data" and node.get("action-enabled") is not None]
+        check(buttons and all(not enabled_action(node) for node in buttons),
               "Erase was enabled without confirmation")
         self.tap(entry)
         shell("input", "text", "incorrect")
         _, nodes = self.wait_ui("wrong-confirmation", lambda n: composer(n) and "incorrect" in label(n))
-        buttons = [node for node in nodes if label(node) == "Erase data"]
-        check(buttons and all(node.get("enabled") == "false" for node in buttons),
+        buttons = [node for node in nodes if label(node) == "Erase data" and node.get("action-enabled") is not None]
+        check(buttons and all(not enabled_action(node) for node in buttons),
               "Erase was enabled with the wrong confirmation")
         self.screenshot("wrong-confirmation")
         self.click("cancel-reset", labeled("Cancel"))
@@ -263,7 +287,7 @@ class Smoke:
         entry, _ = self.wait_ui("confirmed-reset-input", composer)
         self.tap(entry)
         shell("input", "text", "yes")
-        self.click("confirm-erase", lambda n: label(n) == "Erase data" and n.get("enabled") == "true")
+        self.click("confirm-erase", lambda n: label(n) == "Erase data" and enabled_action(n))
         self.chat("chat-after-confirmed-reset")
         app_shell(f"test ! -e {FIXTURE} && test -s {DATABASE} && test -s {KEY_PREFS}")
         check(self.digest(KEY_PREFS) != original_key, "Database passphrase was not regenerated")

@@ -36,6 +36,22 @@ jobs:
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           packages: platform-tools
+      - name: Prepare emulator packages with download retry
+        env:
+          SMOKE_API: ${{ matrix.api }}
+        run: |
+          set -euo pipefail
+          image="system-images;android-$SMOKE_API;google_apis;x86_64"
+          for attempt in 1 2 3; do
+            if timeout 300 sdkmanager --install emulator "$image" &&
+              test -x "$ANDROID_HOME/emulator/emulator" &&
+              test -s "$ANDROID_HOME/system-images/android-$SMOKE_API/google_apis/x86_64/system.img"; then
+              exit 0
+            fi
+            echo "SDK package download attempt $attempt did not finish"
+            sleep 5
+          done
+          exit 1
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' |
