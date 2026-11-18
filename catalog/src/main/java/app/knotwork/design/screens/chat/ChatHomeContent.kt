@@ -582,11 +582,11 @@ private fun ChatHomeEmptyBody(state: ChatHomeViewState, callbacks: ChatHomeCallb
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = stringResource(
-                    R.string.knotwork_chat_home_empty_caption,
-                    state.pipelineName,
-                    state.modelName,
-                ),
+                text = if (state.modelName == null) {
+                    stringResource(R.string.knotwork_chat_home_empty_caption_no_model, state.pipelineName)
+                } else {
+                    stringResource(R.string.knotwork_chat_home_empty_caption, state.pipelineName, state.modelName)
+                },
                 style = KnotworkTextStyles.BodyBase,
                 color = KnotworkTheme.extended.onSurfaceMuted,
             )

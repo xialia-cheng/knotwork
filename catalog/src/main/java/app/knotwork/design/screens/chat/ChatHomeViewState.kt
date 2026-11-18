@@ -265,7 +265,7 @@ class ChatHomeRunCallbacks(
  *
  * @property visualState which of the 9 documented states to render.
  * @property threadTitle text displayed as the TopAppBar title.
- * @property modelName text displayed beneath the title (model picker label).
+ * @property modelName name of the active local model in the empty-chat caption, or `null` when none is active.
  * @property messages chronological message list rendered inside the body
  *   `LazyColumn`. Empty when [visualState] is [ChatHomeVisualState.Empty].
  * @property composerValue current value of the composer text field.
@@ -296,7 +296,7 @@ class ChatHomeRunCallbacks(
 data class ChatHomeViewState(
     val visualState: ChatHomeVisualState,
     val threadTitle: String,
-    val modelName: String,
+    val modelName: String?,
     val messages: List<ChatHomeMessageRow> = emptyList(),
     val composerValue: String = "",
     val composerState: ComposerState = ComposerState.Idle,
