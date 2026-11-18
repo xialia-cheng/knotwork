@@ -1142,6 +1142,7 @@ Only Kotlin files appear inside the generated blocks.
       - `SplashScreen.kt` - Slim mapper. Folds `SplashUiState` into `SplashViewState` (Initializing / Loading / Error) and renders `SplashContent`.
       - `SplashUiState.kt` - Render state of `SplashScreen` (message, progressFraction, isDone, errorMessage).
       - `SplashViewModel.kt` - Hilt ViewModel that subscribes to `AppInitializationUseCase`, folds each `InitProgress` into `SplashUiState`, and exposes `retry()` to re-run the pipeline after a fatal failure.
+    - `SplashExitCoordinator.kt` - Coordinates the system overlay with either a drawn loading mark or completed initialization.
     - `taskmonitor/` - Task monitoring screen (Knotwork-converted; swipe-to-cancel + detail `ModalBottomSheet`).
       - `TaskMonitorScreen.kt` - Slim mapper. Folds `TaskMonitorState` into the catalog `TaskMonitorViewState` (filter chips + rows + optional `TaskMonitorDetail`), hosts the detail bottom sheet, wires `openDetails` / `closeDetails`.
       - `TaskMonitorState.kt` - Task monitor UI state. Adds `detailTaskId: String?` for the bottom-sheet host.

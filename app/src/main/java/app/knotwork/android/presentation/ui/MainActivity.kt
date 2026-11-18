@@ -48,6 +48,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private val splashExitCoordinator = SplashExitCoordinator()
+
     @Inject lateinit var appStateSettings: AppStateSettings
 
     @Inject lateinit var appearanceSettings: AppearanceSettingsRepository
@@ -92,13 +94,20 @@ class MainActivity : ComponentActivity() {
         // Platform splash (Android 12+) — must be installed BEFORE
         // `super.onCreate` so the system swaps the activity-theme splash
         // window for the SplashScreen-managed window before any content
-        // attempts to draw. `Theme.App.Splash` supplies the accent-500
+        // attempts to draw. `Theme.App.Splash` supplies the light or dark
         // background and the brand-mark foreground; the post-splash theme
-        // declared there takes over as soon as the first Compose frame
-        // commits, so the platform splash hides exactly when the in-app
-        // [SplashScreen][app.knotwork.android.presentation.ui.splash.SplashScreen]
-        // composable becomes visible — no blank-frame flash.
-        installSplashScreen()
+        // declared there takes over when the first Compose frame commits.
+        installSplashScreen().setOnExitAnimationListener { splash ->
+            // The platform stage is a blank launch colour, so there is no
+            // platform animation to resume: the loading page weaves the mark
+            // from its first frame (the checklist's "system stage is the same
+            // colour, the loading page weaves the icon from blank for ~1 s").
+            // Restarting the clock here would skip the first stretch of the
+            // weave and make the mark pop in half-drawn.
+            splashExitCoordinator.onPlatformExit {
+                splash.view.postOnAnimation { splash.remove() }
+            }
+        }
         super.onCreate(savedInstanceState)
 
         if (ContextCompat.checkSelfPermission(
@@ -203,6 +212,7 @@ class MainActivity : ComponentActivity() {
                         showOnboarding = !hasCompletedOnboarding,
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
+                        onSplashContentReady = splashExitCoordinator::onContentReady,
                         modifier = Modifier.padding(innerPadding),
                     )
                 }

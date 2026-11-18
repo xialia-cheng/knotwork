@@ -1,8 +1,11 @@
 package app.knotwork.design.screens.chat
 
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Density
@@ -13,6 +16,7 @@ import app.knotwork.design.a11y.LocalKnotworkA11y
 import app.knotwork.design.components.chips.Risk
 import app.knotwork.design.theme.KnotworkTheme
 import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -284,6 +288,43 @@ class ChatHomeContentSnapshotTest {
         snapshot(name = "hitl_destructive_font_scale_2x", dark = false, fontScale = 2f) {
             ChatHomeContent(state = ChatHomePreview.hitlConfirm(risk = Risk.Destructive))
         }
+
+    /**
+     * The cold-start body must draw nothing: a centred progress indicator in the
+     * theme's primary used to land a frame or two after the splash's wordmark
+     * finished, in the same ink-blue family, and a real launch read as a second
+     * mark drawing itself.
+     */
+    @Test
+    fun cold_start_body_draws_no_mark_of_its_own() {
+        composeTestRule.setContent {
+            KnotworkTheme {
+                ChatHomeContent(
+                    state = ChatHomePreview.empty().copy(visualState = ChatHomeVisualState.Loading),
+                )
+            }
+        }
+        assertEquals(0, progressIndicatorCount())
+    }
+
+    /**
+     * Positive control for [cold_start_body_draws_no_mark_of_its_own]: the same
+     * query must find a progress indicator when one is on screen. Without this,
+     * a matcher that silently matches nothing would make the guard above pass
+     * for the wrong reason.
+     */
+    @Test
+    fun the_progress_indicator_query_finds_one_when_it_is_there() {
+        composeTestRule.setContent {
+            KnotworkTheme { CircularProgressIndicator() }
+        }
+        assertEquals(1, progressIndicatorCount())
+    }
+
+    private fun progressIndicatorCount(): Int = composeTestRule
+        .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+        .fetchSemanticsNodes()
+        .size
 
     /**
      * Wraps the content under the standard test rule, pins reduced-motion +

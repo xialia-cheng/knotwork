@@ -57,9 +57,13 @@ import app.knotwork.design.components.chat.ChatRole
 import app.knotwork.design.screens.chat.ChatHomeMessageRow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -208,6 +212,7 @@ constructor(
     }
 
     private var messagesJob: Job? = null
+    private val initialMessages = CompletableDeferred<Unit>()
 
     /**
      * Node type currently executing in the live run, taken from
@@ -451,6 +456,13 @@ constructor(
         console.startObservers()
         observeInstalledModels()
         initializeSession()
+    }
+
+    /** Completes when the first chat body, header and suggestions can be shown together. */
+    internal val initialScreenReady: Deferred<Unit> = viewModelScope.async(start = CoroutineStart.LAZY) {
+        threads.awaitInitialSessions()
+        pipelineBinding.awaitInitialBinding()
+        initialMessages.await()
     }
 
     /** Updates the composer input value. Hoisted to the VM so screen recompositions never own the text. */
@@ -1022,23 +1034,28 @@ constructor(
             if (_state.value.thread.currentSessionId.isNotBlank()) return@launch
             val savedSessionId = appStateSettings.currentChatSessionId.first()
             if (_state.value.thread.currentSessionId.isNotBlank()) return@launch
-            val sessionId = if (savedSessionId.isNullOrBlank()) {
-                val newId = UUID.randomUUID().toString()
-                appStateSettings.setCurrentChatSessionId(newId)
-                chatRepository.saveSession(
-                    ChatSession(
-                        id = newId,
-                        name = defaultNames.newChat(),
-                        updatedAt = System.currentTimeMillis(),
-                    ),
+            val newSession = if (savedSessionId.isNullOrBlank()) {
+                val session = ChatSession(
+                    id = UUID.randomUUID().toString(),
+                    name = defaultNames.newChat(),
+                    updatedAt = System.currentTimeMillis(),
                 )
-                newId
+                appStateSettings.setCurrentChatSessionId(session.id)
+                chatRepository.saveSession(session)
+                session
             } else {
-                savedSessionId
+                null
             }
+            val sessionId = newSession?.id ?: savedSessionId.orEmpty()
             if (_state.value.thread.currentSessionId.isNotBlank()) return@launch
-            _state.update {
-                threads.sessionMetadataRefreshed(it.copy(thread = it.thread.copy(currentSessionId = sessionId)))
+            _state.update { current ->
+                // The message query can return before Room publishes the newly
+                // inserted session to the list observer. Show its known title now.
+                val thread = current.thread.copy(
+                    currentSessionId = sessionId,
+                    title = newSession?.name ?: current.thread.title,
+                )
+                threads.sessionMetadataRefreshed(current.copy(thread = thread))
             }
             observeMessages(sessionId)
             reattach.reattachToRun(sessionId)
@@ -1096,6 +1113,7 @@ constructor(
             // No session to load — settle Loading to Empty so the surface
             // renders the empty-state hero instead of spinning forever.
             rebalanceRestingState()
+            initialMessages.complete(Unit)
             return
         }
         // The thread's previews, each cut once; a new thread starts with none.
@@ -1128,6 +1146,7 @@ constructor(
                     )
                 }
                 rebalanceRestingState()
+                initialMessages.complete(Unit)
                 tokenCounterJob?.cancel()
                 tokenCounterJob = launch {
                     val approx = try {

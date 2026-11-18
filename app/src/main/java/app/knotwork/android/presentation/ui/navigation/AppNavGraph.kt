@@ -1,12 +1,17 @@
 package app.knotwork.android.presentation.ui.navigation
 
 import android.content.Intent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -58,6 +63,7 @@ import app.knotwork.android.presentation.ui.settings.runlimits.RunLimitsScreen
 import app.knotwork.android.presentation.ui.settings.usage.UsageTelemetryScreen
 import app.knotwork.android.presentation.ui.skills.SkillLibraryScreen
 import app.knotwork.android.presentation.ui.splash.SplashScreen
+import app.knotwork.android.presentation.ui.splash.SplashViewModel
 import app.knotwork.android.presentation.ui.taskmonitor.TaskMonitorScreen
 import app.knotwork.android.presentation.ui.taskmonitor.TaskMonitorViewModel
 import app.knotwork.android.presentation.ui.tools.AllowedDomainsScreen
@@ -114,6 +120,7 @@ import app.knotwork.design.screens.settings.SettingsCategoryId
  *        open-thread / new-chat request and the `CHAT_TAB` composable drains it
  *        into `selectThread` / `createNewSessionWithPipeline`.
  * @param modifier Inset-padding passthrough from [AppShellScaffold].
+ * @param onSplashContentReady Releases the platform overlay when content or navigation is ready.
  */
 @Composable
 fun AppNavGraph(
@@ -122,15 +129,48 @@ fun AppNavGraph(
     pendingDeepLink: Intent?,
     chatEntryRequestRelay: ChatEntryRequestRelay,
     modifier: Modifier = Modifier,
+    onSplashContentReady: () -> Unit = {},
 ) {
     NavHost(
         navController = navController,
         startDestination = NavRoutes.SPLASH,
         modifier = modifier.fillMaxSize(),
     ) {
-        composable(NavRoutes.SPLASH) {
+        // Cut directly to the destination once its first screen is ready.
+        composable(
+            route = NavRoutes.SPLASH,
+            exitTransition = {
+                val target = targetState.destination.route
+                if (target == NavRoutes.CHAT_TAB || target == NavRoutes.ONBOARDING) {
+                    ExitTransition.None
+                } else {
+                    null
+                }
+            },
+        ) { entry ->
+            val splashViewModel: SplashViewModel = hiltViewModel(entry)
+            val startup by splashViewModel.uiState.collectAsStateWithLifecycle()
+            // An explicit launch link chooses its own chat. Leave that selection to the
+            // existing navigation relay instead of waiting on the last-used conversation.
+            val prepareChat = !showOnboarding && pendingDeepLink == null
+            val chatViewModel = if (startup.isDone && prepareChat) {
+                graphChatHomeViewModel(navController, entry)
+            } else {
+                null
+            }
+            val chatReady by produceState(false, chatViewModel) {
+                value = false
+                chatViewModel?.let {
+                    it.initialScreenReady.await()
+                    value = true
+                }
+            }
             SplashScreen(
+                viewModel = splashViewModel,
+                destinationReady = !prepareChat || chatReady,
+                onSplashContentReady = onSplashContentReady,
                 onInitialized = {
+                    onSplashContentReady()
                     val next = if (showOnboarding) NavRoutes.ONBOARDING else NavRoutes.CHAT_TAB
                     navController.navigate(next) {
                         popUpTo(NavRoutes.SPLASH) { inclusive = true }
@@ -149,7 +189,12 @@ fun AppNavGraph(
             )
         }
 
-        composable(NavRoutes.ONBOARDING) {
+        composable(
+            route = NavRoutes.ONBOARDING,
+            enterTransition = {
+                if (initialState.destination.route == NavRoutes.SPLASH) EnterTransition.None else null
+            },
+        ) {
             OnboardingScreen(
                 onCompleted = {
                     navController.navigate(NavRoutes.CHAT_TAB) {
@@ -171,8 +216,18 @@ fun AppNavGraph(
         // app, exactly like a normal launch. Deep links are NOT registered as
         // `navDeepLink`s (auto-handling raced the splash and produced a doubled /
         // blank chat); MainActivity routes them via DeepLinkRouter.
-        composable(route = NavRoutes.CHAT_TAB) {
-            val chatHomeViewModel: ChatHomeViewModel = hiltViewModel()
+        composable(
+            route = NavRoutes.CHAT_TAB,
+            // Cut only when the loading page hands over. Returning null for every
+            // other source keeps the NavHost's own transition — and because the
+            // destination defaults its popEnterTransition to enterTransition, an
+            // unconditional None here would also have turned ordinary pops back
+            // into the home into a cut.
+            enterTransition = {
+                if (initialState.destination.route == NavRoutes.SPLASH) EnterTransition.None else null
+            },
+        ) { entry ->
+            val chatHomeViewModel = graphChatHomeViewModel(navController, entry)
             // Drain entry requests into the one chat home. A request may be
             // buffered (CONFLATED) from before this collector mounted on a cold
             // launch, so it is delivered as soon as we land here.
@@ -628,4 +683,13 @@ private fun settingsCategoryRoute(category: SettingsCategoryId): String = when (
     SettingsCategoryId.Background -> NavRoutes.SETTINGS_BACKGROUND
     SettingsCategoryId.Privacy -> NavRoutes.SETTINGS_PRIVACY
     SettingsCategoryId.About -> NavRoutes.SETTINGS_ABOUT
+}
+
+/** Shares the chat instance prepared by splash with the chat destination. */
+@Composable
+private fun graphChatHomeViewModel(navController: NavHostController, entry: NavBackStackEntry): ChatHomeViewModel {
+    val graphEntry = remember(navController, entry) {
+        navController.getBackStackEntry(navController.graph.id)
+    }
+    return hiltViewModel(graphEntry)
 }
