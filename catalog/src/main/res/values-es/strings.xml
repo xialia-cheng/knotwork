@@ -647,6 +647,7 @@
     <string name="knotwork_chat_home_title_debug_hint">Toca tres veces para abrir el selector de estado de depuración</string>
     <string name="knotwork_chat_home_empty_title">Nuevo chat</string>
     <string name="knotwork_chat_home_empty_caption">Pipeline · %1$s · %2$s (activo)</string>
+    <string name="knotwork_chat_home_empty_caption_no_model">Pipeline · %1$s · Sin modelo local activo</string>
     <string name="knotwork_chat_home_empty_card_uses">usa · %1$s</string>
     <string name="knotwork_chat_home_drawer_sessions_header">SESIONES</string>
     <string name="knotwork_chat_home_drawer_new_thread">Nuevo chat</string>

@@ -99,7 +99,8 @@ fun ChatHomeScreenState.toViewState(
 ): ChatHomeViewState {
     val untitled = resolveText(UiText(R.string.chat_untitled))
     val threadTitle = thread.title.ifBlank { untitled }
-    val modelName = model.name ?: resolveText(UiText(R.string.chat_model_placeholder))
+    val modelName = model.name
+    val modelLabel = modelName ?: resolveText(UiText(R.string.chat_model_placeholder))
     val composerValue = composer.value
     val resolvedPipelineName = pipelineName ?: resolveText(UiText(R.string.chat_pipeline_placeholder))
     val composerAttachment = composer.attachment?.toCatalogComposerAttachment()
@@ -165,7 +166,7 @@ fun ChatHomeScreenState.toViewState(
             threadTitle = threadTitle,
             modelName = modelName,
             messages =
-            visibleMessages + (pending.tool?.let { liveHitlRow(modelName, it) } ?: hitlRow(modelName, visual.risk)),
+            visibleMessages + (pending.tool?.let { liveHitlRow(modelLabel, it) } ?: hitlRow(modelLabel, visual.risk)),
             composerValue = composerValue,
             pendingTypedConfirm = composer.typedConfirm,
             pipelineName = resolvedPipelineName,
@@ -181,8 +182,8 @@ fun ChatHomeScreenState.toViewState(
             threadTitle = threadTitle,
             modelName = modelName,
             messages = visibleMessages + (
-                pending.clarification?.let { liveClarificationRow(modelName, it) }
-                    ?: clarificationRow(modelName)
+                pending.clarification?.let { liveClarificationRow(modelLabel, it) }
+                    ?: clarificationRow(modelLabel)
                 ),
             composerValue = composerValue,
             pipelineName = resolvedPipelineName,
@@ -199,9 +200,9 @@ fun ChatHomeScreenState.toViewState(
             modelName = modelName,
             messages = visibleMessages + (
                 pending.interrupted?.let {
-                    liveInterruptedRow(modelName, it, resolveText(UiText(R.string.chat_interrupted_unknown_step)))
+                    liveInterruptedRow(modelLabel, it, resolveText(UiText(R.string.chat_interrupted_unknown_step)))
                 }
-                    ?: interruptedRow(modelName)
+                    ?: interruptedRow(modelLabel)
                 ),
             composerValue = composerValue,
             pipelineName = resolvedPipelineName,
@@ -221,7 +222,7 @@ fun ChatHomeScreenState.toViewState(
             // pending snapshot behind it; a pause card without one would offer
             // Continue and Stop buttons wired to a run that does not exist.
             messages = visibleMessages + listOfNotNull(
-                pending.ceiling?.let { ceilingPauseRow(modelName, it, resolveText) },
+                pending.ceiling?.let { ceilingPauseRow(modelLabel, it, resolveText) },
             ),
             composerValue = composerValue,
             pipelineName = resolvedPipelineName,
