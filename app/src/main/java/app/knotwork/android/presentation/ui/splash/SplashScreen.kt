@@ -18,7 +18,6 @@ import app.knotwork.design.screens.splash.SplashCallbacks
 import app.knotwork.design.screens.splash.SplashContent
 import app.knotwork.design.screens.splash.SplashResetDialogState
 import app.knotwork.design.screens.splash.SplashViewState
-import kotlinx.coroutines.delay
 import app.knotwork.design.R as DesignR
 
 /**
@@ -34,10 +33,11 @@ import app.knotwork.design.R as DesignR
  * the screen renders the dedicated data-locked recovery surface instead of
  * the generic error layout: explanation + Retry + typed-confirm full reset.
  *
- * @param onInitialized Invoked once when the use case reaches `InitStage.Done`.
+ * @param onInitialized Invoked when initialization and the destination are ready.
  * @param viewModel Hilt-injected [SplashViewModel].
  * @param modifier Optional layout modifier.
  * @param onSplashContentReady Signals that the system overlay can hand off to this screen.
+ * @param destinationReady Whether the destination can show its first screen.
  */
 @Composable
 fun SplashScreen(
@@ -45,25 +45,14 @@ fun SplashScreen(
     modifier: Modifier = Modifier,
     viewModel: SplashViewModel = hiltViewModel(),
     onSplashContentReady: () -> Unit = {},
+    destinationReady: Boolean = true,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // The loading page leaves only once the wordmark has finished weaving *and*
-    // initialization is done. Navigating on "done" alone cut the animation
-    // short whenever the app started faster than the weave: the record showed
-    // the mark reaching its last stroke and the chat home replacing it in the
-    // same fifth of a second. The wait is bounded by the weave itself (under a
-    // second) and never runs when loading is slower than that.
     var weaveFinished by remember { mutableStateOf(false) }
-    LaunchedEffect(uiState.isDone, weaveFinished) {
-        if (uiState.isDone && weaveFinished) {
-            // The record showed the last stroke and the chat home in the same
-            // fifth of a second: completing the weave is not the same as the user
-            // seeing it complete. A short, fixed dwell makes the finished mark
-            // readable without turning the splash into a wait.
-            delay(SPLASH_COMPLETE_DWELL_MS)
-            onInitialized()
-        }
+    val canNavigate = uiState.isDone && destinationReady && weaveFinished
+    LaunchedEffect(canNavigate) {
+        if (canNavigate) onInitialized()
     }
 
     val startingMessage = stringResource(R.string.splash_starting)
@@ -83,7 +72,11 @@ fun SplashScreen(
     val resources = LocalResources.current
     val viewState = uiState.toViewState(
         defaultMessage = startingMessage,
-        stageText = { stage -> resources.getString(stageLabel(stage)) },
+        stageText = { stage ->
+            resources.getString(
+                if (stage is InitStage.Done && !destinationReady) R.string.splash_stage_chats else stageLabel(stage),
+            )
+        },
         dataLockedTexts = dataLockedTexts,
     )
     val appName = stringResource(R.string.app_name)
@@ -194,6 +187,3 @@ internal fun stageLabel(stage: InitStage): Int = when (stage) {
     InitStage.Done -> R.string.splash_stage_ready
     is InitStage.Failed -> stageLabel(stage.failedStage)
 }
-
-/** How long the finished mark stays on screen before the home replaces it. */
-private const val SPLASH_COMPLETE_DWELL_MS = 350L

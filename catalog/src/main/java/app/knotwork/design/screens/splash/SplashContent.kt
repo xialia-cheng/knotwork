@@ -213,6 +213,7 @@ private fun SplashThread(
     val resources = LocalResources.current
     val view = LocalView.current
     val readyRegistered = remember(view) { AtomicBoolean(false) }
+    val finishRegistered = remember(view) { AtomicBoolean(false) }
     val systemScale = Settings.Global.getFloat(
         context.contentResolver,
         Settings.Global.ANIMATOR_DURATION_SCALE,
@@ -245,28 +246,27 @@ private fun SplashThread(
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
     LaunchedEffect(reducedMotion, systemScale, painterResult) {
-        if (painterResult == null) return@LaunchedEffect
+        if (painter == null) return@LaunchedEffect
         if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
-            onWeaveFinished()
         } else {
             // The weave always runs in full, from the first stroke. A launch that
             // spent seconds on the bare launch colour is followed by the real
             // animation, not by a mark that pops in complete or from half-way.
             progress.snapTo(0f)
             progress.animateTo(1f, tween(THREAD_DURATION_MS, easing = LinearEasing))
-            onWeaveFinished()
         }
     }
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
         if (painter != null) {
-            painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
-            // Hand the platform overlay back on the first committed frame of
-            // this surface, whether or not a platform clock was handed over.
-            // The platform stage is a bare launch colour now, so the clock is
-            // null on every production launch; gating readiness on it here left
-            // the overlay up until initialization finished.
+            val drawnProgress = progress.value
+            painter.draw(this, drawnProgress, if (dark) ink.toArgb() else null)
             notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            // Let navigation replace the splash after the finished artwork is
+            // submitted, without reserving a fixed display time for it.
+            if (drawnProgress >= 1f) {
+                notifyWhenFrameCommitted(view, finishRegistered, onWeaveFinished)
+            }
         } else if (fallback != null) {
             val markSize = (size.width * MARK_FRACTION).toInt()
             val inset = ((size.width - markSize) / 2f).toInt()
@@ -277,6 +277,7 @@ private fun SplashThread(
                 colorFilter = if (dark) ColorFilter.tint(ink) else null,
             )
             notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            notifyWhenFrameCommitted(view, finishRegistered, onWeaveFinished)
         }
     }
 }
