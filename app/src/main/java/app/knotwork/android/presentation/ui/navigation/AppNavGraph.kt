@@ -161,7 +161,7 @@ fun AppNavGraph(
             val chatReady by produceState(false, chatViewModel) {
                 value = false
                 chatViewModel?.let {
-                    it.awaitInitialScreen()
+                    it.initialScreenReady.await()
                     value = true
                 }
             }

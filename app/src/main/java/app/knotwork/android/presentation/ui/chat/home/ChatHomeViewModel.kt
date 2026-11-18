@@ -59,8 +59,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -455,8 +458,8 @@ constructor(
         initializeSession()
     }
 
-    /** Waits for the first chat body and its header and suggestions to be ready to show together. */
-    internal suspend fun awaitInitialScreen() {
+    /** Completes when the first chat body, header and suggestions can be shown together. */
+    internal val initialScreenReady: Deferred<Unit> = viewModelScope.async(start = CoroutineStart.LAZY) {
         threads.awaitInitialSessions()
         pipelineBinding.awaitInitialBinding()
         initialMessages.await()

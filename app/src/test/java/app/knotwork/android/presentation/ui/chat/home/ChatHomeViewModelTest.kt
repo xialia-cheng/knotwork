@@ -395,7 +395,7 @@ class ChatHomeViewModelTest {
 
         viewModel = createViewModel()
         val firstScreen = async {
-            viewModel.awaitInitialScreen()
+            viewModel.initialScreenReady.await()
             viewModel.state.value
         }
 
@@ -421,7 +421,7 @@ class ChatHomeViewModelTest {
         val messages = MutableSharedFlow<List<ChatMessage>>(replay = 1)
         every { chatRepository.getDisplayMessagesForSession(any()) } returns messages
         viewModel = createViewModel()
-        val firstScreen = async { viewModel.awaitInitialScreen() }
+        val firstScreen = async { viewModel.initialScreenReady.await() }
         runCurrent()
 
         viewModel.forceState(ChatHomeUiState.Generating())
