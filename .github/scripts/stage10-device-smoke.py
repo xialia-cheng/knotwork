@@ -57,7 +57,9 @@ def composer(node):
 
 
 def permission_deny(node):
-    return node.get("resource-id", "").endswith("/permission_deny_button")
+    return node.get("resource-id", "").endswith((
+        "/permission_deny_button", "/permission_deny_and_dont_ask_again_button",
+    ))
 
 
 class Smoke:
@@ -79,7 +81,7 @@ class Smoke:
         check(png.startswith(b"\x89PNG"), "Invalid screenshot")
         (self.evidence / f"{name}.png").write_bytes(png)
 
-    def wait_ui(self, name, predicate, deny_again=False, timeout=60):
+    def wait_ui(self, name, predicate, deny_again=False, scroll_once=False, timeout=60):
         until = time.monotonic() + timeout
         last_xml = b""
         last_error = ""
@@ -89,12 +91,21 @@ class Smoke:
                 if deny_again:
                     dialog = next((node for node in nodes if permission_deny(node)), None)
                     if dialog is not None:
+                        (self.evidence / f"{name}-repeated-permission.xml").write_bytes(last_xml)
                         self.tap(dialog)
                         continue
                 match = next((node for node in nodes if predicate(node)), None)
                 if match is not None:
                     (self.evidence / f"{name}.xml").write_bytes(last_xml)
                     return match, nodes
+                if scroll_once:
+                    area = next((node for node in nodes if node.get("scrollable") == "true"), None)
+                    if area is not None:
+                        x1, y1, x2, y2 = map(int, re.findall(r"\d+", area.get("bounds", "")))
+                        x = str((x1 + x2) // 2)
+                        step = (y2 - y1) // 4
+                        shell("input", "swipe", x, str(y2 - step), x, str(y1 + step), "350")
+                        scroll_once = False
             except (RuntimeError, ValueError, ET.ParseError, subprocess.TimeoutExpired) as error:
                 last_error = str(error)
             time.sleep(0.5)
@@ -108,8 +119,8 @@ class Smoke:
         check(x2 > x1 and y2 > y1, "Empty touch bounds")
         shell("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
 
-    def click(self, name, predicate):
-        node, _ = self.wait_ui(name, predicate)
+    def click(self, name, predicate, scroll_once=False):
+        node, _ = self.wait_ui(name, predicate, scroll_once=scroll_once)
         self.tap(node)
 
     def launch(self, name, warm=False):
@@ -154,8 +165,18 @@ class Smoke:
               "The blocked send cleared the draft")
         check(any("Settings" in label(n) and "Models" in label(n) and "No active model." in label(n)
                   for n in nodes), "No-model error does not explain where to install a model")
-        shell("input", "keyevent", "KEYCODE_BACK")
         return "Send gives the Settings → Models route and preserves the draft"
+
+    def models_entry(self):
+        self.click("more-tab", labeled("More"))
+        self.click("models-entry", labeled("Models"), scroll_once=True)
+        self.wait_ui("empty-models-list", lambda n: label(n) in ("No model installed", "No models installed"),
+                     scroll_once=True)
+        self.screenshot("empty-models-list")
+        shell("input", "keyevent", "KEYCODE_BACK")
+        self.click("back-to-chat-tab", labeled("Chat"))
+        self.chat("chat-after-models")
+        return "Opened the Models screen with an actual empty model list and returned to chat"
 
     def warm_start(self):
         original = shell("pidof", PKG)
@@ -190,6 +211,10 @@ class Smoke:
         self.wait_ui(name, labeled(LOCKED_TEXT), deny_again=True)
         self.screenshot(name)
 
+    def unavailable_key_failures(self):
+        log = adb("logcat", "-d", "-s", "EncryptedDbPassphraseProvider:E").decode(errors="replace")
+        return log.count("DB passphrase unavailable (PASSPHRASE_MISSING)")
+
     def locked_recovery(self):
         self.stop()
         app_shell(f"mkdir -p files/agent_workspace && printf stage10-fixture > {FIXTURE}")
@@ -199,8 +224,10 @@ class Smoke:
         app_shell(f"test -s {DATABASE} && test -s {KEY_PREFS} && mv {KEY_PREFS} {HELD_KEY}")
         self.launch("database-key-missing")
         self.locked_ui("real-key-recovery")
+        count_before_retry = self.unavailable_key_failures()
         self.click("locked-retry", labeled("Retry"))
         self.locked_ui("locked-after-retry")
+        check(self.unavailable_key_failures() > count_before_retry, "Retry did not cause another missing-key read")
         self.click("open-reset-dialog", labeled("Erase data"))
         self.wait_ui("reset-dialog", labeled("Erase your data?"))
         entry, nodes = self.wait_ui("reset-dialog-input", composer)
@@ -279,6 +306,7 @@ def main():
     try:
         smoke.run("denied_notifications_and_no_model_onboarding", smoke.denied_first_launch)
         smoke.run("first_task_without_a_model", smoke.no_local_model)
+        smoke.run("reach_model_install_screen", smoke.models_entry)
         smoke.run("warm_start", smoke.warm_start)
         smoke.run("generic_initialization_retry", smoke.generic_retry)
         smoke.run("confirmed_database_reset", smoke.locked_recovery)
