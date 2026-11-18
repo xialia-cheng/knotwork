@@ -4,7 +4,9 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -31,24 +33,26 @@ import app.knotwork.design.R as DesignR
  * the screen renders the dedicated data-locked recovery surface instead of
  * the generic error layout: explanation + Retry + typed-confirm full reset.
  *
- * @param onInitialized Invoked once when the use case reaches `InitStage.Done`.
+ * @param onInitialized Invoked when initialization and the destination are ready.
  * @param viewModel Hilt-injected [SplashViewModel].
  * @param modifier Optional layout modifier.
- * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
  * @param onSplashContentReady Signals that the system overlay can hand off to this screen.
+ * @param destinationReady Whether the destination can show its first screen.
  */
 @Composable
 fun SplashScreen(
     onInitialized: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SplashViewModel = hiltViewModel(),
-    splashAnimationStartMillis: Long? = null,
     onSplashContentReady: () -> Unit = {},
+    destinationReady: Boolean = true,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.isDone) {
-        if (uiState.isDone) onInitialized()
+    var weaveFinished by remember { mutableStateOf(false) }
+    val canNavigate = uiState.isDone && destinationReady && weaveFinished
+    LaunchedEffect(canNavigate) {
+        if (canNavigate) onInitialized()
     }
 
     val startingMessage = stringResource(R.string.splash_starting)
@@ -68,7 +72,11 @@ fun SplashScreen(
     val resources = LocalResources.current
     val viewState = uiState.toViewState(
         defaultMessage = startingMessage,
-        stageText = { stage -> resources.getString(stageLabel(stage)) },
+        stageText = { stage ->
+            resources.getString(
+                if (stage is InitStage.Done && !destinationReady) R.string.splash_stage_chats else stageLabel(stage),
+            )
+        },
         dataLockedTexts = dataLockedTexts,
     )
     val appName = stringResource(R.string.app_name)
@@ -88,9 +96,8 @@ fun SplashScreen(
         modifier = modifier,
         retryLabel = retryLabel,
         callbacks = callbacks,
-        splashAnimationStartMillis = splashAnimationStartMillis,
         onMarkReady = onSplashContentReady,
-        platformUnderlay = true,
+        onWeaveFinished = { weaveFinished = true },
     )
 }
 

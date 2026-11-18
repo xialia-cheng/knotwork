@@ -24,8 +24,10 @@ import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -67,7 +69,14 @@ private val SplashMaxWidth = 360.dp
 // The adjusted size still needs handoff verification on both devices.
 private val DefaultPlatformSplashIconSize = 288.dp
 
-internal const val THREAD_DURATION_MS = 1000
+/**
+ * How long the whole weave takes. The checklist says "about one second"; the
+ * owner asked for a faster reveal after seeing it on a device, so the strokes
+ * are the same and only the clock is shorter. Keep this the single place that
+ * decides the duration.
+ */
+internal const val THREAD_DURATION_MS = 850
+
 private const val PROGRESS_TRACK_ALPHA = 0.2f
 private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
 
@@ -83,9 +92,7 @@ private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
  * @param state render state — drives loading vs. error layout.
  * @param modifier optional layout modifier applied to the root box.
  * @param callbacks one-shot callback bundle (Retry).
- * @param splashAnimationStartMillis Platform icon animation start time, in epoch milliseconds.
  * @param onMarkReady Called after a frame with known platform timing is committed.
- * @param platformUnderlay Draws the original mark underneath the platform splash until timing is known.
  */
 @Composable
 fun SplashContent(
@@ -94,11 +101,18 @@ fun SplashContent(
     modifier: Modifier = Modifier,
     retryLabel: String = stringResource(R.string.knotwork_splash_retry),
     callbacks: SplashCallbacks = noopSplashCallbacks(),
-    splashAnimationStartMillis: Long? = null,
     onMarkReady: () -> Unit = {},
-    platformUnderlay: Boolean = false,
+    onWeaveFinished: () -> Unit = {},
 ) {
-    val starting = state is SplashViewState.Initializing || state is SplashViewState.Loading
+    // Pins the starting layout once its weave has finished, so a state change
+    // that lands after the animation (initialization failing right after the
+    // last stroke, most likely) cannot switch to the compact layout and start a
+    // second weave from zero. Only the starting branch may set this: letting the
+    // compact branch set it as well would jump the other way and weave twice.
+    var weaveDone by remember { mutableStateOf(false) }
+    val starting = weaveDone ||
+        state is SplashViewState.Initializing ||
+        state is SplashViewState.Loading
     val startupInk = colorResource(R.color.brand_startup_ink)
     BoxWithConstraints(
         modifier = modifier
@@ -115,10 +129,12 @@ fun SplashContent(
                 maxHeight * MARK_MAX_HEIGHT_FRACTION,
             )
             SplashThread(
-                splashAnimationStartMillis,
                 Modifier.size(markSize).testTag("splash_loading_mark"),
                 onMarkReady,
-                platformUnderlay,
+                onWeaveFinished = {
+                    weaveDone = true
+                    onWeaveFinished()
+                },
             )
             Column(
                 modifier = Modifier
@@ -141,10 +157,9 @@ fun SplashContent(
                 verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp6),
             ) {
                 SplashThread(
-                    splashAnimationStartMillis,
                     Modifier.size(KnotworkLogoSize.Lg.size),
                     onMarkReady,
-                    platformUnderlay,
+                    onWeaveFinished = onWeaveFinished,
                 )
                 SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
@@ -189,16 +204,16 @@ private fun SplashDetails(
 /** Renders the original artwork mask without delaying initialization. */
 @Composable
 private fun SplashThread(
-    splashAnimationStartMillis: Long?,
     modifier: Modifier = Modifier,
     onMarkReady: () -> Unit = {},
-    platformUnderlay: Boolean = false,
+    onWeaveFinished: () -> Unit = {},
 ) {
     val reducedMotion = KnotworkTheme.a11y.reducedMotion()
     val context = LocalContext.current
     val resources = LocalResources.current
     val view = LocalView.current
-    val readyRegistered = remember(view, splashAnimationStartMillis) { AtomicBoolean(false) }
+    val readyRegistered = remember(view) { AtomicBoolean(false) }
+    val finishRegistered = remember(view) { AtomicBoolean(false) }
     val systemScale = Settings.Global.getFloat(
         context.contentResolver,
         Settings.Global.ANIMATOR_DURATION_SCALE,
@@ -214,37 +229,44 @@ private fun SplashThread(
             Result.failure(error)
         }
     }
-    val progress = remember(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
-        val initial = if (reducedMotion) {
-            1f
-        } else {
-            splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale).toFloat() /
-                THREAD_DURATION_MS
-        }
-        Animatable(initial)
+    // Keyed only on the things that legitimately restart the animation. Keying it
+    // on the palette load, as it used to be, rebuilt the Animatable at progress
+    // 0 the moment the palette arrived: the static fallback below had already
+    // shown the finished mark, so the user saw "complete mark → one blank frame
+    // → weave restarts".
+    val progress = remember(reducedMotion, systemScale) {
+        Animatable(if (reducedMotion || systemScale <= 0f) 1f else 0f)
     }
     val painter = painterResult?.getOrNull()
-    // Android can briefly transfer its splash icon surface after the activity's
-    // first frame. Keep the original artwork underneath while the shader loads.
-    val useFallback = painter == null || (platformUnderlay && splashAnimationStartMillis == null)
+    // The static artwork is a failure fallback only. Drawing it while the
+    // palette is still loading is what produced the finished mark before the
+    // weave had run a single frame.
+    val useFallback = painterResult?.isFailure == true
     val fallback = if (useFallback) ImageBitmap.imageResource(R.drawable.brand_mark) else null
     val dark = isSystemInDarkTheme()
     val ink = colorResource(R.color.brand_startup_ink)
-    LaunchedEffect(reducedMotion, splashAnimationStartMillis, systemScale, painterResult) {
-        if (painterResult == null) return@LaunchedEffect
+    LaunchedEffect(reducedMotion, systemScale, painterResult) {
+        if (painter == null) return@LaunchedEffect
         if (reducedMotion || systemScale <= 0f) {
             progress.snapTo(1f)
         } else {
-            val elapsed = splashThreadElapsed(splashAnimationStartMillis, System.currentTimeMillis(), systemScale)
-            progress.snapTo(elapsed.toFloat() / THREAD_DURATION_MS)
-            val remaining = THREAD_DURATION_MS - elapsed.toInt()
-            if (remaining > 0) progress.animateTo(1f, tween(remaining, easing = LinearEasing))
+            // The weave always runs in full, from the first stroke. A launch that
+            // spent seconds on the bare launch colour is followed by the real
+            // animation, not by a mark that pops in complete or from half-way.
+            progress.snapTo(0f)
+            progress.animateTo(1f, tween(THREAD_DURATION_MS, easing = LinearEasing))
         }
     }
     Canvas(modifier.semantics { strokePainterReady = painter != null }) {
-        if (painter != null && !useFallback) {
-            painter.draw(this, progress.value, if (dark) ink.toArgb() else null)
-            if (splashAnimationStartMillis != null) notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+        if (painter != null) {
+            val drawnProgress = progress.value
+            painter.draw(this, drawnProgress, if (dark) ink.toArgb() else null)
+            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            // Let navigation replace the splash after the finished artwork is
+            // submitted, without reserving a fixed display time for it.
+            if (drawnProgress >= 1f) {
+                notifyWhenFrameCommitted(view, finishRegistered, onWeaveFinished)
+            }
         } else if (fallback != null) {
             val markSize = (size.width * MARK_FRACTION).toInt()
             val inset = ((size.width - markSize) / 2f).toInt()
@@ -254,9 +276,8 @@ private fun SplashThread(
                 dstSize = IntSize(markSize, markSize),
                 colorFilter = if (dark) ColorFilter.tint(ink) else null,
             )
-            if (painterResult?.isFailure == true && splashAnimationStartMillis != null) {
-                notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
-            }
+            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            notifyWhenFrameCommitted(view, finishRegistered, onWeaveFinished)
         }
     }
 }
@@ -272,14 +293,6 @@ private fun notifyWhenFrameCommitted(view: View, registered: AtomicBoolean, onRe
     } else {
         view.post { onReady() }
     }
-}
-
-/** A static platform icon is complete; standalone previews start from zero. */
-internal fun splashThreadElapsed(startMillis: Long?, nowMillis: Long, scale: Float = 1f): Long = when {
-    scale <= 0f -> THREAD_DURATION_MS.toLong()
-    startMillis == null -> 0L // Standalone catalog previews have no platform splash.
-    startMillis <= 0L -> THREAD_DURATION_MS.toLong()
-    else -> ((nowMillis - startMillis).coerceAtLeast(0) / scale).toLong().coerceAtMost(THREAD_DURATION_MS.toLong())
 }
 
 @Composable

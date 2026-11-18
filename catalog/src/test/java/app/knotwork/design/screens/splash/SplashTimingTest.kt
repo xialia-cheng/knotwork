@@ -6,20 +6,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.ui.MotionDurationScale
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Verifies platform timing conversion and Compose animation scaling at supported system speeds. */
+/** Verifies Compose animation scaling at the system speeds the app supports. */
 class SplashTimingTest {
-    @Test
-    fun platformElapsedUsesWallTimeDividedByDurationScale() {
-        assertEquals(400L, splashThreadElapsed(1_000L, 1_200L, .5f))
-        assertEquals(400L, splashThreadElapsed(1_000L, 1_400L, 1f))
-        assertEquals(400L, splashThreadElapsed(1_000L, 1_800L, 2f))
-        assertEquals(1_000L, splashThreadElapsed(1_000L, 1_200L, 0f))
-    }
-
     @Test
     fun composeScalesOnlyTheRemainingTimelineOnce() {
         for (factor in listOf(0f, .5f, 1f, 2f)) {

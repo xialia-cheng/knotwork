@@ -42,7 +42,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -163,7 +163,14 @@ fun ChatHomeContent(
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             snackbarHost = snackbarHost,
-            containerColor = MaterialTheme.colorScheme.surface,
+            // The cold-start body wears the splash's own background: the two are
+            // one continuous surface across the hand-off, and a cool near-white
+            // after the warm startup cream read as a step in the colour.
+            containerColor = if (state.visualState == ChatHomeVisualState.Loading) {
+                colorResource(R.color.brand_startup_background)
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
             topBar = {
                 app.knotwork.design.components.topbar.KnotworkTopAppBarShell {
                     ChatHomeTopBar(state = state, callbacks = callbacks)
@@ -522,10 +529,15 @@ private fun ChatHomeBody(
 }
 
 /**
- * Cold-start body — a centred [CircularProgressIndicator] on the chat
- * surface. Renders before the chat repository delivers its first snapshot
- * so the user never sees the [ChatHomeEmptyBody] hero flash for a frame
- * on every app launch.
+ * Cold-start body: the bare chat surface, deliberately drawing nothing.
+ *
+ * It used to centre a CircularProgressIndicator in the theme's primary — an
+ * ink-blue arc a few dozen pixels wide. On a cold start that arc lands right
+ * after the splash's wordmark completes, in the same colour family, and the
+ * record of a real launch read as "the logo drew itself again and got cut
+ * off". The splash already covers this wait, and the surface it leaves behind is
+ * the same one this body paints (see the container colour above), so the only
+ * change at the hand-off is that the first snapshot arrives a frame or two later.
  */
 @Composable
 private fun ChatHomeLoadingBody(padding: PaddingValues) {
@@ -533,10 +545,7 @@ private fun ChatHomeLoadingBody(padding: PaddingValues) {
         modifier = Modifier
             .fillMaxSize()
             .padding(padding),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-    }
+    )
 }
 
 /**

@@ -1,10 +1,12 @@
 """Offline clipping experiment; generated resources are not yet device validated."""
+import os
 from pathlib import Path
 import re
 from PIL import Image
 import numpy as np
 
 root = Path(__file__).resolve().parents[2]
+out_dir = Path(os.environ.get('AVD_OUT_DIR') or (root / 'build' / 'pr6-avd'))
 a = np.asarray(Image.open(root / 'catalog/src/main/res/drawable-nodpi/brand_mark.png').convert('RGBA'))[:, :, 3] >= 128
 height, width = a.shape
 padded = np.pad(a, 1, constant_values=False)
@@ -57,7 +59,7 @@ print('clip contour chars', len(clip), 'contours', len(paths))
 if len(clip) > 32000:
     raise ValueError('clip path exceeds Android string pool limit')
 for folder in ('drawable', 'drawable-night'):
-    source = (root / 'app/src/main/res' / folder / 'brand_startup_mark_animated.xml').read_text()
+    source = (out_dir / folder / 'brand_startup_mark_animated.xml').read_text()
     if '<clip-path' in source or 'android:strokeWidth="0.0301"' not in source:
         raise ValueError('run export_outline.py to generate clean source before seam postprocessing')
     source = source.replace('android:strokeWidth="0.0301"', 'android:strokeWidth="0.2"')
@@ -66,6 +68,6 @@ for folder in ('drawable', 'drawable-night'):
                             '            <group>\n'
                             f'                <clip-path android:pathData="{clip}"/>')
     source = source.replace('        </vector>', '            </group>\n        </vector>')
-    out = root / 'app/src/main/res' / folder / 'brand_startup_mark_animated.xml'
+    out = out_dir / folder / 'brand_startup_mark_animated.xml'
     out.write_text(source)
     print(folder, 'clip_contours', len(paths), 'bytes', out.stat().st_size)
