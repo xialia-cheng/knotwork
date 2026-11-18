@@ -193,14 +193,17 @@ class Smoke:
 
     def models_entry(self):
         self.click("more-tab", labeled("More"))
-        self.click("models-entry", labeled("Models"), scroll_once=True)
-        self.wait_ui("empty-models-list", lambda n: label(n) in ("No model installed", "No models installed"),
-                     scroll_once=True)
+        self.click("settings-from-more", labeled("Settings"), scroll_once=True)
+        self.click("models-setting", labeled("Models"), scroll_once=True)
+        self.wait_ui("no-model-setting", labeled("No model installed"))
+        self.screenshot("no-model-setting")
+        self.click("manage-models", labeled("Manage"), scroll_once=True)
+        _, nodes = self.wait_ui("empty-models-list", lambda n: label(n).startswith("0 active · 0 on disk ·"))
+        check(any(label(node) == "Discover models" for node in nodes), "Model discovery action is missing")
         self.screenshot("empty-models-list")
-        shell("input", "keyevent", "KEYCODE_BACK")
         self.click("back-to-chat-tab", labeled("Chat"))
         self.chat("chat-after-models")
-        return "Opened the Models screen with an actual empty model list and returned to chat"
+        return "Settings → Models → Manage shows zero active and zero on disk with a model discovery action"
 
     def warm_start(self):
         original = shell("pidof", PKG)
