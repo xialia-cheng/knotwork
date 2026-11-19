@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -93,6 +94,7 @@ private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
  * @param modifier optional layout modifier applied to the root box.
  * @param callbacks one-shot callback bundle (Retry).
  * @param onMarkReady Called after a frame with known platform timing is committed.
+ * @param onBackgroundChanged Receives the background of each committed composition.
  */
 @Composable
 fun SplashContent(
@@ -103,6 +105,7 @@ fun SplashContent(
     callbacks: SplashCallbacks = noopSplashCallbacks(),
     onMarkReady: () -> Unit = {},
     onWeaveFinished: () -> Unit = {},
+    onBackgroundChanged: (Color) -> Unit = {},
 ) {
     // Pins the starting layout once its weave has finished, so a state change
     // that lands after the animation (initialization failing right after the
@@ -113,13 +116,17 @@ fun SplashContent(
     val starting = weaveDone ||
         state is SplashViewState.Initializing ||
         state is SplashViewState.Loading
+    val background = if (starting) {
+        colorResource(R.color.brand_startup_background)
+    } else {
+        MaterialTheme.colorScheme.background
+    }
+    SideEffect { onBackgroundChanged(background) }
     val startupInk = colorResource(R.color.brand_startup_ink)
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                if (starting) colorResource(R.color.brand_startup_background) else MaterialTheme.colorScheme.background,
-            ),
+            .background(background),
         contentAlignment = Alignment.Center,
     ) {
         if (starting) {

@@ -10,15 +10,19 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.knotwork.android.data.services.AgentForegroundService
 import app.knotwork.android.domain.repositories.AppStateSettings
@@ -29,6 +33,8 @@ import app.knotwork.android.presentation.state.AppRestartRequest
 import app.knotwork.android.presentation.state.ChatEntryRequestRelay
 import app.knotwork.android.presentation.state.TransientMessageRelay
 import app.knotwork.android.presentation.theme.KnotworkAppTheme
+import app.knotwork.android.presentation.theme.resolveDarkTheme
+import app.knotwork.android.presentation.theme.setStatusBarAppearanceFor
 import app.knotwork.android.presentation.ui.navigation.AppNavGraph
 import app.knotwork.android.presentation.ui.navigation.AppShellScaffold
 import app.knotwork.android.presentation.ui.navigation.NavRoutes
@@ -153,6 +159,7 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
 
         // The `knotwork://` deep link this cold launch carried (launcher
         // shortcut / share / notification), or null for a normal launch. The
@@ -165,8 +172,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val appearance by appearanceSettings.settings.collectAsState(initial = AppearanceSettings())
-            KnotworkAppTheme(appearance = appearance) {
+            val systemDarkTheme = isSystemInDarkTheme()
+            val darkTheme = appearance.resolveDarkTheme(systemDarkTheme)
+            KnotworkAppTheme(appearance = appearance, darkTheme = darkTheme) {
                 val navController = rememberNavController()
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = backStackEntry?.destination?.route
+                // Before the graph is attached, the window still uses the platform launch style.
+                SideEffect {
+                    if (currentRoute != null && currentRoute != NavRoutes.SPLASH) {
+                        insetsController.isAppearanceLightStatusBars = !darkTheme
+                    }
+                }
 
                 // Route deep links that arrive on the already-running single-task
                 // instance (onNewIntent) into the live NavController. The launch
@@ -213,6 +230,12 @@ class MainActivity : ComponentActivity() {
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
                         onSplashContentReady = splashExitCoordinator::onContentReady,
+                        onSplashBackgroundChanged = { background ->
+                            // A splash composition may still be present during its exit.
+                            if (navController.currentDestination?.route == NavRoutes.SPLASH) {
+                                insetsController.setStatusBarAppearanceFor(background)
+                            }
+                        },
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
