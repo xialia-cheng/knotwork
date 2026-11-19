@@ -48,8 +48,6 @@ jobs:
     name: Status bar · API ${{ matrix.api }}
     needs: build
     runs-on: ubuntu-latest
-    env:
-      PYTHONPATH: ${{ runner.temp }}/status-bar-python
     timeout-minutes: 32
     strategy:
       fail-fast: false
@@ -69,7 +67,9 @@ jobs:
           unzip -q smoke-apk.zip
           sha256sum -c app-foss-debug.apk.sha256
       - name: Set up the PNG reader
-        run: python3 -m pip install --disable-pip-version-check --target "$PYTHONPATH" Pillow==11.3.0
+        run: |
+          python3 -m pip install --disable-pip-version-check --target "$RUNNER_TEMP/status-bar-python" Pillow==11.3.0
+          echo "PYTHONPATH=$RUNNER_TEMP/status-bar-python" >> "$GITHUB_ENV"
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           packages: platform-tools
