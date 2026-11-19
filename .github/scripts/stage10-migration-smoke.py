@@ -222,11 +222,12 @@ class Smoke:
         before = self.backup_files()
         self.open_backup(name)
         self.click(name + "-start-backup", labeled("Back up…"))
-        _, nodes = self.wait_ui(name + "-backup-form", labeled("Password again"))
+        confirmation = lambda n: label(n).casefold() == "password again"
+        _, nodes = self.wait_ui(name + "-backup-form", confirmation)
         fields = [n for n in nodes if edit_field(n)]
         check(len(fields) == 2, "Expected a password and confirmation field")
         self.type_into(fields[0], BACKUP_PASSPHRASE)
-        _, nodes = self.wait_ui(name + "-confirmation-field", labeled("Password again"), scroll_steps=2)
+        _, nodes = self.wait_ui(name + "-confirmation-field", confirmation, scroll_steps=2)
         fields = [n for n in nodes if edit_field(n)]
         check(len(fields) == 2, "Backup confirmation field was not available")
         self.type_into(fields[1], BACKUP_PASSPHRASE)
@@ -306,8 +307,12 @@ class Smoke:
         self.stop()
         self.launch("cold-pipelines-shortcut", shortcut=True)
         check(self.pipeline_state("Stage10Upgrade", "cold-shortcut-target") == count, "Cold shortcut missed the library")
-        self.theme_backup = self.export_backup("current-data")
         return "APK updated in place; database, pipeline, file and appearance preserved; cold and warm shortcut passed"
+
+    def backup_appearance_fixture(self):
+        self.pkg = CURRENT
+        self.theme_backup = self.export_backup("current-data")
+        return "Exported a backup containing the dark and vivid appearance settings"
 
     def cross_package(self, legacy, latest):
         self.initial_install(LEGACY, legacy, "old-package")
@@ -376,6 +381,8 @@ def main():
     smoke.theme_backup = None
     try:
         smoke.run("same_package_upgrade", lambda: smoke.in_place_upgrade(packages / "earlier.apk", packages / "latest.apk"))
+        if smoke.results[-1]["status"] == "pass":
+            smoke.run("backup_appearance_fixture", smoke.backup_appearance_fixture)
         smoke.run("cross_package_backup_restore", lambda: smoke.cross_package(packages / "legacy.apk", packages / "latest.apk"))
         smoke.run("appearance_backup_roundtrip", smoke.appearance_roundtrip)
     finally:
