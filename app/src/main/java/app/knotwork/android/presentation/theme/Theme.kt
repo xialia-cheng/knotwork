@@ -14,7 +14,7 @@ import app.knotwork.design.tokens.themeSeed
 @Composable
 fun KnotworkAppTheme(
     appearance: AppearanceSettings = AppearanceSettings(),
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = appearance.resolveDarkTheme(isSystemInDarkTheme()),
     content: @Composable () -> Unit,
 ) {
     val resources = LocalResources.current
@@ -26,16 +26,17 @@ fun KnotworkAppTheme(
             Color(resources.getColor(android.R.color.system_accent1_500, null))
         }
     }
-    val dark = when (appearance.mode) {
-        "light" -> false
-        "dark" -> true
-        else -> darkTheme
-    }
     KnotworkTheme(
-        darkTheme = dark,
+        darkTheme = darkTheme,
         seed = seed,
         vivid = appearance.vivid,
         pureBlack = appearance.pureBlack,
         content = content,
     )
+}
+
+internal fun AppearanceSettings.resolveDarkTheme(systemDarkTheme: Boolean): Boolean = when (mode) {
+    "light" -> false
+    "dark" -> true
+    else -> systemDarkTheme
 }
