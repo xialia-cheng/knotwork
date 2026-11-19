@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -121,6 +122,7 @@ import app.knotwork.design.screens.settings.SettingsCategoryId
  *        into `selectThread` / `createNewSessionWithPipeline`.
  * @param modifier Inset-padding passthrough from [AppShellScaffold].
  * @param onSplashContentReady Releases the platform overlay when content or navigation is ready.
+ * @param onSplashBackgroundChanged Reports the rendered background while the splash destination is active.
  */
 @Composable
 fun AppNavGraph(
@@ -130,6 +132,7 @@ fun AppNavGraph(
     chatEntryRequestRelay: ChatEntryRequestRelay,
     modifier: Modifier = Modifier,
     onSplashContentReady: () -> Unit = {},
+    onSplashBackgroundChanged: (Color) -> Unit = {},
 ) {
     NavHost(
         navController = navController,
@@ -169,6 +172,7 @@ fun AppNavGraph(
                 viewModel = splashViewModel,
                 destinationReady = !prepareChat || chatReady,
                 onSplashContentReady = onSplashContentReady,
+                onBackgroundChanged = onSplashBackgroundChanged,
                 onInitialized = {
                     onSplashContentReady()
                     val next = if (showOnboarding) NavRoutes.ONBOARDING else NavRoutes.CHAT_TAB

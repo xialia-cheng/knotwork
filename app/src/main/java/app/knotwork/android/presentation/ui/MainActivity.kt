@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -33,6 +34,7 @@ import app.knotwork.android.presentation.state.ChatEntryRequestRelay
 import app.knotwork.android.presentation.state.TransientMessageRelay
 import app.knotwork.android.presentation.theme.KnotworkAppTheme
 import app.knotwork.android.presentation.theme.resolveDarkTheme
+import app.knotwork.android.presentation.theme.setStatusBarAppearanceFor
 import app.knotwork.android.presentation.ui.navigation.AppNavGraph
 import app.knotwork.android.presentation.ui.navigation.AppShellScaffold
 import app.knotwork.android.presentation.ui.navigation.NavRoutes
@@ -175,13 +177,12 @@ class MainActivity : ComponentActivity() {
             KnotworkAppTheme(appearance = appearance, darkTheme = darkTheme) {
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
-                // The launch screen uses the light or dark brand background from Android resources.
-                val darkStatusBarSurface = when (backStackEntry?.destination?.route) {
-                    null, NavRoutes.SPLASH -> systemDarkTheme
-                    else -> darkTheme
-                }
-                LaunchedEffect(darkStatusBarSurface) {
-                    insetsController.isAppearanceLightStatusBars = !darkStatusBarSurface
+                val currentRoute = backStackEntry?.destination?.route
+                // Before the graph is attached, the window still uses the platform launch style.
+                SideEffect {
+                    if (currentRoute != null && currentRoute != NavRoutes.SPLASH) {
+                        insetsController.isAppearanceLightStatusBars = !darkTheme
+                    }
                 }
 
                 // Route deep links that arrive on the already-running single-task
@@ -229,6 +230,12 @@ class MainActivity : ComponentActivity() {
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
                         onSplashContentReady = splashExitCoordinator::onContentReady,
+                        onSplashBackgroundChanged = { background ->
+                            // A splash composition may still be present during its exit.
+                            if (navController.currentDestination?.route == NavRoutes.SPLASH) {
+                                insetsController.setStatusBarAppearanceFor(background)
+                            }
+                        },
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
