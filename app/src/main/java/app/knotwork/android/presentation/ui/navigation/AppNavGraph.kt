@@ -1,6 +1,7 @@
 package app.knotwork.android.presentation.ui.navigation
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,8 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
+import androidx.navigation.compose.DefaultNavTransitions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
@@ -134,7 +137,7 @@ fun AppNavGraph(
     onSplashContentReady: () -> Unit = {},
     onSplashBackgroundChanged: (Color) -> Unit = {},
 ) {
-    NavHost(
+    AppNavHost(
         navController = navController,
         startDestination = NavRoutes.SPLASH,
         modifier = modifier.fillMaxSize(),
@@ -603,6 +606,45 @@ fun AppNavGraph(
         }
     }
 }
+
+/** Keeps each bottom-tab root full screen through a switch or system back gesture. */
+@Composable
+internal fun AppNavHost(
+    navController: NavHostController,
+    startDestination: String,
+    modifier: Modifier = Modifier,
+    builder: NavGraphBuilder.() -> Unit,
+) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        modifier = modifier,
+        enterTransition = {
+            if (isBetweenTabRoots()) EnterTransition.None else DefaultNavTransitions.enterTransition(this)
+        },
+        exitTransition = {
+            if (isBetweenTabRoots()) ExitTransition.None else DefaultNavTransitions.exitTransition(this)
+        },
+        predictivePopEnterTransition = { swipeEdge ->
+            if (isBetweenTabRoots()) {
+                EnterTransition.None
+            } else {
+                DefaultNavTransitions.predictivePopEnterTransition(this, swipeEdge)
+            }
+        },
+        predictivePopExitTransition = { swipeEdge ->
+            if (isBetweenTabRoots()) {
+                ExitTransition.None
+            } else {
+                DefaultNavTransitions.predictivePopExitTransition(this, swipeEdge)
+            }
+        },
+        builder = builder,
+    )
+}
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isBetweenTabRoots(): Boolean =
+    initialState.destination.route in TAB_ROOT_ROUTES && targetState.destination.route in TAB_ROOT_ROUTES
 
 /**
  * The tool / MCP management surface, registered at two routes.

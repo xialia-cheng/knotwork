@@ -1,11 +1,21 @@
 package app.knotwork.android.presentation.ui.navigation
 
 import android.content.Intent
+import androidx.activity.BackEventCompat
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.core.net.toUri
@@ -54,6 +64,49 @@ class NavigationContractTest {
 
     private lateinit var navController: NavHostController
     private val chatEntryRelay = ChatEntryRequestRelay()
+
+    @Test
+    fun tabRootSwitchAndPredictiveBackShowOneFullScreenSurface() {
+        composeTestRule.setContent {
+            val nav = rememberNavController()
+            navController = nav
+            AppNavHost(
+                navController = nav,
+                startDestination = NavRoutes.CHAT_TAB,
+                modifier = Modifier.fillMaxSize().testTag(NAV_HOST_TAG),
+            ) {
+                composable(NavRoutes.CHAT_TAB) { Box(Modifier.fillMaxSize().background(Color.Red)) }
+                composable(NavRoutes.TOOLS) { Box(Modifier.fillMaxSize().background(Color.Green)) }
+                composable(NavRoutes.MORE) { Box(Modifier.fillMaxSize().background(Color.Blue)) }
+            }
+        }
+        composeTestRule.runOnIdle { navController.navigateToTab(NavRoutes.TOOLS) }
+        assertNavHostColor(Color.Green)
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnUiThread { navController.navigateToTab(NavRoutes.MORE) }
+        composeTestRule.mainClock.advanceTimeBy(64)
+        assertNavHostColor(Color.Blue)
+        composeTestRule.mainClock.autoAdvance = true
+
+        val dispatcher = composeTestRule.activity.onBackPressedDispatcher
+        repeat(2) { attempt ->
+            composeTestRule.runOnIdle {
+                dispatcher.dispatchOnBackStarted(BackEventCompat(0f, 300f, 0f, BackEventCompat.EDGE_LEFT))
+            }
+            composeTestRule.runOnIdle {
+                dispatcher.dispatchOnBackProgressed(BackEventCompat(120f, 300f, .8f, BackEventCompat.EDGE_LEFT))
+            }
+            assertNavHostColor(Color.Blue)
+            if (attempt == 0) {
+                composeTestRule.runOnIdle { dispatcher.dispatchOnBackCancelled() }
+                assertNavHostColor(Color.Blue)
+            } else {
+                pressBack()
+                assertNavHostColor(Color.Red)
+            }
+        }
+    }
 
     // ─── Finding #14: the settings-owned tools surface ─────────────────────
 
@@ -286,8 +339,16 @@ class NavigationContractTest {
 
     private fun NavHostController.currentRoute(): String? = currentBackStackEntry?.destination?.route
 
+    private fun assertNavHostColor(expected: Color) {
+        val pixels = composeTestRule.onNodeWithTag(NAV_HOST_TAG).captureToImage().toPixelMap()
+        val middle = pixels.height / 2
+        assertEquals(expected, pixels[pixels.width / 20, middle])
+        assertEquals(expected, pixels[pixels.width / 2, middle])
+    }
+
     private companion object {
         const val SESSION_ID = "session-42"
+        const val NAV_HOST_TAG = "tab-transition-host"
 
         const val CHAT_BODY = "chat-home-body"
         const val PIPELINES_BODY = "pipeline-library-body"
