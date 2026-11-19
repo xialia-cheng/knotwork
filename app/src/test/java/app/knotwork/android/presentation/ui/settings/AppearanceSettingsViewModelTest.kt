@@ -18,6 +18,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
+/** Checks local RGB previews, final saves, and delayed persistence acknowledgements. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppearanceSettingsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
