@@ -171,9 +171,9 @@ class Smoke:
             shell("input", "keycombination", "113", "29")
         shell("input", "text", shlex.quote(value.replace(" ", "%s")))
 
-    def rename_fixture_pipeline(self, name):
+    def rename_fixture_pipeline(self, name, original=SAMPLE):
         self.click(name + "-pipelines", labeled("Pipelines"))
-        self.click(name + "-open-pipeline-actions", labeled("More actions for " + SAMPLE))
+        self.click(name + "-open-pipeline-actions", labeled("More actions for " + original))
         self.click(name + "-rename", labeled("Rename"))
         self.wait_ui(name + "-rename-dialog", labeled("Rename pipeline"))
         field, _ = self.wait_ui(name + "-pipeline-name", edit_field)
@@ -190,7 +190,7 @@ class Smoke:
     def settings(self, name):
         self.click(name + "-more", labeled("More"))
         self.click(name + "-settings", labeled("Settings"), scroll_steps=3)
-        self.wait_ui(name + "-hub", labeled("Generation"))
+        self.wait_ui(name + "-hub", labeled("Search settings"))
 
     def appearance(self, name, set_values=False):
         if set_values:
@@ -311,7 +311,7 @@ class Smoke:
 
     def cross_package(self, legacy, latest):
         self.initial_install(LEGACY, legacy, "old-package")
-        count = self.rename_fixture_pipeline("Stage10Legacy")
+        count = self.rename_fixture_pipeline("Stage10Legacy", "Showcase — full agent")
         fixture = self.file_fixture("Stage10Legacy")
         sha = self.checksum(fixture)
         path = self.export_backup("legacy-data")
