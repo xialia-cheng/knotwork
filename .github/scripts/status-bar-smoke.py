@@ -160,7 +160,13 @@ class Smoke:
         shell("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
 
     def click(self, name, predicate, scroll_once=False):
-        node, _ = self.wait_ui(name, predicate, scroll_once=scroll_once)
+        def visible_target(node):
+            if not predicate(node):
+                return False
+            x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("bounds", "")))
+            return x2 - x1 >= 24 and y2 - y1 >= 24
+
+        node, _ = self.wait_ui(name, visible_target, scroll_once=scroll_once)
         self.tap(node)
 
     def launch(self, name, warm=False):

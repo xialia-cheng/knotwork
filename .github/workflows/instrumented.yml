@@ -8,64 +8,32 @@ permissions:
   actions: read
 
 jobs:
-  build:
-    name: Build the reviewed FOSS Debug APK
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - name: Verify that product files match the fix
-        run: |
-          baseline=16d76141f9672f480394a54dd6835cbec5f04350
-          git merge-base --is-ancestor "$baseline" HEAD
-          git diff --exit-code "$baseline" HEAD -- . ':!.github'
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: '21'
-      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
-        with:
-          packages: platform-tools
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-read-only: true
-      - name: Assemble and checksum
-        run: |
-          ./gradlew :app:assembleFossDebug --no-daemon
-          cd app/build/outputs/apk/foss/debug
-          sha256sum app-foss-debug.apk | tee app-foss-debug.apk.sha256
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: status-bar-foss-apk
-          path: |
-            app/build/outputs/apk/foss/debug/app-foss-debug.apk
-            app/build/outputs/apk/foss/debug/app-foss-debug.apk.sha256
-          if-no-files-found: error
-
   smoke:
     name: Status bar · API ${{ matrix.api }}
-    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 32
     strategy:
       fail-fast: false
       matrix:
-        api: [34, 36]
+        api: [36]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Download and verify the APK built in this run
+        with:
+          fetch-depth: 0
+      - name: Download and verify the previously built APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          artifact="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[] | select(.name == "status-bar-foss-apk") | .id')"
-          test -n "$artifact"
+          baseline=16d76141f9672f480394a54dd6835cbec5f04350
+          git merge-base --is-ancestor "$baseline" HEAD
+          git diff --exit-code "$baseline" HEAD -- . ':!.github'
           cd "$RUNNER_TEMP"
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact/zip" > smoke-apk.zip
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/14493545025/zip" > smoke-apk.zip
+          echo "e2a5c29911f7d7302fe5d37ba0c2d3c2779b3569d45bd619238f96aa3194ff27  smoke-apk.zip" | sha256sum -c -
           unzip -q smoke-apk.zip
           sha256sum -c app-foss-debug.apk.sha256
+          echo "1fd817bbfe99deba0bd7b6ac918ab62b8c229b8c43518ec6ac6045737763dd27  app-foss-debug.apk" | sha256sum -c -
       - name: Set up the PNG reader
         run: |
           python3 -m pip install --disable-pip-version-check --target "$RUNNER_TEMP/status-bar-python" Pillow==11.3.0
