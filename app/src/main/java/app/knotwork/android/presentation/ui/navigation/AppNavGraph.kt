@@ -1,9 +1,13 @@
 package app.knotwork.android.presentation.ui.navigation
 
 import android.content.Intent
+import androidx.activity.BackEventCompat
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,6 +16,8 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -607,7 +613,7 @@ fun AppNavGraph(
     }
 }
 
-/** Keeps the active page full screen through tab switches and returns from tool details. */
+/** Uses short transitions for tab switches and navigation between the tool list and details. */
 @Composable
 internal fun AppNavHost(
     navController: NavHostController,
@@ -615,6 +621,7 @@ internal fun AppNavHost(
     modifier: Modifier = Modifier,
     builder: NavGraphBuilder.() -> Unit,
 ) {
+    val toolBackOffset = with(LocalDensity.current) { TOOL_BACK_PREVIEW_OFFSET_DP.dp.roundToPx() }
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -633,10 +640,14 @@ internal fun AppNavHost(
             }
         },
         predictivePopExitTransition = { swipeEdge ->
-            if (shouldCutTransition()) {
-                ExitTransition.None
-            } else {
-                DefaultNavTransitions.predictivePopExitTransition(this, swipeEdge)
+            when {
+                isReturningToToolList() -> slideOutHorizontally(
+                    animationSpec = tween(durationMillis = TOOL_BACK_PREVIEW_DURATION_MS, easing = LinearEasing),
+                ) {
+                    if (swipeEdge == BackEventCompat.EDGE_RIGHT) -toolBackOffset else toolBackOffset
+                }
+                shouldCutTransition() -> ExitTransition.None
+                else -> DefaultNavTransitions.predictivePopExitTransition(this, swipeEdge)
             }
         },
         builder = builder,
@@ -647,11 +658,17 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.shouldCutTransitio
     val fromRoute = initialState.destination.route
     val toRoute = targetState.destination.route
     val tabSwitch = fromRoute in TAB_ROOT_ROUTES && toRoute in TAB_ROOT_ROUTES
+    val opensToolDetail = fromRoute in TOOL_LIST_ROUTES && toRoute == NavRoutes.TOOL_DETAIL
     // A fading detail page remains above the list and can still receive its first tap.
-    val backToTools = fromRoute == NavRoutes.TOOL_DETAIL &&
-        (toRoute == NavRoutes.TOOLS || toRoute == NavRoutes.SETTINGS_TOOLS_MANAGE)
-    return tabSwitch || backToTools
+    return tabSwitch || opensToolDetail || isReturningToToolList()
 }
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isReturningToToolList(): Boolean =
+    initialState.destination.route == NavRoutes.TOOL_DETAIL && targetState.destination.route in TOOL_LIST_ROUTES
+
+private val TOOL_LIST_ROUTES = setOf(NavRoutes.TOOLS, NavRoutes.SETTINGS_TOOLS_MANAGE)
+private const val TOOL_BACK_PREVIEW_OFFSET_DP = 8
+private const val TOOL_BACK_PREVIEW_DURATION_MS = 120
 
 /**
  * The tool / MCP management surface, registered at two routes.

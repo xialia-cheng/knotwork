@@ -136,7 +136,17 @@ class NavigationContractTest {
                 }
             }
         }
-        navigateTo(NavRoutes.TOOL_DETAIL.replace("{toolId}", "test-tool"))
+        val clock = composeTestRule.mainClock
+        clock.autoAdvance = false
+        try {
+            composeTestRule.runOnUiThread {
+                navController.navigate(NavRoutes.TOOL_DETAIL.replace("{toolId}", "test-tool"))
+            }
+            clock.advanceTimeBy(64)
+            assertNavHostColor(Color.Blue)
+        } finally {
+            clock.autoAdvance = true
+        }
 
         val dispatcher = composeTestRule.activity.onBackPressedDispatcher
         composeTestRule.runOnIdle {
@@ -145,8 +155,11 @@ class NavigationContractTest {
         composeTestRule.runOnIdle {
             dispatcher.dispatchOnBackProgressed(BackEventCompat(120f, 300f, .8f, BackEventCompat.EDGE_LEFT))
         }
+        val preview = composeTestRule.onNodeWithTag(NAV_HOST_TAG).captureToImage().toPixelMap()
+        val middle = preview.height / 2
+        assertEquals(Color.Green, preview[1, middle])
+        assertEquals(Color.Blue, preview[preview.width / 2, middle])
 
-        val clock = composeTestRule.mainClock
         clock.autoAdvance = false
         try {
             composeTestRule.runOnUiThread { dispatcher.onBackPressed() }
