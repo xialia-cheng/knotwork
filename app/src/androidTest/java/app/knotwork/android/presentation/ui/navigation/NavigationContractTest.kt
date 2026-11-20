@@ -123,7 +123,7 @@ class NavigationContractTest {
             AppNavHost(
                 navController = nav,
                 startDestination = NavRoutes.TOOLS,
-                modifier = Modifier.fillMaxSize().testTag(NAV_HOST_TAG),
+                modifier = Modifier.fillMaxSize().background(Color.Black).testTag(NAV_HOST_TAG),
             ) {
                 composable(NavRoutes.TOOLS) {
                     Box(Modifier.fillMaxSize().background(Color.Green).clickable { listTaps++ })
@@ -157,7 +157,7 @@ class NavigationContractTest {
         }
         val preview = composeTestRule.onNodeWithTag(NAV_HOST_TAG).captureToImage().toPixelMap()
         val middle = preview.height / 2
-        assertEquals(Color.Green, preview[1, middle])
+        assertEquals(Color.Black, preview[1, middle])
         assertEquals(Color.Blue, preview[preview.width / 2, middle])
 
         clock.autoAdvance = false

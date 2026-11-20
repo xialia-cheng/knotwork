@@ -1,21 +1,20 @@
 package app.knotwork.android.presentation.ui.navigation
 
 import android.content.Intent
-import androidx.activity.BackEventCompat
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -27,8 +26,12 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.DefaultNavTransitions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import androidx.navigationevent.NavigationEvent
+import androidx.navigationevent.NavigationEventTransitionState
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import app.knotwork.android.domain.models.ProviderId
 import app.knotwork.android.presentation.state.ChatEntryRequest
 import app.knotwork.android.presentation.state.ChatEntryRequestRelay
@@ -621,11 +624,28 @@ internal fun AppNavHost(
     modifier: Modifier = Modifier,
     builder: NavGraphBuilder.() -> Unit,
 ) {
-    val toolBackOffset = with(LocalDensity.current) { TOOL_BACK_PREVIEW_OFFSET_DP.dp.roundToPx() }
+    val toolBackOffset = with(LocalDensity.current) { TOOL_BACK_PREVIEW_OFFSET_DP.dp.toPx() }
+    val dispatcher = checkNotNull(LocalNavigationEventDispatcherOwner.current).navigationEventDispatcher
+    val gestureState = dispatcher.transitionState.collectAsState()
+    val currentEntry = navController.currentBackStackEntryAsState()
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier,
+        modifier = modifier.clipToBounds().graphicsLayer {
+            // Follow the live gesture without extending the NavHost's exit transition.
+            val gesture = gestureState.value as? NavigationEventTransitionState.InProgress
+            translationX = if (
+                currentEntry.value?.destination?.route == NavRoutes.TOOL_DETAIL &&
+                navController.previousBackStackEntry?.destination?.route in TOOL_LIST_ROUTES &&
+                gesture?.direction == NavigationEventTransitionState.TRANSITIONING_BACK
+            ) {
+                val event = gesture.latestEvent
+                val distance = toolBackOffset * event.progress
+                if (event.swipeEdge == NavigationEvent.EDGE_RIGHT) -distance else distance
+            } else {
+                0f
+            }
+        },
         enterTransition = {
             if (shouldCutTransition()) EnterTransition.None else DefaultNavTransitions.enterTransition(this)
         },
@@ -640,14 +660,10 @@ internal fun AppNavHost(
             }
         },
         predictivePopExitTransition = { swipeEdge ->
-            when {
-                isReturningToToolList() -> slideOutHorizontally(
-                    animationSpec = tween(durationMillis = TOOL_BACK_PREVIEW_DURATION_MS, easing = LinearEasing),
-                ) {
-                    if (swipeEdge == BackEventCompat.EDGE_RIGHT) -toolBackOffset else toolBackOffset
-                }
-                shouldCutTransition() -> ExitTransition.None
-                else -> DefaultNavTransitions.predictivePopExitTransition(this, swipeEdge)
+            if (shouldCutTransition()) {
+                ExitTransition.None
+            } else {
+                DefaultNavTransitions.predictivePopExitTransition(this, swipeEdge)
             }
         },
         builder = builder,
@@ -668,7 +684,6 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.isReturningToToolL
 
 private val TOOL_LIST_ROUTES = setOf(NavRoutes.TOOLS, NavRoutes.SETTINGS_TOOLS_MANAGE)
 private const val TOOL_BACK_PREVIEW_OFFSET_DP = 8
-private const val TOOL_BACK_PREVIEW_DURATION_MS = 120
 
 /**
  * The tool / MCP management surface, registered at two routes.
