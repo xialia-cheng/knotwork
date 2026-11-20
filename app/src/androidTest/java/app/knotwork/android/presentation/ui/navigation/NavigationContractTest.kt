@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.BackEventCompat
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -14,18 +15,22 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.get
+import androidx.navigation.navArgument
 import app.knotwork.android.presentation.state.ChatEntryRequest
 import app.knotwork.android.presentation.state.ChatEntryRequestRelay
 import app.knotwork.android.presentation.state.TransientMessageRelay
@@ -105,6 +110,55 @@ class NavigationContractTest {
                 pressBack()
                 assertNavHostColor(Color.Red)
             }
+        }
+    }
+
+    @Test
+    fun toolListReceivesFirstTapImmediatelyAfterPredictiveBack() {
+        var listTaps = 0
+        var detailTaps = 0
+        composeTestRule.setContent {
+            val nav = rememberNavController()
+            navController = nav
+            AppNavHost(
+                navController = nav,
+                startDestination = NavRoutes.TOOLS,
+                modifier = Modifier.fillMaxSize().testTag(NAV_HOST_TAG),
+            ) {
+                composable(NavRoutes.TOOLS) {
+                    Box(Modifier.fillMaxSize().background(Color.Green).clickable { listTaps++ })
+                }
+                composable(
+                    route = NavRoutes.TOOL_DETAIL,
+                    arguments = listOf(navArgument(NavRoutes.TOOL_DETAIL_ID_ARG) { type = NavType.StringType }),
+                ) {
+                    Box(Modifier.fillMaxSize().background(Color.Blue).clickable { detailTaps++ })
+                }
+            }
+        }
+        navigateTo(NavRoutes.TOOL_DETAIL.replace("{toolId}", "test-tool"))
+
+        val dispatcher = composeTestRule.activity.onBackPressedDispatcher
+        composeTestRule.runOnIdle {
+            dispatcher.dispatchOnBackStarted(BackEventCompat(0f, 300f, 0f, BackEventCompat.EDGE_LEFT))
+        }
+        composeTestRule.runOnIdle {
+            dispatcher.dispatchOnBackProgressed(BackEventCompat(120f, 300f, .8f, BackEventCompat.EDGE_LEFT))
+        }
+
+        val clock = composeTestRule.mainClock
+        clock.autoAdvance = false
+        try {
+            composeTestRule.runOnUiThread { dispatcher.onBackPressed() }
+            clock.advanceTimeBy(64)
+            assertNavHostColor(Color.Green)
+            composeTestRule.onNodeWithTag(NAV_HOST_TAG).performTouchInput { click(center) }
+            composeTestRule.runOnIdle {
+                assertEquals(1, listTaps)
+                assertEquals(0, detailTaps)
+            }
+        } finally {
+            clock.autoAdvance = true
         }
     }
 

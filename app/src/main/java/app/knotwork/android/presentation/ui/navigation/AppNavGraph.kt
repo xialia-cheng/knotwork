@@ -607,7 +607,7 @@ fun AppNavGraph(
     }
 }
 
-/** Keeps each bottom-tab root full screen through a switch or system back gesture. */
+/** Keeps the active page full screen through tab switches and returns from tool details. */
 @Composable
 internal fun AppNavHost(
     navController: NavHostController,
@@ -620,20 +620,20 @@ internal fun AppNavHost(
         startDestination = startDestination,
         modifier = modifier,
         enterTransition = {
-            if (isBetweenTabRoots()) EnterTransition.None else DefaultNavTransitions.enterTransition(this)
+            if (shouldCutTransition()) EnterTransition.None else DefaultNavTransitions.enterTransition(this)
         },
         exitTransition = {
-            if (isBetweenTabRoots()) ExitTransition.None else DefaultNavTransitions.exitTransition(this)
+            if (shouldCutTransition()) ExitTransition.None else DefaultNavTransitions.exitTransition(this)
         },
         predictivePopEnterTransition = { swipeEdge ->
-            if (isBetweenTabRoots()) {
+            if (shouldCutTransition()) {
                 EnterTransition.None
             } else {
                 DefaultNavTransitions.predictivePopEnterTransition(this, swipeEdge)
             }
         },
         predictivePopExitTransition = { swipeEdge ->
-            if (isBetweenTabRoots()) {
+            if (shouldCutTransition()) {
                 ExitTransition.None
             } else {
                 DefaultNavTransitions.predictivePopExitTransition(this, swipeEdge)
@@ -643,8 +643,15 @@ internal fun AppNavHost(
     )
 }
 
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.isBetweenTabRoots(): Boolean =
-    initialState.destination.route in TAB_ROOT_ROUTES && targetState.destination.route in TAB_ROOT_ROUTES
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.shouldCutTransition(): Boolean {
+    val fromRoute = initialState.destination.route
+    val toRoute = targetState.destination.route
+    val tabSwitch = fromRoute in TAB_ROOT_ROUTES && toRoute in TAB_ROOT_ROUTES
+    // A fading detail page remains above the list and can still receive its first tap.
+    val backToTools = fromRoute == NavRoutes.TOOL_DETAIL &&
+        (toRoute == NavRoutes.TOOLS || toRoute == NavRoutes.SETTINGS_TOOLS_MANAGE)
+    return tabSwitch || backToTools
+}
 
 /**
  * The tool / MCP management surface, registered at two routes.
