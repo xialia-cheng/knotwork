@@ -22,6 +22,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
+import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.ComposeNavigator
@@ -114,7 +115,27 @@ class NavigationContractTest {
     }
 
     @Test
-    fun toolListReceivesFirstTapImmediatelyAfterPredictiveBack() {
+    fun toolListReceivesFirstTapImmediatelyAfterPredictiveBack() = assertImmediateDetailTransition(
+        parentRoute = NavRoutes.TOOLS,
+        detailRoute = NavRoutes.TOOL_DETAIL,
+        detailPath = NavRoutes.TOOL_DETAIL.replace("{toolId}", "test-tool"),
+        detailArguments = listOf(navArgument(NavRoutes.TOOL_DETAIL_ID_ARG) { type = NavType.StringType }),
+    )
+
+    @Test
+    fun filesOpensWithoutOverlapAndReturnsInputToMoreImmediately() =
+        assertImmediateDetailTransition(parentRoute = NavRoutes.MORE, detailRoute = NavRoutes.FILES)
+
+    @Test
+    fun memoryOpensWithoutOverlapAndReturnsInputToMoreImmediately() =
+        assertImmediateDetailTransition(parentRoute = NavRoutes.MORE, detailRoute = NavRoutes.MEMORY)
+
+    private fun assertImmediateDetailTransition(
+        parentRoute: String,
+        detailRoute: String,
+        detailPath: String = detailRoute,
+        detailArguments: List<NamedNavArgument> = emptyList(),
+    ) {
         var listTaps = 0
         var detailTaps = 0
         composeTestRule.setContent {
@@ -122,16 +143,13 @@ class NavigationContractTest {
             navController = nav
             AppNavHost(
                 navController = nav,
-                startDestination = NavRoutes.TOOLS,
+                startDestination = parentRoute,
                 modifier = Modifier.fillMaxSize().background(Color.Black).testTag(NAV_HOST_TAG),
             ) {
-                composable(NavRoutes.TOOLS) {
+                composable(parentRoute) {
                     Box(Modifier.fillMaxSize().background(Color.Green).clickable { listTaps++ })
                 }
-                composable(
-                    route = NavRoutes.TOOL_DETAIL,
-                    arguments = listOf(navArgument(NavRoutes.TOOL_DETAIL_ID_ARG) { type = NavType.StringType }),
-                ) {
+                composable(route = detailRoute, arguments = detailArguments) {
                     Box(Modifier.fillMaxSize().background(Color.Blue).clickable { detailTaps++ })
                 }
             }
@@ -139,9 +157,7 @@ class NavigationContractTest {
         val clock = composeTestRule.mainClock
         clock.autoAdvance = false
         try {
-            composeTestRule.runOnUiThread {
-                navController.navigate(NavRoutes.TOOL_DETAIL.replace("{toolId}", "test-tool"))
-            }
+            composeTestRule.runOnUiThread { navController.navigate(detailPath) }
             clock.advanceTimeBy(64)
             assertNavHostColor(Color.Blue)
         } finally {
@@ -149,16 +165,16 @@ class NavigationContractTest {
         }
 
         val dispatcher = composeTestRule.activity.onBackPressedDispatcher
-        composeTestRule.runOnIdle {
-            dispatcher.dispatchOnBackStarted(BackEventCompat(0f, 300f, 0f, BackEventCompat.EDGE_LEFT))
-        }
-        composeTestRule.runOnIdle {
-            dispatcher.dispatchOnBackProgressed(BackEventCompat(120f, 300f, .8f, BackEventCompat.EDGE_LEFT))
-        }
+        progressBackGesture()
         val preview = composeTestRule.onNodeWithTag(NAV_HOST_TAG).captureToImage().toPixelMap()
         val middle = preview.height / 2
         assertEquals(Color.Black, preview[1, middle])
         assertEquals(Color.Blue, preview[preview.width / 2, middle])
+
+        composeTestRule.runOnIdle { dispatcher.dispatchOnBackCancelled() }
+        val cancelledPreview = composeTestRule.onNodeWithTag(NAV_HOST_TAG).captureToImage().toPixelMap()
+        assertEquals(Color.Blue, cancelledPreview[1, middle])
+        progressBackGesture()
 
         clock.autoAdvance = false
         try {
@@ -172,6 +188,16 @@ class NavigationContractTest {
             }
         } finally {
             clock.autoAdvance = true
+        }
+    }
+
+    private fun progressBackGesture() {
+        val dispatcher = composeTestRule.activity.onBackPressedDispatcher
+        composeTestRule.runOnIdle {
+            dispatcher.dispatchOnBackStarted(BackEventCompat(0f, 300f, 0f, BackEventCompat.EDGE_LEFT))
+        }
+        composeTestRule.runOnIdle {
+            dispatcher.dispatchOnBackProgressed(BackEventCompat(120f, 300f, .8f, BackEventCompat.EDGE_LEFT))
         }
     }
 

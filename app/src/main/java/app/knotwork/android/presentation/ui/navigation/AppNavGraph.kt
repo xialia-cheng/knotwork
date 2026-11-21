@@ -616,7 +616,7 @@ fun AppNavGraph(
     }
 }
 
-/** Uses short transitions for tab switches and navigation between the tool list and details. */
+/** Hands off the screen immediately on tab switches and selected detail routes. */
 @Composable
 internal fun AppNavHost(
     navController: NavHostController,
@@ -624,7 +624,7 @@ internal fun AppNavHost(
     modifier: Modifier = Modifier,
     builder: NavGraphBuilder.() -> Unit,
 ) {
-    val toolBackOffset = with(LocalDensity.current) { TOOL_BACK_PREVIEW_OFFSET_DP.dp.toPx() }
+    val backPreviewOffset = with(LocalDensity.current) { BACK_PREVIEW_OFFSET_DP.dp.toPx() }
     val dispatcher = checkNotNull(LocalNavigationEventDispatcherOwner.current).navigationEventDispatcher
     val gestureState = dispatcher.transitionState.collectAsState()
     val currentEntry = navController.currentBackStackEntryAsState()
@@ -635,12 +635,14 @@ internal fun AppNavHost(
             // Follow the live gesture without extending the NavHost's exit transition.
             val gesture = gestureState.value as? NavigationEventTransitionState.InProgress
             translationX = if (
-                currentEntry.value?.destination?.route == NavRoutes.TOOL_DETAIL &&
-                navController.previousBackStackEntry?.destination?.route in TOOL_LIST_ROUTES &&
+                isImmediateDetail(
+                    parentRoute = navController.previousBackStackEntry?.destination?.route,
+                    detailRoute = currentEntry.value?.destination?.route,
+                ) &&
                 gesture?.direction == NavigationEventTransitionState.TRANSITIONING_BACK
             ) {
                 val event = gesture.latestEvent
-                val distance = toolBackOffset * event.progress
+                val distance = backPreviewOffset * event.progress
                 if (event.swipeEdge == NavigationEvent.EDGE_RIGHT) -distance else distance
             } else {
                 0f
@@ -674,16 +676,17 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.shouldCutTransitio
     val fromRoute = initialState.destination.route
     val toRoute = targetState.destination.route
     val tabSwitch = fromRoute in TAB_ROOT_ROUTES && toRoute in TAB_ROOT_ROUTES
-    val opensToolDetail = fromRoute in TOOL_LIST_ROUTES && toRoute == NavRoutes.TOOL_DETAIL
-    // A fading detail page remains above the list and can still receive its first tap.
-    return tabSwitch || opensToolDetail || isReturningToToolList()
+    // Hand off drawing and touch input together when entering or leaving these details.
+    return tabSwitch || isImmediateDetail(fromRoute, toRoute) || isImmediateDetail(toRoute, fromRoute)
 }
 
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.isReturningToToolList(): Boolean =
-    initialState.destination.route == NavRoutes.TOOL_DETAIL && targetState.destination.route in TOOL_LIST_ROUTES
+private fun isImmediateDetail(parentRoute: String?, detailRoute: String?): Boolean =
+    (parentRoute in TOOL_LIST_ROUTES && detailRoute == NavRoutes.TOOL_DETAIL) ||
+        (parentRoute == NavRoutes.MORE && detailRoute in MORE_CONTENT_ROUTES)
 
 private val TOOL_LIST_ROUTES = setOf(NavRoutes.TOOLS, NavRoutes.SETTINGS_TOOLS_MANAGE)
-private const val TOOL_BACK_PREVIEW_OFFSET_DP = 8
+private val MORE_CONTENT_ROUTES = setOf(NavRoutes.FILES, NavRoutes.MEMORY)
+private const val BACK_PREVIEW_OFFSET_DP = 8
 
 /**
  * The tool / MCP management surface, registered at two routes.
