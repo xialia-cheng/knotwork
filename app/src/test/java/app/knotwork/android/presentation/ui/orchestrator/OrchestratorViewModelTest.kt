@@ -3,6 +3,7 @@ package app.knotwork.android.presentation.ui.orchestrator
 import app.knotwork.android.R
 import app.knotwork.android.data.engine.KoogCloudModelCatalog
 import app.knotwork.android.domain.engine.DefaultPipelineFactory
+import app.knotwork.android.domain.engine.PipelineConnectionActivity
 import app.knotwork.android.domain.models.AgentTool
 import app.knotwork.android.domain.models.CloudProvider
 import app.knotwork.android.domain.models.ConnectionModel
@@ -175,6 +176,7 @@ class OrchestratorViewModelTest {
      */
     private fun buildViewModel(): OrchestratorViewModel = OrchestratorViewModel(
         savePipelineUseCase = savePipelineUseCase,
+        connectionActivity = PipelineConnectionActivity(),
         libraryUseCases = OrchestratorLibraryUseCases(
             loadPipeline = loadPipelineUseCase,
             renamePipeline = renamePipelineUseCase,

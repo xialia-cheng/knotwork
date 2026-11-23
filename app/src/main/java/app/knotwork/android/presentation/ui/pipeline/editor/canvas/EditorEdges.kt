@@ -37,6 +37,8 @@ import app.knotwork.design.components.pipelineeditor.OutboundPort
 import app.knotwork.design.components.pipelineeditor.drawCanvasEdge
 import app.knotwork.design.components.pipelineeditor.headerTint
 import app.knotwork.design.theme.KnotworkTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 /**
  * Canvas-space coordinates of one port anchor (inbound or one of N outbound ports).
@@ -214,6 +216,7 @@ internal fun portsFor(node: NodeModel, outboundLabels: List<String?> = emptyList
  * in dashed style.
  * @param measuredCards each card as it was laid out, by node id; an edge leaves its source's
  * measured dot line, or the shortest card's before the card is measured.
+ * @param connectionTraversals edge IDs that show a short traversal marker.
  */
 @Composable
 internal fun EditorEdges(
@@ -226,9 +229,11 @@ internal fun EditorEdges(
     selectedNodeId: String? = null,
     reducedMotion: Boolean = false,
     measuredCards: Map<String, CardMeasure> = emptyMap(),
+    connectionTraversals: Flow<String> = emptyFlow(),
 ) {
     val density = LocalDensity.current
     val accentColor = KnotworkTheme.extended.outlineStrong
+    val runningConnection = rememberRunningConnection(connectionTraversals, reducedMotion)
     val strokeWidth = with(density) { 2.dp.toPx() }
     val dark = MaterialTheme.colorScheme.background.luminance() < DARK_LUMINANCE_CUTOFF
     val related = remember(connections, selectedNodeId) { relatedEdges(connections, selectedNodeId) }
@@ -303,6 +308,15 @@ internal fun EditorEdges(
                 width = style.width.value.dp.toPx(),
                 highlighted = style.highlighted,
                 portScale = transform.scale,
+            )
+            runningConnection.drawOn(
+                scope = this,
+                id = c.id,
+                start = Offset(sx, sy),
+                control1 = Offset(c0.first, c0.second),
+                control2 = Offset(c1.first, c1.second),
+                end = Offset(tx, ty),
+                color = accentColor,
             )
         }
         if (connectionDraft != null) {

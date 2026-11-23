@@ -16,6 +16,8 @@ import app.knotwork.android.presentation.ui.pipeline.editor.canvas.EditorCanvas
 import app.knotwork.android.presentation.ui.pipeline.editor.core.EditorState
 import app.knotwork.design.components.pipelineeditor.EditorToolbar
 import app.knotwork.design.components.pipelineeditor.NodeError
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 /**
  * Pure-layout content for the [PipelineEditorScreen] — caller provides the live state
@@ -55,6 +57,7 @@ import app.knotwork.design.components.pipelineeditor.NodeError
  * @param onFocusNode forwarded from a `ValidationBar` row tap.
  * @param onMultiSelectCancel exits multi-select without acting.
  * @param onMultiSelectDelete removes every multi-selected node + their connections.
+ * @param connectionTraversals live edge IDs for the displayed graph.
  * @param snackbarHost the screen's snackbar host, drawn at the bottom of the canvas area —
  *   above the [ValidationBar], which a host at the bottom of the screen used to cover.
  */
@@ -86,6 +89,7 @@ internal fun PipelineEditorContent(
     onMultiSelectDelete: () -> Unit,
     modifier: Modifier = Modifier,
     subtitleForNode: (NodeModel) -> String? = { null },
+    connectionTraversals: Flow<String> = emptyFlow(),
     snackbarHost: @Composable () -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -113,6 +117,7 @@ internal fun PipelineEditorContent(
                 editor = editor,
                 errorsByNodeId = errorsByNodeId,
                 reducedMotion = reducedMotion,
+                connectionTraversals = connectionTraversals,
                 onMoveNode = onMoveNode,
                 onAddNode = onAddNode,
                 onAddConnection = onAddConnection,

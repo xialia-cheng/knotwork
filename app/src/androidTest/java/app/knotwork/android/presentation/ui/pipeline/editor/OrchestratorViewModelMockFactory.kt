@@ -24,6 +24,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 
 /**
  * Mutable mirror of every [MutableStateFlow] / [MutableSharedFlow] that
@@ -64,6 +65,7 @@ internal fun mockOrchestratorViewModel(
     val vm = mockk<OrchestratorViewModel>(relaxed = true)
     every { vm.uiState } returns uiStateFlow
     every { vm.focusNodeRequest } returns focusNodeRequestFlow
+    every { vm.observeConnectionTraversals(any()) } returns emptyFlow()
     // `addNode` returns the id of the new node — the production screen
     // assigns this id straight into `editor.configuringNodeId`, so a
     // null from a relaxed stub would crash the next composition.

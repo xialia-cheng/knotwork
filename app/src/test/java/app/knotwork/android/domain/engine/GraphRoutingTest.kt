@@ -99,6 +99,20 @@ class GraphRoutingTest {
     // --- nextNodeId: plain nodes ------------------------------------------------
 
     @Test
+    fun `branches reaching the same node retain the selected edge identity`() {
+        val condition = node("condition", NodeType.IF_CONDITION)
+        val trueEdge = edge("condition", output.id, "True").copy(id = "true-port")
+        val falseEdge = edge("condition", output.id, "False").copy(id = "false-port")
+        val graph = graph(listOf(condition, output), listOf(trueEdge, falseEdge))
+
+        assertEquals(
+            falseEdge,
+            GraphRouting.nextConnection(condition, graph, conditionResult = false, routingKey = null),
+        )
+        assertEquals(output.id, GraphRouting.nextNodeId(condition, graph, conditionResult = false, routingKey = null))
+    }
+
+    @Test
     fun `given a node with no edges then the branch ends`() {
         assertNull(GraphRouting.nextNodeId(llm, graph(listOf(llm), emptyList()), null, null))
     }

@@ -56,6 +56,7 @@ class QueueCursorTest {
         val entry = cursor.enter(queue, """["first", "second", "third"]""") as QueueEntry.FirstItem
 
         assertEquals("work", entry.node?.id)
+        assertEquals("queue->work", entry.connectionId)
         assertEquals("$instruction\n\nCURRENT SUBTASK TO EXECUTE:\nfirst", entry.inputText)
         // Three items × the one-node item path, then summary + output after Done.
         assertEquals(3 * 1 + 2, entry.remainingSteps)
@@ -71,6 +72,7 @@ class QueueCursorTest {
         val third = cursor.advance("r2")
 
         assertEquals("work", second.node?.id)
+        assertEquals("queue->work", second.connectionId)
         assertEquals(
             "PREVIOUS RESULTS CONTEXT:\nResult of Subtask 1:\nr1\n\n---\n\n$instruction" +
                 "\n\nCURRENT SUBTASK TO EXECUTE:\nsecond",
@@ -92,6 +94,7 @@ class QueueCursorTest {
         val done = cursor.advance("r2")
 
         assertEquals("summary", done.node?.id)
+        assertEquals("queue->summary", done.connectionId)
         assertEquals("Queue execution completed.\nResults:\n1. r1\n2. r2", done.inputText)
         assertFalse(cursor.isActive)
     }

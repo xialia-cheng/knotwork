@@ -47,6 +47,7 @@ import timber.log.Timber
  * @param live Runs a node's executor.
  * @param noteUndeliveredImage Notes an image no node took, when the walk ends
  *   without an OUTPUT node.
+ * @param onConnectionEntered Publishes the connection that led into a new live stage.
  */
 class RunWalk(
     private val collector: FlowCollector<AgentOrchestratorState>,
@@ -58,6 +59,7 @@ class RunWalk(
     private val replay: CheckpointReplay,
     private val live: LiveNodeStep,
     private val noteUndeliveredImage: suspend () -> Unit,
+    private val onConnectionEntered: (String) -> Unit,
 ) {
 
     /** The QUEUE_PROCESSOR loop the walk is in, if any. */
@@ -87,6 +89,9 @@ class RunWalk(
 
     /** The node the walk is on, or `null` once a branch has ended. */
     private var current: NodeModel? = null
+
+    /** The edge selected to enter [current]; reported only if this visit runs live. */
+    private var incomingConnectionId: String? = null
 
     /** The text the walk carries into [current]. */
     private var carried = ""
@@ -237,9 +242,12 @@ class RunWalk(
             console.push(ConsoleEventType.NodeExecution, "↻ ${node.type.name} $what from checkpoint")
             Step(taken.result, taken.input, taken.durationMs, replayed = true)
         }
-        ReplayStep.Live -> when (val outcome = live.run(node, carried, carriedByModel, visit)) {
-            is LiveOutcome.Ran -> Step(outcome.result, outcome.input, outcome.durationMs, replayed = false)
-            LiveOutcome.Parked, LiveOutcome.Failed -> null
+        ReplayStep.Live -> {
+            incomingConnectionId?.let(onConnectionEntered)
+            when (val outcome = live.run(node, carried, carriedByModel, visit)) {
+                is LiveOutcome.Ran -> Step(outcome.result, outcome.input, outcome.durationMs, replayed = false)
+                LiveOutcome.Parked, LiveOutcome.Failed -> null
+            }
         }
     }
 
@@ -451,9 +459,12 @@ class RunWalk(
                     estimatedTotalSteps = stepCount + entry.remainingSteps
                     // Assembled from earlier results and a planned subtask: the
                     // app's text around other nodes' output, so not a model's.
-                    moveTo(QueueStep(entry.node, entry.inputText))
+                    moveTo(QueueStep(entry.node, entry.inputText, entry.connectionId))
                 }
-                is QueueEntry.Skipped -> current = entry.node
+                is QueueEntry.Skipped -> {
+                    current = entry.node
+                    incomingConnectionId = entry.connectionId
+                }
             }
             return
         }
@@ -462,8 +473,8 @@ class RunWalk(
         // original data, not the routing label.
         carriedByModel = ModelAuthorship.after(node.type, result, carried, carriedByModel)
         carried = if (node.type == NodeType.INTENT_ROUTER) carried else result?.outputText ?: carried
-        val nextNodeId = GraphRouting.nextNodeId(node, graph, result?.conditionResult, result?.routingKey)
-        val nextNode = graph.nodes.find { it.id == nextNodeId }
+        val edge = GraphRouting.nextConnection(node, graph, result?.conditionResult, result?.routingKey)
+        val nextNode = graph.nodes.find { it.id == edge?.targetNodeId }
         // After a branching node resolves its path, compute the estimated total for that branch.
         if (node.type == NodeType.INTENT_ROUTER || node.type == NodeType.IF_CONDITION) {
             estimatedTotalSteps = stepCount + GraphRouting.countNodesOnPath(nextNode, graph)
@@ -473,6 +484,7 @@ class RunWalk(
             return
         }
         current = nextNode
+        incomingConnectionId = edge?.id
     }
 
     /** Moves to a queue boundary: the text there is the app's, not a model's. */
@@ -480,6 +492,7 @@ class RunWalk(
         carriedByModel = false
         carried = step.inputText
         current = step.node
+        incomingConnectionId = step.connectionId
     }
 
     /**
