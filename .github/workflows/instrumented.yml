@@ -55,7 +55,7 @@ jobs:
             apk="app/build/outputs/apk/$variant/debug/app-$variant-debug.apk"
             "$signer" verify --print-certs "$apk" | tee "$evidence/$variant-signature.txt"
             "$aapt" dump badging "$apk" > "$evidence/$variant-badging.txt"
-            rg -F "package: name='me.lcfuns.zhiwen.debug'" "$evidence/$variant-badging.txt"
+            grep -F "package: name='me.lcfuns.zhiwen.debug'" "$evidence/$variant-badging.txt"
             sha256sum "$apk" | tee "$evidence/$variant-apk.sha256"
           done
           (cd "$evidence" && sha256sum latest.apk > latest.apk.sha256)
