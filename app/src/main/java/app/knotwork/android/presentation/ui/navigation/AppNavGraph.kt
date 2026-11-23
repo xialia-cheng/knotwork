@@ -187,8 +187,7 @@ fun AppNavGraph(
                 onBackgroundChanged = onSplashBackgroundChanged,
                 onInitialized = {
                     onSplashContentReady()
-                    val next = if (showOnboarding) NavRoutes.ONBOARDING else NavRoutes.CHAT_TAB
-                    navController.navigate(next) {
+                    navController.navigate(postSplashDestination(showOnboarding)) {
                         popUpTo(NavRoutes.SPLASH) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -781,3 +780,19 @@ private fun graphChatHomeViewModel(navController: NavHostController, entry: NavB
     }
     return hiltViewModel(graphEntry)
 }
+
+/**
+ * The destination the splash screen hands over to once start-up finishes.
+ *
+ * Chat is the home: a returning user lands on the conversation surface, where a
+ * request is started by typing it in natural language. Only a first run is
+ * diverted to [NavRoutes.ONBOARDING]; there is no launcher grid or dashboard in
+ * front of the chat. The decision is a pure function the splash lambda calls so
+ * "the app opens on the chat" is pinned by a JVM test instead of living as an
+ * untestable line inside a Compose callback.
+ *
+ * @param showOnboarding Whether the first-run onboarding has still to be shown.
+ * @return [NavRoutes.ONBOARDING] on a first run, [NavRoutes.CHAT_TAB] otherwise.
+ */
+internal fun postSplashDestination(showOnboarding: Boolean): String =
+    if (showOnboarding) NavRoutes.ONBOARDING else NavRoutes.CHAT_TAB
