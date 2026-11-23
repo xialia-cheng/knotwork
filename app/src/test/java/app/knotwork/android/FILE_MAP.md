@@ -617,6 +617,8 @@ Only Kotlin files appear inside the generated blocks.
     - `ImportProblemTextTest.kt` - The sentences a refused import, export or input becomes.
     - `JsonLayoutLosslessTest.kt` - Guard: laying JSON out never changes what it says, and text that is not JSON is shown as it came.
     - `JsonLayoutTest.kt` - Cases of the shared JSON layout one by one; `JsonLayoutLosslessTest` holds the rule over generated documents.
+  - `icon/` - Tests for launcher icon rendering and proportional scaling.
+    - `LauncherForegroundScalingTest.kt` - Checks that adaptive icon foreground artwork scales proportionally across bounds, densities and themes.
   - `notifications/` - Tests for the notification channels and notifiers.
     - `ApprovalNotificationManagerTest.kt` - Robolectric coverage for `ApprovalNotificationManager` — the Human-in-the-loop gate that surfaces tool-approval prompts in the system shade when the user is not actively viewing the requesting chat session.
     - `ClarificationNotificationManagerTest.kt` - Robolectric coverage for `ClarificationNotificationManager`: the parked run's question is the model's, written from the conversation, so where the system hides sensitive content the notification shows its title alone.
@@ -749,6 +751,7 @@ Only Kotlin files appear inside the generated blocks.
     - `prompts/` - Tests for the prompt library.
       - `PromptLibraryViewModelTest.kt` - Unit tests for `PromptLibraryViewModel`.
     - `settings/` - Tests for the settings screens and their catalogues.
+      - `AppearanceSettingsViewModelTest.kt` - Checks local RGB previews, final saves, and delayed persistence acknowledgements.
       - `AppLanguageLabelsTest.kt` - Each language is named in itself, whatever language the app is shown in.
       - `backup/` - Tests for the *Backup & restore* screen's ViewModel.
         - `AfterRestoreViewModelTest.kt` - `AfterRestoreViewModel`: the sheet from the report, the snackbar when nothing is left to do, the downloads it starts — one at a time — and *Done*.
@@ -781,6 +784,7 @@ Only Kotlin files appear inside the generated blocks.
     - `splash/` - Tests for the splash and initialisation path.
       - `SplashStateMappingTest.kt` - Verifies the `SplashUiState.toViewState(...)` mapper that bridges the app-side cold-start projection to the catalog `SplashViewState` consumed by `SplashContent`.
       - `SplashViewModelTest.kt` - Verifies that `SplashViewModel` folds `InitProgress` emissions into the UI state correctly across the success path, the failed path, the retry path, and the data-locked recovery flow (typed-confirm full reset).
+    - `SplashExitCoordinatorTest.kt` - Verifies splash handoff ordering for slow startup and immediately completed initialization.
     - `taskmonitor/` - Tests for the task monitor.
       - `TaskMonitorViewModelTest.kt` - Tests for TaskMonitorViewModel.
     - `tools/` - Tests for the Tools surface, the MCP server editor and the domain allowlist.

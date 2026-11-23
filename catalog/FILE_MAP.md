@@ -407,6 +407,7 @@ Paths below are relative to `src/main/java/app/knotwork/design/`.
     - `SkillLibraryPreview.kt` - canonical sample states shared by the `@Preview`s and the Roborazzi baselines, so the two cannot drift.
     - `SkillLibraryViewState.kt` - visual-state and tab enums, the tool-indicator / tool-mode enums behind the tri-state allowlist, and the row / tool-option / context-flag / editor / delete models.
   - `splash/` - Splash page — content + view-state.
+    - `PixelStrokePainter.kt` - Experimental original-pixel reveal.
     - `SplashContent.kt` - splash surface (brand logo, app name, determinate progress or error + Retry CTA).
     - `SplashViewState.kt` - sealed Initializing / Loading / Error cold-start state.
   - `taskmonitor/` - Task-monitor page.
@@ -634,6 +635,7 @@ matters.
     - `SkillLibraryContentSnapshotTest.kt` - Roborazzi snapshot baselines for the Skill Library surfaces — the list (`SkillLibraryContent`), the full-screen editor (`SkillEditorContent`) and the delete dialog (`SkillDeleteDialogContent`) across their documented states in both themes.
   - `splash/` - the splash surface.
     - `SplashContentSnapshotTest.kt` - Roborazzi baseline for `SplashContent`.
+    - `SplashTimingTest.kt` - Verifies platform timing conversion and Compose animation scaling at supported system speeds.
   - `taskmonitor/` - the active-task monitor.
     - `TaskMonitorContentSnapshotTest.kt` - Roborazzi baseline for `TaskMonitorContent` — the active-task list and its empty state.
   - `tools/` - the Tools screen — collapsible groups, the allowed-domains editor, and the three rules the surface gained from the closed test.

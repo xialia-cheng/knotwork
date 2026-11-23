@@ -74,6 +74,14 @@ class ChatHomeStateMappingTest {
         pending = pending,
     )
 
+    @Test
+    fun `empty chat caption receives the active model name only when available`() {
+        val screen = screenState(ChatHomeUiState.Empty)
+
+        assertEquals(model, screen.toViewState().modelName)
+        assertNull(screen.copy(model = ChatHomeModelState()).toViewState().modelName)
+    }
+
     // ─── Stopped runs: chosen vs unchosen ─────────────────────────────────────
 
     @Test
