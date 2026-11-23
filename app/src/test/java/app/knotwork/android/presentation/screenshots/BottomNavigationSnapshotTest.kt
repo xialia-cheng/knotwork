@@ -8,6 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import app.knotwork.android.presentation.ui.navigation.AppBottomNavigationBar
 import app.knotwork.android.presentation.ui.navigation.NavRoutes
@@ -15,6 +16,7 @@ import app.knotwork.design.a11y.FixedKnotworkA11y
 import app.knotwork.design.a11y.LocalKnotworkA11y
 import app.knotwork.design.theme.KnotworkTheme
 import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -73,6 +75,10 @@ class BottomNavigationSnapshotTest {
                 }
             }
         }
+        val viewport = composeTestRule.onRoot().fetchSemanticsNode().boundsInRoot
+        val tab = composeTestRule.onNodeWithText("Chat").fetchSemanticsNode().boundsInRoot
+        assertTrue("Bottom navigation must leave room above it for page content", tab.top > viewport.center.y)
+
         composeTestRule.onRoot().captureRoboImage(
             roborazziOptions = AppRoborazziOptions,
             filePath = "src/test/snapshots/$fileName",

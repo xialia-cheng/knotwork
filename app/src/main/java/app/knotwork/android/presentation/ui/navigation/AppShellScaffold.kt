@@ -19,9 +19,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -360,7 +360,7 @@ private fun RowScope.BottomNavItem(
     Column(
         modifier = Modifier
             .weight(1f)
-            .fillMaxHeight()
+            .heightIn(min = NavItemMinHeight)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .semantics(mergeDescendants = true) {}
             .padding(vertical = KnotworkTheme.spacing.sp1),
@@ -395,6 +395,10 @@ private fun RowScope.BottomNavItem(
 
 /** Duration of a bottom-nav selection change, per spec: about 150 ms. */
 private const val NAV_STATE_ANIMATION_MS: Int = 150
+
+/** Material navigation bar item height, with room for larger text when it needs more space. */
+@Suppress("MagicNumber") // The Material navigation bar's height token is internal.
+private val NavItemMinHeight = 80.dp
 
 /** Diameter of the dot under the selected tab's glyph. */
 @Suppress("MagicNumber") // Spec value, not derived from another token.
