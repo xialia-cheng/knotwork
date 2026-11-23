@@ -1,25 +1,55 @@
 package app.knotwork.design.screens.splash
 
+import android.provider.Settings
+import android.util.Log
+import android.view.View
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.knotwork.design.R
-import app.knotwork.design.components.brand.KnotworkLogo
 import app.knotwork.design.components.brand.KnotworkLogoSize
 import app.knotwork.design.components.buttons.KnotworkPrimaryButton
 import app.knotwork.design.components.buttons.KnotworkSecondaryButton
@@ -28,9 +58,31 @@ import app.knotwork.design.components.dialogs.TypedConfirmDialogState
 import app.knotwork.design.components.text.Text
 import app.knotwork.design.theme.KnotworkTheme
 import app.knotwork.design.tokens.KnotworkTextStyles
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Maximum content width of the splash column — keeps the layout readable on tablets. */
 private val SplashMaxWidth = 360.dp
+
+// API 34/36 recordings scaled to 360 px wide: system mark 139 px versus 159 px at 328 dp.
+// The adjusted size still needs handoff verification on both devices.
+private val DefaultPlatformSplashIconSize = 288.dp
+
+/**
+ * How long the whole weave takes. The checklist says "about one second"; the
+ * owner asked for a faster reveal after seeing it on a device, so the strokes
+ * are the same and only the clock is shorter. Keep this the single place that
+ * decides the duration.
+ */
+internal const val THREAD_DURATION_MS = 850
+
+private const val PROGRESS_TRACK_ALPHA = 0.2f
+private const val MARK_MAX_HEIGHT_FRACTION = 0.45f
+
+internal val StrokePainterReady = SemanticsPropertyKey<Boolean>("StrokePainterReady")
+private var SemanticsPropertyReceiver.strokePainterReady by StrokePainterReady
 
 /**
  * Stateless Knotwork splash surface. Renders the brand mark + app name +
@@ -41,6 +93,8 @@ private val SplashMaxWidth = 360.dp
  * @param state render state — drives loading vs. error layout.
  * @param modifier optional layout modifier applied to the root box.
  * @param callbacks one-shot callback bundle (Retry).
+ * @param onMarkReady Called after a frame with known platform timing is committed.
+ * @param onBackgroundChanged Receives the background of each committed composition.
  */
 @Composable
 fun SplashContent(
@@ -49,40 +103,72 @@ fun SplashContent(
     modifier: Modifier = Modifier,
     retryLabel: String = stringResource(R.string.knotwork_splash_retry),
     callbacks: SplashCallbacks = noopSplashCallbacks(),
+    onMarkReady: () -> Unit = {},
+    onWeaveFinished: () -> Unit = {},
+    onBackgroundChanged: (Color) -> Unit = {},
 ) {
-    Box(
+    // Pins the starting layout once its weave has finished, so a state change
+    // that lands after the animation (initialization failing right after the
+    // last stroke, most likely) cannot switch to the compact layout and start a
+    // second weave from zero. Only the starting branch may set this: letting the
+    // compact branch set it as well would jump the other way and weave twice.
+    var weaveDone by remember { mutableStateOf(false) }
+    val starting = weaveDone ||
+        state is SplashViewState.Initializing ||
+        state is SplashViewState.Loading
+    val background = if (starting) {
+        colorResource(R.color.brand_startup_background)
+    } else {
+        MaterialTheme.colorScheme.background
+    }
+    SideEffect { onBackgroundChanged(background) }
+    val startupInk = colorResource(R.color.brand_startup_ink)
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .systemBarsPadding(),
+            .background(background),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = SplashMaxWidth)
-                .padding(horizontal = KnotworkTheme.spacing.sp8),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp6),
-        ) {
-            KnotworkLogo(size = KnotworkLogoSize.Lg)
-            Text(
-                text = appName,
-                style = KnotworkTextStyles.Display2xl,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
+        if (starting) {
+            val markSize = minOf(
+                DefaultPlatformSplashIconSize,
+                maxWidth,
+                maxHeight * MARK_MAX_HEIGHT_FRACTION,
             )
-            when (state) {
-                SplashViewState.Initializing -> SplashProgress(progress = 0f, message = "")
-                is SplashViewState.Loading -> SplashProgress(progress = state.progress, message = state.message)
-                is SplashViewState.Error -> SplashError(
-                    message = state.message,
-                    retryLabel = retryLabel,
-                    onRetry = callbacks.onRetry,
+            SplashThread(
+                Modifier.size(markSize).testTag("splash_loading_mark"),
+                onMarkReady,
+                onWeaveFinished = {
+                    weaveDone = true
+                    onWeaveFinished()
+                },
+            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .systemBarsPadding()
+                    .widthIn(max = SplashMaxWidth)
+                    .padding(horizontal = KnotworkTheme.spacing.sp8, vertical = KnotworkTheme.spacing.sp8),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp6),
+            ) {
+                SplashDetails(appName, state, retryLabel, callbacks, startupInk)
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .systemBarsPadding()
+                    .widthIn(max = SplashMaxWidth)
+                    .padding(horizontal = KnotworkTheme.spacing.sp8),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp6),
+            ) {
+                SplashThread(
+                    Modifier.size(KnotworkLogoSize.Lg.size),
+                    onMarkReady,
+                    onWeaveFinished = onWeaveFinished,
                 )
-                is SplashViewState.DataLocked -> SplashDataLocked(
-                    state = state,
-                    retryLabel = retryLabel,
-                    callbacks = callbacks,
-                )
+                SplashDetails(appName, state, retryLabel, callbacks, MaterialTheme.colorScheme.onSurface)
             }
         }
     }
@@ -97,7 +183,128 @@ fun SplashContent(
 }
 
 @Composable
+private fun SplashDetails(
+    appName: String,
+    state: SplashViewState,
+    retryLabel: String,
+    callbacks: SplashCallbacks,
+    textColor: Color,
+) {
+    Text(
+        text = appName,
+        style = KnotworkTextStyles.Display2xl,
+        color = textColor,
+        textAlign = TextAlign.Center,
+    )
+    when (state) {
+        SplashViewState.Initializing -> SplashProgress(progress = 0f, message = "")
+        is SplashViewState.Loading -> SplashProgress(progress = state.progress, message = state.message)
+        is SplashViewState.Error -> SplashError(
+            message = state.message,
+            retryLabel = retryLabel,
+            onRetry = callbacks.onRetry,
+        )
+        is SplashViewState.DataLocked -> SplashDataLocked(state = state, retryLabel = retryLabel, callbacks = callbacks)
+    }
+}
+
+/** Renders the original artwork mask without delaying initialization. */
+@Composable
+private fun SplashThread(
+    modifier: Modifier = Modifier,
+    onMarkReady: () -> Unit = {},
+    onWeaveFinished: () -> Unit = {},
+) {
+    val reducedMotion = KnotworkTheme.a11y.reducedMotion()
+    val context = LocalContext.current
+    val resources = LocalResources.current
+    val view = LocalView.current
+    val readyRegistered = remember(view) { AtomicBoolean(false) }
+    val finishRegistered = remember(view) { AtomicBoolean(false) }
+    val systemScale = Settings.Global.getFloat(
+        context.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    )
+    val painterResult by produceState<Result<PixelStrokePainter>?>(initialValue = null, resources) {
+        value = try {
+            Result.success(withContext(Dispatchers.Default) { PixelStrokePainter.load(resources) })
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Log.e("SplashThread", "Could not load stroke animation", error)
+            Result.failure(error)
+        }
+    }
+    // Keyed only on the things that legitimately restart the animation. Keying it
+    // on the palette load, as it used to be, rebuilt the Animatable at progress
+    // 0 the moment the palette arrived: the static fallback below had already
+    // shown the finished mark, so the user saw "complete mark → one blank frame
+    // → weave restarts".
+    val progress = remember(reducedMotion, systemScale) {
+        Animatable(if (reducedMotion || systemScale <= 0f) 1f else 0f)
+    }
+    val painter = painterResult?.getOrNull()
+    // The static artwork is a failure fallback only. Drawing it while the
+    // palette is still loading is what produced the finished mark before the
+    // weave had run a single frame.
+    val useFallback = painterResult?.isFailure == true
+    val fallback = if (useFallback) ImageBitmap.imageResource(R.drawable.brand_mark) else null
+    val dark = isSystemInDarkTheme()
+    val ink = colorResource(R.color.brand_startup_ink)
+    LaunchedEffect(reducedMotion, systemScale, painterResult) {
+        if (painter == null) return@LaunchedEffect
+        if (reducedMotion || systemScale <= 0f) {
+            progress.snapTo(1f)
+        } else {
+            // The weave always runs in full, from the first stroke. A launch that
+            // spent seconds on the bare launch colour is followed by the real
+            // animation, not by a mark that pops in complete or from half-way.
+            progress.snapTo(0f)
+            progress.animateTo(1f, tween(THREAD_DURATION_MS, easing = LinearEasing))
+        }
+    }
+    Canvas(modifier.semantics { strokePainterReady = painter != null }) {
+        if (painter != null) {
+            val drawnProgress = progress.value
+            painter.draw(this, drawnProgress, if (dark) ink.toArgb() else null)
+            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            // Let navigation replace the splash after the finished artwork is
+            // submitted, without reserving a fixed display time for it.
+            if (drawnProgress >= 1f) {
+                notifyWhenFrameCommitted(view, finishRegistered, onWeaveFinished)
+            }
+        } else if (fallback != null) {
+            val markSize = (size.width * MARK_FRACTION).toInt()
+            val inset = ((size.width - markSize) / 2f).toInt()
+            drawImage(
+                image = fallback,
+                dstOffset = IntOffset(inset, inset),
+                dstSize = IntSize(markSize, markSize),
+                colorFilter = if (dark) ColorFilter.tint(ink) else null,
+            )
+            notifyWhenFrameCommitted(view, readyRegistered, onMarkReady)
+            notifyWhenFrameCommitted(view, finishRegistered, onWeaveFinished)
+        }
+    }
+}
+
+private fun notifyWhenFrameCommitted(view: View, registered: AtomicBoolean, onReady: () -> Unit) {
+    if (!registered.compareAndSet(false, true)) return
+    val observer = view.viewTreeObserver
+    if (view.isHardwareAccelerated && observer.isAlive) {
+        observer.registerFrameCommitCallback { view.post { onReady() } }
+        // A completed animation can be completely static; request a frame so
+        // the one-shot callback still runs when no other content invalidates.
+        view.postInvalidateOnAnimation()
+    } else {
+        view.post { onReady() }
+    }
+}
+
+@Composable
 private fun SplashProgress(progress: Float, message: String) {
+    val ink = colorResource(R.color.brand_startup_ink)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp3),
@@ -106,15 +313,15 @@ private fun SplashProgress(progress: Float, message: String) {
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = KnotworkTheme.extended.surface2,
+            color = ink,
+            trackColor = ink.copy(alpha = PROGRESS_TRACK_ALPHA),
             strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
         )
         if (message.isNotEmpty()) {
             Text(
                 text = message,
                 style = KnotworkTextStyles.BodyBase,
-                color = KnotworkTheme.extended.onSurfaceMuted,
+                color = ink,
                 textAlign = TextAlign.Center,
             )
         }

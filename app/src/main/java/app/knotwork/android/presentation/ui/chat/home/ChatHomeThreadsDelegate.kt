@@ -8,6 +8,7 @@ import app.knotwork.android.domain.text.toSingleLineTitle
 import app.knotwork.android.domain.usecases.ArchiveChatUseCase
 import app.knotwork.android.domain.usecases.UnarchiveChatUseCase
 import app.knotwork.design.screens.chat.ChatHomeThreadRow
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,6 +73,9 @@ class ChatHomeThreadsDelegate(
 ) {
 
     private var sessions: List<ChatSession> = emptyList()
+    private val initialSessions = CompletableDeferred<Unit>()
+
+    internal suspend fun awaitInitialSessions() = initialSessions.await()
 
     /**
      * The in-flight persistence write of the most recently created chat, or `null`
@@ -354,6 +358,7 @@ class ChatHomeThreadsDelegate(
             chatRepository.getSessionsFlow(includeArchived = true).collect { current ->
                 sessions = current
                 state.update { sessionMetadataRefreshed(it) }
+                initialSessions.complete(Unit)
                 onSessionsChanged()
             }
         }

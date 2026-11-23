@@ -381,6 +381,59 @@ class ChatHomeViewModelTest {
     }
 
     @Test
+    fun `startup waits for chat body and metadata before showing home`() = runTest(testDispatcher) {
+        val sessionId = "saved-session"
+        savedSessionIdFlow.value = sessionId
+        val sessions = MutableSharedFlow<List<ChatSession>>(replay = 1)
+        val pipelines = MutableSharedFlow<List<PipelineGraph>>(replay = 1)
+        val defaultPipeline = MutableSharedFlow<String?>(replay = 1)
+        val messages = MutableSharedFlow<List<ChatMessage>>(replay = 1)
+        every { chatRepository.getSessionsFlow(any()) } returns sessions
+        every { pipelineRepository.getAllPipelines() } returns pipelines
+        every { settingsRepository.defaultPipelineId } returns defaultPipeline
+        every { chatRepository.getDisplayMessagesForSession(sessionId) } returns messages
+
+        viewModel = createViewModel()
+        val firstScreen = async {
+            viewModel.initialScreenReady.await()
+            viewModel.state.value
+        }
+
+        messages.emit(emptyList())
+        runCurrent()
+        assertEquals(ChatHomeUiState.Empty, viewModel.state.value.visual)
+        assertFalse(firstScreen.isCompleted)
+
+        sessions.emit(listOf(ChatSession(id = sessionId, name = "Existing chat", updatedAt = 0)))
+        pipelines.emit(listOf(PipelineGraph(id = "local", name = "Local chat")))
+        runCurrent()
+        assertFalse(firstScreen.isCompleted)
+
+        defaultPipeline.emit("local")
+        val screen = firstScreen.await()
+        assertEquals(ChatHomeUiState.Empty, screen.visual)
+        assertEquals("Existing chat", screen.thread.title)
+        assertEquals("Local chat", screen.pipelineName)
+    }
+
+    @Test
+    fun `startup waits for messages when a restored run changes the visual state first`() = runTest(testDispatcher) {
+        val messages = MutableSharedFlow<List<ChatMessage>>(replay = 1)
+        every { chatRepository.getDisplayMessagesForSession(any()) } returns messages
+        viewModel = createViewModel()
+        val firstScreen = async { viewModel.initialScreenReady.await() }
+        runCurrent()
+
+        viewModel.forceState(ChatHomeUiState.Generating())
+        runCurrent()
+        assertFalse(firstScreen.isCompleted)
+
+        messages.emit(emptyList())
+        firstScreen.await()
+        assertEquals(ChatHomeUiState.Generating(), viewModel.state.value.visual)
+    }
+
+    @Test
     fun `messages flow projects ChatMessage rows when display flow emits`() = runTest(testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()

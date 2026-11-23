@@ -186,6 +186,7 @@
     <string name="knotwork_chat_home_title_debug_hint">Тройное нажатие открывает выбор отладочного состояния</string>
     <string name="knotwork_chat_home_empty_title">Новый чат</string>
     <string name="knotwork_chat_home_empty_caption">Пайплайн · %1$s · %2$s (активна)</string>
+    <string name="knotwork_chat_home_empty_caption_no_model">Пайплайн · %1$s · Нет активной локальной модели</string>
     <string name="knotwork_chat_home_empty_card_uses">использует · %1$s</string>
     <string name="knotwork_chat_home_drawer_sessions_header">ЧАТЫ</string>
     <string name="knotwork_chat_home_drawer_new_thread">Новый чат</string>
