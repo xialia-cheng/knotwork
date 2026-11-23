@@ -746,6 +746,7 @@ private fun PipelineGenerationDialog(
         title = { Text(stringResource(R.string.orchestrator_generate_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(KnotworkTheme.spacing.sp2)) {
+                Text(stringResource(R.string.orchestrator_generate_network_notice))
                 OutlinedTextField(
                     value = state.demand,
                     onValueChange = onDemandChange,

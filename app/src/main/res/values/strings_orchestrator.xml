@@ -89,6 +89,7 @@
     <string name="orchestrator_library_speed_dial_from_sentence">From a sentence</string>
     <string name="orchestrator_generate_title">Generate a pipeline</string>
     <string name="orchestrator_generate_prompt_label">Describe what the pipeline should do</string>
+    <string name="orchestrator_generate_network_notice">Generating sends your description and the listed MCP tool names and descriptions to DeepSeek. Requests and retries can use your API quota.</string>
     <string name="orchestrator_generate_loading">Generating…</string>
     <string name="orchestrator_generate_preview_heading">Preview</string>
     <string name="orchestrator_generate_plan_heading">Plan</string>

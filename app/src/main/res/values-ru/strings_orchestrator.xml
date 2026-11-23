@@ -80,6 +80,7 @@
     <string name="orchestrator_library_speed_dial_from_sentence">Из фразы</string>
     <string name="orchestrator_generate_title">Создать пайплайн</string>
     <string name="orchestrator_generate_prompt_label">Опишите, что должен делать пайплайн</string>
+    <string name="orchestrator_generate_network_notice">При генерации в DeepSeek отправляются ваше описание, а также имена и описания инструментов MCP из списка. Запросы и повторные попытки могут расходовать квоту API.</string>
     <string name="orchestrator_generate_loading">Создаём…</string>
     <string name="orchestrator_generate_preview_heading">Предпросмотр</string>
     <string name="orchestrator_generate_plan_heading">План</string>
