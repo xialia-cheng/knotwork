@@ -495,7 +495,7 @@ matters.
     - `ConsoleCatalogPageSnapshotTest.kt` - Roborazzi snapshot baseline for `ConsoleCatalogContent` in both themes.
     - `ConsoleCopyAffordanceTest.kt` - Behavioural tests for the console's long-press copy affordance on the Vars and Traces tabs.
     - `ConsoleEntryStripAffordanceTest.kt` - Pins what makes the console's entry point findable.
-    - `ConsoleEntryStripSnapshotTest.kt` - Roborazzi baseline for the console entry strip in every status state.
+    - `ConsoleEntryStripSnapshotTest.kt` - Roborazzi baselines for a closed or expanded chat console.
     - `ConsoleFilterTest.kt` - Pure-JVM tests for `ConsoleFilter` — the predicate used by `ConsolePane`'s Logs tab to drop filtered-out sources.
     - `ConsoleSearchAffordanceTest.kt` - Pins the console's Search action to the Logs tab.
     - `ConsoleSnapTest.kt` - Documents the discrete `ConsoleSnap` heights as preview-only fixtures.

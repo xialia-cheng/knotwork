@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import app.knotwork.android.R
+import app.knotwork.design.components.console.ConsoleSnap
 import io.mockk.verify
 import org.junit.Rule
 import org.junit.Test
@@ -56,6 +57,27 @@ class ChatHomeOverflowMenuTest {
         composeTestRule.waitForIdle()
 
         verify(exactly = 1) { handles.threads.deleteCurrentSession() }
+    }
+
+    @Test
+    fun consoleFromOverflow_opensPartialPaneAndDismissesMenu() {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        val overflowCd = ctx.getString(KnotworkR.string.knotwork_chat_home_action_overflow)
+        val consoleItem = ctx.getString(R.string.chat_overflow_console)
+        val (viewModel, handles) = mockChatHomeViewModel()
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                ChatHomeScreen(viewModel = viewModel)
+            }
+        }
+
+        composeTestRule.onNodeWithText(consoleItem).assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription(overflowCd).performClick()
+        composeTestRule.onNodeWithText(consoleItem).performClick()
+        composeTestRule.onNodeWithText(consoleItem).assertDoesNotExist()
+
+        verify(exactly = 1) { handles.console.openConsole(ConsoleSnap.Partial) }
     }
 
     @Test
