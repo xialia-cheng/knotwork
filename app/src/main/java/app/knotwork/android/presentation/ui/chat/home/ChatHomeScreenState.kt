@@ -81,6 +81,8 @@ import app.knotwork.design.screens.chat.ChatHomeThreadRow
  *   pending bubble until its stored row reaches [messages], or `null` when
  *   nothing is in that window. Kept apart from [messages] because the display
  *   flow overwrites that list on every emission.
+ * @property streamingReply The transient assistant bubble, replaced by the stored message.
+ * @property latestReplyAt Timestamp of the most recent stored, locally written assistant reply.
  */
 data class ChatHomeScreenState(
     val visual: ChatHomeUiState = ChatHomeUiState.Loading,
@@ -101,7 +103,12 @@ data class ChatHomeScreenState(
     val sendingUserTurn: SendingUserTurn? = null,
     val run: ChatHomeRunState = ChatHomeRunState(),
     val runExportSizeBytes: Long? = null,
+    val streamingReply: StreamingChatReply? = null,
+    val latestReplyAt: Long? = null,
 )
+
+/** A partial reply and the time its model call began. */
+data class StreamingChatReply(val text: String, val startedAt: Long)
 
 /**
  * A user message that has been sent but whose stored row has not reached the

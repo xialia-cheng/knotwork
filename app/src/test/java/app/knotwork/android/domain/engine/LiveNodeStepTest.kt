@@ -106,6 +106,7 @@ class LiveNodeStepTest {
     private fun step(
         tree: RunTreeContext = RunTreeContext.standalone().copy(budget = ledger()),
         resuming: Boolean = false,
+        graph: PipelineGraph = this.graph,
     ) = LiveNodeStep(
         nodeExecutorFactory = factory,
         metricsRepository = metrics,
@@ -162,6 +163,28 @@ class LiveNodeStepTest {
         verify { metrics.recordNodeExecution(NodeType.LITE_RT, any(), 12) }
         assertEquals(1, tree.budget.stepsSpent)
         assertEquals(12, tree.budget.tokensSpent)
+    }
+
+    @Test
+    fun `only a root cloud node directly feeding a passthrough output can preview the reply`() = runTest {
+        val cloud = node(NodeType.CLOUD)
+        val output = node(NodeType.OUTPUT)
+        val direct = graph.copy(
+            nodes = listOf(cloud, output),
+            connections = listOf(ConnectionModel("answer", cloud.id, output.id)),
+        )
+        executor.outputs = flowOf(NodeOutput.Result(NodeExecutionResult(outputText = "answer")))
+
+        step(graph = direct).run(cloud, "in", carriedByModel = false, visitIndex = 0)
+        assertTrue(executor.lastScope!!.publishesChatReply)
+
+        val nested = RunTreeContext.standalone().copy(budget = ledger()).nested("child", 0)
+        step(tree = nested, graph = direct).run(cloud, "in", carriedByModel = false, visitIndex = 0)
+        assertFalse(executor.lastScope!!.publishesChatReply)
+
+        val formatting = direct.copy(nodes = listOf(cloud, output.copy(systemPrompt = "Summarize this.")))
+        step(graph = formatting).run(cloud, "in", carriedByModel = false, visitIndex = 0)
+        assertFalse(executor.lastScope!!.publishesChatReply)
     }
 
     @Test

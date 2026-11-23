@@ -125,11 +125,13 @@ sealed interface AgentOrchestratorState {
     data class ObservationResult(val toolName: String, val result: String) : AgentOrchestratorState
 
     /**
-     * The agent is answering the user directly.
+     * A model is producing text during a run.
      *
      * @property partialText The text response generated so far.
+     * @property chatReplyStartedAt Time when the model call started, only for text
+     *   that will go directly to the chat as the root run's answer.
      */
-    data class Answering(val partialText: String) : AgentOrchestratorState
+    data class Answering(val partialText: String, val chatReplyStartedAt: Long? = null) : AgentOrchestratorState
 
     /**
      * The orchestration cycle is fully completed.

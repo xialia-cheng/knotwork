@@ -111,6 +111,7 @@ class LiveNodeStep(
             imagePath = inputs.takeImage(node),
             inputWrittenByModel = carriedByModel,
             inference = inference,
+            publishesChatReply = publishesChatReplyFrom(node),
         )
         // Before the terminal OUTPUT node runs: its executor emits `Completed`,
         // after which no further console line may be pushed (it would shift the
@@ -169,6 +170,15 @@ class LiveNodeStep(
         metricsRepository.recordNodeExecution(node.type, durationMs, result?.tokenCount)
         charge(node, result)
         return LiveOutcome.Ran(result, prepared.input, durationMs)
+    }
+
+    /** Only a terminal cloud answer with an unchanged path to chat can be previewed. */
+    private fun publishesChatReplyFrom(node: NodeModel): Boolean {
+        if (tree.depth != 0 || node.type != NodeType.CLOUD) return false
+        val edge = graph.connections.filter { it.sourceNodeId == node.id }.singleOrNull() ?: return false
+        return graph.nodes.any {
+            it.id == edge.targetNodeId && it.type == NodeType.OUTPUT && it.systemPrompt.isNullOrBlank()
+        }
     }
 
     /**

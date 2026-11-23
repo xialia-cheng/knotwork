@@ -606,6 +606,59 @@ class ChatHomeViewModelTest {
     }
 
     @Test
+    fun `only a terminal reply streams and its stored row replaces the preview`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        val sessionId = viewModel.state.value.thread.currentSessionId
+        val events = MutableSharedFlow<AgentOrchestratorState>(replay = 1)
+        coEvery { agentOrchestratorUseCase(sessionId, "hi", null) } returns events
+        viewModel.onComposerValueChange("hi")
+        viewModel.sendMessage()
+        advanceUntilIdle()
+
+        events.emit(AgentOrchestratorState.Answering("intermediate draft"))
+        advanceUntilIdle()
+        assertNull(viewModel.state.value.toViewState().streamingReply)
+
+        events.emit(AgentOrchestratorState.Answering("Part ", chatReplyStartedAt = 10L))
+        advanceUntilIdle()
+        assertEquals("Part ", viewModel.state.value.toViewState().streamingReply)
+
+        events.emit(AgentOrchestratorState.Answering("Part one.", chatReplyStartedAt = 10L))
+        advanceUntilIdle()
+        assertEquals("Part one.", viewModel.state.value.toViewState().streamingReply)
+
+        events.emit(AgentOrchestratorState.Completed("Part one."))
+        advanceUntilIdle()
+        assertEquals("Part one.", viewModel.state.value.toViewState().streamingReply)
+
+        messagesFlow.value = listOf(ChatMessage(8L, sessionId, Role.AGENT, "Part one.", timestamp = 11L))
+        advanceUntilIdle()
+        assertNull(viewModel.state.value.toViewState().streamingReply)
+        assertEquals(1, viewModel.state.value.toViewState().messages.count { it.role == ChatRole.Assistant })
+    }
+
+    @Test
+    fun `stopping a run discards its streamed reply`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        val sessionId = viewModel.state.value.thread.currentSessionId
+        val events = MutableSharedFlow<AgentOrchestratorState>(replay = 1)
+        coEvery { agentOrchestratorUseCase(sessionId, "hi", null) } returns events
+        viewModel.onComposerValueChange("hi")
+        viewModel.sendMessage()
+        advanceUntilIdle()
+
+        events.emit(AgentOrchestratorState.Answering("Part ", chatReplyStartedAt = 10L))
+        advanceUntilIdle()
+        assertEquals("Part ", viewModel.state.value.toViewState().streamingReply)
+
+        viewModel.stopGeneration()
+        advanceUntilIdle()
+        assertNull(viewModel.state.value.toViewState().streamingReply)
+    }
+
+    @Test
     fun `given a typed stop then the cause reaches the surface, not only the record`() = runTest(testDispatcher) {
         // The seam between the engine's typed cause and the sentence the user
         // reads. Dropping `state.reason` here compiles, keeps the run record

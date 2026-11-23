@@ -288,6 +288,7 @@ fun ChatHomeScreenState.toViewState(
         VoiceInputState.Idle -> null
     }
     return baseViewState.copy(
+        streamingReply = streamingReply?.text,
         composerAttachment = composerAttachment,
         composerState = voiceComposerState ?: baseViewState.composerState,
         composerVoiceNotice = composer.voiceNotice,

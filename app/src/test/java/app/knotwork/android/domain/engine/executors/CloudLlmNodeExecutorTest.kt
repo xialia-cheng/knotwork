@@ -14,6 +14,7 @@ import app.knotwork.android.domain.engine.retry.CloudRetryListener
 import app.knotwork.android.domain.models.AgentOrchestratorState
 import app.knotwork.android.domain.models.CloudProvider
 import app.knotwork.android.domain.models.ConsoleEventType
+import app.knotwork.android.domain.models.ExecutionScope
 import app.knotwork.android.domain.models.NodeModel
 import app.knotwork.android.domain.models.NodeOutput
 import app.knotwork.android.domain.models.NodeType
@@ -290,6 +291,33 @@ class CloudLlmNodeExecutorTest {
 
         assertEquals("A whole answer", result.outputText)
         assertNull(result.error)
+    }
+
+    @Test
+    fun `terminal DeepSeek previews stream content without reasoning frames`() = runTest {
+        val node = NodeModel("1", NodeType.CLOUD, 0f, 0f, cloudProvider = "deepseek")
+        val client: LLMClient = mockk(relaxed = true)
+        coEvery { client.executeStreaming(any(), any<LLModel>()) } returns flowOf(
+            mockk<StreamFrame.ReasoningDelta>(),
+            StreamFrame.TextDelta("Part "),
+            StreamFrame.TextDelta("one."),
+            StreamFrame.End(finishReason = "stop", metaInfo = ResponseMetaInfo.Empty),
+        )
+        coEvery { clientFactory.createClient(CloudProvider.DEEPSEEK, any()) } returns client
+        coEvery { modelResolver.resolveModel(CloudProvider.DEEPSEEK) } returns AnthropicModels.Sonnet_4_5
+
+        val output = executor.execute(
+            node,
+            "input",
+            "s1",
+            "Q",
+            scope = ExecutionScope(publishesChatReply = true),
+        ).toList()
+        val answers = output.filterIsInstance<NodeOutput.State>()
+            .mapNotNull { it.state as? AgentOrchestratorState.Answering }
+        assertEquals(listOf("Part ", "Part one."), answers.map { it.partialText })
+        assertEquals(answers[0].chatReplyStartedAt, answers[1].chatReplyStartedAt)
+        assertTrue(answers[0].chatReplyStartedAt!! > 0L)
     }
 
     @Test
