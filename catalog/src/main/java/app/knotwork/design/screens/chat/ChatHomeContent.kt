@@ -671,7 +671,30 @@ private fun ChatHomeMessageList(
     markdownRenderer: (@Composable (String) -> Unit)?,
     listState: LazyListState,
 ) {
-    if (state.streamingReply != null) FollowStreamingReply(listState)
+    if (state.streamingReply != null) {
+        // Follow new lines only while the reader is already at the end.
+        LaunchedEffect(listState) {
+            var previous: Pair<Int, Int>? = null
+            snapshotFlow {
+                val layout = listState.layoutInfo
+                layout.visibleItemsInfo.lastOrNull()?.takeIf { it.key == STREAMING_REPLY_KEY }?.let { item ->
+                    val hidden = item.offset + item.size + layout.afterContentPadding - layout.viewportEndOffset
+                    item.size to hidden.coerceAtLeast(0)
+                }
+            }.collect { measured ->
+                val before = previous
+                previous = measured
+                if (measured == null) return@collect
+                val (height, hiddenPixels) = measured
+                val wasAtEnd = before?.second == 0
+                val grew = before != null && height > before.first
+                if (wasAtEnd && grew && hiddenPixels > 0 && !listState.isScrollInProgress) {
+                    listState.scrollBy(hiddenPixels.toFloat())
+                    if (!listState.canScrollForward) previous = height to 0
+                }
+            }
+        }
+    }
     // Compose the Scaffold-provided insets with the surface's own 16dp
     // horizontal padding into a single `contentPadding` value. Applying
     // them via `Modifier.padding` would shrink the LazyColumn's
@@ -730,32 +753,6 @@ private fun ChatHomeMessageList(
             }
             state.errorMessage?.let { message ->
                 item { ChatHomeErrorTile(message = message, onRetry = callbacks.onErrorRetry) }
-            }
-        }
-    }
-}
-
-/** Keep the new line in view if the reader was already at the end of the reply. */
-@Composable
-private fun FollowStreamingReply(listState: LazyListState) {
-    LaunchedEffect(listState) {
-        var previous: Pair<Int, Int>? = null
-        snapshotFlow {
-            val layout = listState.layoutInfo
-            layout.visibleItemsInfo.lastOrNull()?.takeIf { it.key == STREAMING_REPLY_KEY }?.let { item ->
-                val hidden = item.offset + item.size + layout.afterContentPadding - layout.viewportEndOffset
-                item.size to hidden.coerceAtLeast(0)
-            }
-        }.collect { measured ->
-            val before = previous
-            previous = measured
-            if (measured == null) return@collect
-            val (height, hiddenPixels) = measured
-            val wasAtEnd = before?.second == 0
-            val grew = before != null && height > before.first
-            if (wasAtEnd && grew && hiddenPixels > 0 && !listState.isScrollInProgress) {
-                listState.scrollBy(hiddenPixels.toFloat())
-                if (!listState.canScrollForward) previous = height to 0
             }
         }
     }
