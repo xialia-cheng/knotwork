@@ -3,7 +3,9 @@ package app.knotwork.android.presentation.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalResources
+import androidx.core.view.WindowInsetsControllerCompat
 import app.knotwork.android.domain.repositories.AppearanceSettings
 import app.knotwork.design.theme.KnotworkTheme
 import app.knotwork.design.tokens.ThemeSeed
@@ -14,7 +16,7 @@ import app.knotwork.design.tokens.themeSeed
 @Composable
 fun KnotworkAppTheme(
     appearance: AppearanceSettings = AppearanceSettings(),
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = appearance.resolveDarkTheme(isSystemInDarkTheme()),
     content: @Composable () -> Unit,
 ) {
     val resources = LocalResources.current
@@ -26,16 +28,24 @@ fun KnotworkAppTheme(
             Color(resources.getColor(android.R.color.system_accent1_500, null))
         }
     }
-    val dark = when (appearance.mode) {
-        "light" -> false
-        "dark" -> true
-        else -> darkTheme
-    }
     KnotworkTheme(
-        darkTheme = dark,
+        darkTheme = darkTheme,
         seed = seed,
         vivid = appearance.vivid,
         pureBlack = appearance.pureBlack,
         content = content,
     )
 }
+
+internal fun AppearanceSettings.resolveDarkTheme(systemDarkTheme: Boolean): Boolean = when (mode) {
+    "light" -> false
+    "dark" -> true
+    else -> systemDarkTheme
+}
+
+internal fun WindowInsetsControllerCompat.setStatusBarAppearanceFor(background: Color) {
+    isAppearanceLightStatusBars = background.luminance() > STATUS_BAR_ICON_CONTRAST_CROSSOVER
+}
+
+// Relative luminance where black and white have equal contrast against the background.
+private const val STATUS_BAR_ICON_CONTRAST_CROSSOVER = 0.179f

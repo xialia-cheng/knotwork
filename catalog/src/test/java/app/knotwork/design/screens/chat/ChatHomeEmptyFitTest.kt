@@ -1,5 +1,6 @@
 package app.knotwork.design.screens.chat
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -29,6 +30,30 @@ import org.robolectric.annotation.GraphicsMode
 class ChatHomeEmptyFitTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    @Config(sdk = [36], qualifiers = "en-rUS-w360dp-h760dp-xhdpi")
+    fun `empty chat updates its caption when the active local model changes`() {
+        val modelName = mutableStateOf<String?>(null)
+        composeTestRule.setContent {
+            KnotworkTheme(darkTheme = false) {
+                ChatHomeContent(state = ChatHomePreview.empty().copy(modelName = modelName.value))
+            }
+        }
+
+        val noModel = composeTestRule.onNodeWithText("Pipeline · default · No active local model")
+        val activeModel = composeTestRule.onNodeWithText("Pipeline · default · Gemma 2 (active)")
+        noModel.assertIsDisplayed()
+        activeModel.assertDoesNotExist()
+
+        composeTestRule.runOnIdle { modelName.value = "Gemma 2" }
+        activeModel.assertIsDisplayed()
+        noModel.assertDoesNotExist()
+
+        composeTestRule.runOnIdle { modelName.value = null }
+        noModel.assertIsDisplayed()
+        activeModel.assertDoesNotExist()
+    }
 
     @Test
     @Config(sdk = [36], qualifiers = "w360dp-h560dp-xhdpi")

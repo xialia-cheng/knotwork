@@ -4,8 +4,11 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -31,20 +34,28 @@ import app.knotwork.design.R as DesignR
  * the screen renders the dedicated data-locked recovery surface instead of
  * the generic error layout: explanation + Retry + typed-confirm full reset.
  *
- * @param onInitialized Invoked once when the use case reaches `InitStage.Done`.
+ * @param onInitialized Invoked when initialization and the destination are ready.
  * @param viewModel Hilt-injected [SplashViewModel].
  * @param modifier Optional layout modifier.
+ * @param onSplashContentReady Signals that the system overlay can hand off to this screen.
+ * @param destinationReady Whether the destination can show its first screen.
+ * @param onBackgroundChanged Supplies the actual splash background for status bar contrast.
  */
 @Composable
 fun SplashScreen(
     onInitialized: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SplashViewModel = hiltViewModel(),
+    onSplashContentReady: () -> Unit = {},
+    destinationReady: Boolean = true,
+    onBackgroundChanged: (Color) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.isDone) {
-        if (uiState.isDone) onInitialized()
+    var weaveFinished by remember { mutableStateOf(false) }
+    val canNavigate = uiState.isDone && destinationReady && weaveFinished
+    LaunchedEffect(canNavigate) {
+        if (canNavigate) onInitialized()
     }
 
     val startingMessage = stringResource(R.string.splash_starting)
@@ -64,7 +75,11 @@ fun SplashScreen(
     val resources = LocalResources.current
     val viewState = uiState.toViewState(
         defaultMessage = startingMessage,
-        stageText = { stage -> resources.getString(stageLabel(stage)) },
+        stageText = { stage ->
+            resources.getString(
+                if (stage is InitStage.Done && !destinationReady) R.string.splash_stage_chats else stageLabel(stage),
+            )
+        },
         dataLockedTexts = dataLockedTexts,
     )
     val appName = stringResource(R.string.app_name)
@@ -84,6 +99,9 @@ fun SplashScreen(
         modifier = modifier,
         retryLabel = retryLabel,
         callbacks = callbacks,
+        onMarkReady = onSplashContentReady,
+        onWeaveFinished = { weaveFinished = true },
+        onBackgroundChanged = onBackgroundChanged,
     )
 }
 

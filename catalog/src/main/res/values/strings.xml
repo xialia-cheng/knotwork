@@ -1043,6 +1043,7 @@
     <string name="knotwork_chat_home_empty_title">New chat</string>
     <!-- Empty-state caption — formatted "Pipeline · {name} · {model} (active)". -->
     <string name="knotwork_chat_home_empty_caption">Pipeline · %1$s · %2$s (active)</string>
+    <string name="knotwork_chat_home_empty_caption_no_model">Pipeline · %1$s · No active local model</string>
     <!-- Empty-state suggestion card subtitle prefix: "uses · ". -->
     <string name="knotwork_chat_home_empty_card_uses">uses · %1$s</string>
     <!-- SESSIONS drawer header. -->

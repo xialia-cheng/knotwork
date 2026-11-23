@@ -10,15 +10,19 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import app.knotwork.android.data.services.AgentForegroundService
 import app.knotwork.android.domain.repositories.AppStateSettings
@@ -29,6 +33,8 @@ import app.knotwork.android.presentation.state.AppRestartRequest
 import app.knotwork.android.presentation.state.ChatEntryRequestRelay
 import app.knotwork.android.presentation.state.TransientMessageRelay
 import app.knotwork.android.presentation.theme.KnotworkAppTheme
+import app.knotwork.android.presentation.theme.resolveDarkTheme
+import app.knotwork.android.presentation.theme.setStatusBarAppearanceFor
 import app.knotwork.android.presentation.ui.navigation.AppNavGraph
 import app.knotwork.android.presentation.ui.navigation.AppShellScaffold
 import app.knotwork.android.presentation.ui.navigation.NavRoutes
@@ -47,6 +53,8 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val splashExitCoordinator = SplashExitCoordinator()
 
     @Inject lateinit var appStateSettings: AppStateSettings
 
@@ -92,13 +100,20 @@ class MainActivity : ComponentActivity() {
         // Platform splash (Android 12+) — must be installed BEFORE
         // `super.onCreate` so the system swaps the activity-theme splash
         // window for the SplashScreen-managed window before any content
-        // attempts to draw. `Theme.App.Splash` supplies the accent-500
+        // attempts to draw. `Theme.App.Splash` supplies the light or dark
         // background and the brand-mark foreground; the post-splash theme
-        // declared there takes over as soon as the first Compose frame
-        // commits, so the platform splash hides exactly when the in-app
-        // [SplashScreen][app.knotwork.android.presentation.ui.splash.SplashScreen]
-        // composable becomes visible — no blank-frame flash.
-        installSplashScreen()
+        // declared there takes over when the first Compose frame commits.
+        installSplashScreen().setOnExitAnimationListener { splash ->
+            // The platform stage is a blank launch colour, so there is no
+            // platform animation to resume: the loading page weaves the mark
+            // from its first frame (the checklist's "system stage is the same
+            // colour, the loading page weaves the icon from blank for ~1 s").
+            // Restarting the clock here would skip the first stretch of the
+            // weave and make the mark pop in half-drawn.
+            splashExitCoordinator.onPlatformExit {
+                splash.view.postOnAnimation { splash.remove() }
+            }
+        }
         super.onCreate(savedInstanceState)
 
         if (ContextCompat.checkSelfPermission(
@@ -144,6 +159,7 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT),
         )
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
 
         // The `knotwork://` deep link this cold launch carried (launcher
         // shortcut / share / notification), or null for a normal launch. The
@@ -156,8 +172,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val appearance by appearanceSettings.settings.collectAsState(initial = AppearanceSettings())
-            KnotworkAppTheme(appearance = appearance) {
+            val systemDarkTheme = isSystemInDarkTheme()
+            val darkTheme = appearance.resolveDarkTheme(systemDarkTheme)
+            KnotworkAppTheme(appearance = appearance, darkTheme = darkTheme) {
                 val navController = rememberNavController()
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = backStackEntry?.destination?.route
+                // Before the graph is attached, the window still uses the platform launch style.
+                SideEffect {
+                    if (currentRoute != null && currentRoute != NavRoutes.SPLASH) {
+                        insetsController.isAppearanceLightStatusBars = !darkTheme
+                    }
+                }
 
                 // Route deep links that arrive on the already-running single-task
                 // instance (onNewIntent) into the live NavController. The launch
@@ -203,6 +229,13 @@ class MainActivity : ComponentActivity() {
                         showOnboarding = !hasCompletedOnboarding,
                         pendingDeepLink = pendingDeepLink,
                         chatEntryRequestRelay = chatEntryRequestRelay,
+                        onSplashContentReady = splashExitCoordinator::onContentReady,
+                        onSplashBackgroundChanged = { background ->
+                            // A splash composition may still be present during its exit.
+                            if (navController.currentDestination?.route == NavRoutes.SPLASH) {
+                                insetsController.setStatusBarAppearanceFor(background)
+                            }
+                        },
                         modifier = Modifier.padding(innerPadding),
                     )
                 }
