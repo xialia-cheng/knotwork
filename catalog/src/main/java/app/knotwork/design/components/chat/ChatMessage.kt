@@ -465,6 +465,23 @@ private fun TextBubble(
     }
 }
 
+/** The transient assistant bubble, before message actions or metadata are available. */
+@Composable
+internal fun StreamingAssistantBubble(text: String) {
+    val containerWidth = LocalWindowInfo.current.containerSize.width
+    val screenWidth = with(LocalDensity.current) { containerWidth.toDp() }
+    val tail = if (text.length <= CHAT_PREVIEW_THRESHOLD) {
+        text
+    } else {
+        val clipped = text.takeLast(CHAT_PREVIEW_THRESHOLD)
+        val start = if (clipped.first().isLowSurrogate()) 1 else 0
+        "…" + clipped.substring(start)
+    }
+    Box(modifier = Modifier.widthIn(max = screenWidth - AssistantBubbleTrailingInset)) {
+        TextBubble(role = ChatRole.Assistant, text = tail, onContextAction = null)
+    }
+}
+
 /** A plain-text body in the bubble's text colour. */
 @Composable
 private fun BubbleText(role: ChatRole, text: String) {

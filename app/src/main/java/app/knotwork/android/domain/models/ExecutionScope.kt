@@ -47,6 +47,7 @@ import app.knotwork.android.domain.engine.NodeInference
  *   run the engine passes a recording one, which seeds every on-device call from
  *   the run seed and keeps it for the trace. The default records nothing, for a
  *   node executed outside any engine run.
+ * @property publishesChatReply Whether this node's text flows straight to a root OUTPUT in echo mode.
  */
 data class ExecutionScope(
     val run: RunTreeContext = RunTreeContext.standalone(),
@@ -55,4 +56,5 @@ data class ExecutionScope(
     val imagePath: String? = null,
     val inputWrittenByModel: Boolean = false,
     val inference: NodeInference = NodeInference.Unrecorded,
+    val publishesChatReply: Boolean = false,
 )

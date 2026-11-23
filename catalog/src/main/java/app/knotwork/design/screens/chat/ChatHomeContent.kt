@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,6 +57,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,6 +78,7 @@ import app.knotwork.design.components.chat.ChatComposer
 import app.knotwork.design.components.chat.ChatContent
 import app.knotwork.design.components.chat.ChatMessage
 import app.knotwork.design.components.chat.HitlConfirmationState
+import app.knotwork.design.components.chat.StreamingAssistantBubble
 import app.knotwork.design.components.chips.KnotworkSuggestionChip
 import app.knotwork.design.components.console.ConsoleEntryStrip
 import app.knotwork.design.components.console.ConsolePane
@@ -94,6 +97,8 @@ private val ChatHorizontalPadding = 16.dp
 
 /** Vertical gap between consecutive chat-message rows. */
 private val ChatRowGap = 12.dp
+
+private const val STREAMING_REPLY_KEY = "streaming-assistant-reply"
 
 /** Width of the drawer overlay panel (Material spec for navigation drawers). */
 private val DrawerWidth = 320.dp
@@ -666,6 +671,7 @@ private fun ChatHomeMessageList(
     markdownRenderer: (@Composable (String) -> Unit)?,
     listState: LazyListState,
 ) {
+    if (state.streamingReply != null) FollowStreamingReply(listState)
     // Compose the Scaffold-provided insets with the surface's own 16dp
     // horizontal padding into a single `contentPadding` value. Applying
     // them via `Modifier.padding` would shrink the LazyColumn's
@@ -707,7 +713,10 @@ private fun ChatHomeMessageList(
                 onReadWholeMessage = { callbacks.onReadWholeMessage(row.id) },
             )
         }
-        if (state.visualState == ChatHomeVisualState.Generating) {
+        val streamingReply = state.streamingReply
+        if (streamingReply != null) {
+            item(key = STREAMING_REPLY_KEY) { StreamingAssistantBubble(streamingReply) }
+        } else if (state.visualState == ChatHomeVisualState.Generating) {
             item { GeneratingLoaderBubble(label = state.loaderLabel) }
         }
         // A stopped run gets exactly one tile. Which one depends on whether we
@@ -721,6 +730,32 @@ private fun ChatHomeMessageList(
             }
             state.errorMessage?.let { message ->
                 item { ChatHomeErrorTile(message = message, onRetry = callbacks.onErrorRetry) }
+            }
+        }
+    }
+}
+
+/** Keep the new line in view if the reader was already at the end of the reply. */
+@Composable
+private fun FollowStreamingReply(listState: LazyListState) {
+    LaunchedEffect(listState) {
+        var previous: Pair<Int, Int>? = null
+        snapshotFlow {
+            val layout = listState.layoutInfo
+            layout.visibleItemsInfo.lastOrNull()?.takeIf { it.key == STREAMING_REPLY_KEY }?.let { item ->
+                val hidden = item.offset + item.size + layout.afterContentPadding - layout.viewportEndOffset
+                item.size to hidden.coerceAtLeast(0)
+            }
+        }.collect { measured ->
+            val before = previous
+            previous = measured
+            if (measured == null) return@collect
+            val (height, hiddenPixels) = measured
+            val wasAtEnd = before?.second == 0
+            val grew = before != null && height > before.first
+            if (wasAtEnd && grew && hiddenPixels > 0 && !listState.isScrollInProgress) {
+                listState.scrollBy(hiddenPixels.toFloat())
+                if (!listState.canScrollForward) previous = height to 0
             }
         }
     }

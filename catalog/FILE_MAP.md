@@ -569,6 +569,7 @@ matters.
     - `ChatHomeBottomBarTapTest.kt` - A tap on any part of the chat's bottom bar belongs to the bar, not to the message scrolled behind it.
     - `ChatHomeContentSnapshotTest.kt` - Roborazzi snapshot baseline for `ChatHomeContent` across every documented state of `compose/screens/README.md §C1`.
     - `ChatHomeEmptyFitTest.kt` - A new chat's suggestion cards must all be reachable, however little height the screen leaves them.
+    - `ChatHomeStreamingReplyTest.kt` - Covers the replacement of the loader with a live assistant bubble.
     - `HeroSnapshotTest.kt` - Roborazzi baselines for the README hero shots at the canonical pixel resolution promised in `README.md` (1080 × 2400, the de-facto-standard Pixel-class portrait viewport used by every modern Android-store marketing surface).
     - `HitlConfirmationFitTest.kt` - The tallest approval card fits on the screen whole.
     - `ReportResponseDialogSnapshotTest.kt` - Roborazzi baselines for the content-report dialog.

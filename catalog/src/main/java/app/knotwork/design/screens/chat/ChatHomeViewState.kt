@@ -382,6 +382,8 @@ data class ChatHomeViewState(
      */
     val explainedInThread: Boolean = false,
     val run: ChatHomeRunState = ChatHomeRunState(),
+    /** Partial assistant text while the terminal model streams. */
+    val streamingReply: String? = null,
 ) {
     init {
         require(
