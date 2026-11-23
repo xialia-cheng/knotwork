@@ -87,7 +87,7 @@ object GraphRouting {
      * Most nodes leave by their first outgoing edge. Three types choose:
      * - IF_CONDITION takes the `True` or `False` edge for [conditionResult];
      * - INTENT_ROUTER takes the edge whose label matches [routingKey], exactly or
-     *   as a standalone word, and otherwise falls back (see [unmatchedRouterTarget]);
+     *   as a standalone word, and otherwise falls back (see [unmatchedRouterConnection]);
      * - EVALUATION takes the edge labelled with its verdict, or the first edge when
      *   the verdict has no dedicated port.
      *
@@ -103,19 +103,27 @@ object GraphRouting {
         graph: PipelineGraph,
         conditionResult: Boolean?,
         routingKey: String?,
-    ): String? {
+    ): String? = nextConnection(currentNode, graph, conditionResult, routingKey)?.targetNodeId
+
+    /** Returns the selected edge, including its identity when several ports share a target. */
+    fun nextConnection(
+        currentNode: NodeModel,
+        graph: PipelineGraph,
+        conditionResult: Boolean?,
+        routingKey: String?,
+    ): ConnectionModel? {
         val edges = graph.connections.filter { it.sourceNodeId == currentNode.id }
         if (edges.isEmpty()) {
             Timber.tag("PipelineDebug").d("[ROUTE] from=${currentNode.id} label=null -> to=null")
             return null
         }
 
-        val targetNodeId = if (currentNode.type == NodeType.IF_CONDITION) {
+        val selected = if (currentNode.type == NodeType.IF_CONDITION) {
             val expectedLabel = if (conditionResult == true) RouteLabels.TRUE else RouteLabels.FALSE
             val oppositeLabel = if (conditionResult == true) RouteLabels.FALSE else RouteLabels.TRUE
-            val exactTarget = edges.find { RouteLabels.matches(it.label, expectedLabel) }?.targetNodeId
+            val exactEdge = edges.find { RouteLabels.matches(it.label, expectedLabel) }
             when {
-                exactTarget != null -> exactTarget
+                exactEdge != null -> exactEdge
                 // The author wired the opposite branch but left this one
                 // unconnected: terminate the branch (-> "terminated without
                 // OUTPUT") instead of silently falling through to an arbitrary
@@ -123,7 +131,7 @@ object GraphRouting {
                 edges.any { RouteLabels.matches(it.label, oppositeLabel) } -> null
                 // No True/False labels at all — a single default edge. Keep the
                 // legacy fall-through so an unlabelled pass-through still routes.
-                else -> edges.firstOrNull()?.targetNodeId
+                else -> edges.firstOrNull()
             }
         } else if (currentNode.type == NodeType.INTENT_ROUTER) {
             // `routingKey == null` is the router's real failure mode, not an
@@ -136,20 +144,21 @@ object GraphRouting {
                 edges.find { RouteLabels.matches(it.label, key) }
                     ?: edges.find { !it.label.isNullOrBlank() && routingKeyContainsLabelAsWord(key, it.label) }
             }
-            matchedEdge?.targetNodeId ?: unmatchedRouterTarget(currentNode, edges)
+            matchedEdge ?: unmatchedRouterConnection(currentNode, edges)
         } else if (currentNode.type == NodeType.EVALUATION && routingKey != null) {
             // EVALUATION emits a Pass / Retry / Fail verdict as the routing key;
             // route to the edge whose label matches the verdict, falling back to
             // the first outgoing edge when the verdict has no dedicated port.
-            edges.find { RouteLabels.matches(it.label, routingKey) }?.targetNodeId
-                ?: edges.firstOrNull()?.targetNodeId
+            edges.find { RouteLabels.matches(it.label, routingKey) }
+                ?: edges.firstOrNull()
         } else {
-            edges.firstOrNull()?.targetNodeId
+            edges.firstOrNull()
         }
 
-        val edgeLabel = edges.find { it.targetNodeId == targetNodeId }?.label ?: "null"
-        Timber.tag("PipelineDebug").d("[ROUTE] from=${currentNode.id} label=$edgeLabel -> to=$targetNodeId")
-        return targetNodeId
+        Timber.tag("PipelineDebug").d(
+            "[ROUTE] from=${currentNode.id} label=${selected?.label} -> to=${selected?.targetNodeId}",
+        )
+        return selected
     }
 
     /**
@@ -174,12 +183,12 @@ object GraphRouting {
      *
      * @param node The routing node.
      * @param edges Its outgoing connections.
-     * @return The next node id, or `null` to terminate the branch.
+     * @return The fallback connection, or `null` to terminate the branch.
      */
-    private fun unmatchedRouterTarget(node: NodeModel, edges: List<ConnectionModel>): String? {
+    private fun unmatchedRouterConnection(node: NodeModel, edges: List<ConnectionModel>): ConnectionModel? {
         val fallback = node.fallbackClass?.takeIf { it.isNotBlank() }
-            ?: return edges.firstOrNull()?.targetNodeId
-        return edges.find { it.label?.equals(fallback, ignoreCase = true) == true }?.targetNodeId
+            ?: return edges.firstOrNull()
+        return edges.find { it.label?.equals(fallback, ignoreCase = true) == true }
     }
 
     /**

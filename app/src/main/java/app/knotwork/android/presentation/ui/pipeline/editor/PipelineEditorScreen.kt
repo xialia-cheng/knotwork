@@ -209,6 +209,9 @@ fun PipelineEditorScreen(viewModel: OrchestratorViewModel, onBack: () -> Unit) {
             validationErrors.map { viewModel.labelFor(it) }
         }
         val pipeline = uiState.currentPipeline
+        val connectionTraversals = remember(viewModel, pipeline) {
+            viewModel.observeConnectionTraversals(pipeline)
+        }
         val toolbarSubtitle = rememberToolbarSubtitle(
             graph = pipeline,
             validationErrorCount = validationErrors.size,
@@ -338,6 +341,7 @@ fun PipelineEditorScreen(viewModel: OrchestratorViewModel, onBack: () -> Unit) {
 
         PipelineEditorContent(
             graph = pipeline,
+            connectionTraversals = connectionTraversals,
             editor = editor,
             validationErrors = validationErrors,
             validationLabels = validationLabels.map { context.resolve(it) },

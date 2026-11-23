@@ -449,6 +449,7 @@ Only Kotlin files appear inside the generated blocks.
     - `NodeInference.kt` - A node's only way to its model during one visit.
     - `NodeInputComposer.kt` - Builds what each node of one engine invocation sees: its system prompt with `$VARIABLE`s rendered, its input composed from the context blocks it opted into, and — for exactly one node in the run tree — the run's image.
     - `PeakHeapSampler.kt` - Per-run helper tracking the peak native-heap reading across an inference window; reads `NativeMemorySampler` at a throttled (~150 ms) cadence. Used by `StreamInferenceMeter`.
+    - `PipelineConnectionActivity.kt` - Transient traversals from the engine to the open pipeline canvas.
     - `PipelineExecutionContext.kt` - Immutable per-iteration snapshot of pipeline-scoped data (original user message, chat history, previous node output, tool invocation results, memory entries) consumed by `NodeContextBuilder`.
     - `QueueCursor.kt` - Where one QUEUE_PROCESSOR loop of a run stands: the items still to run, the results so far, and which node the loop belongs to.
     - `RecordingNodeInference.kt` - The `NodeInference` of one node visit inside a run: seeds every on-device call from the run seed and keeps what each call did until the engine records it.
@@ -1078,6 +1079,7 @@ Only Kotlin files appear inside the generated blocks.
           - `EmptyPipelineState.kt` - Empty-canvas hero: brand-mark tile + helper copy + `Start with INPUT` / `From template` CTAs + canvas-geometry info pill.
           - `FilterBar.kt` - Top-edge `Find node…` bar (opened from overflow). Auto-focuses; submit centres on the first matching node and selects it.
           - `MiniMap.kt` - Bottom-right mini-map overlay (270 × 290 dp) with `OVERVIEW · 0.42×` header and per-type-hue node bricks + accent viewport rectangle. Exposes `formatScalePercent(scale)`.
+          - `RunningConnection.kt` - Draws the most recent live traversal, using the same cubic as the connection.
           - `ZoomRail.kt` - Always-visible right-edge `+` / `−` / `⤡` (fit-to-view) tile stack.
         - `config/` - Per-`NodeType` configuration sheets and the codec that moves their fields onto `NodeModel`.
           - `NodeConfigCodec.kt` - JSON ↔ catalog `NodeConfig` codec + legacy-field derivation for rows saved without config JSON + `defaultFor(type, title)` factory.

@@ -3,6 +3,7 @@ package app.knotwork.android.presentation.ui.orchestrator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.knotwork.android.R
+import app.knotwork.android.domain.engine.PipelineConnectionActivity
 import app.knotwork.android.domain.models.CloudProvider
 import app.knotwork.android.domain.models.ConnectionModel
 import app.knotwork.android.domain.models.NodeContextConfig
@@ -14,6 +15,7 @@ import app.knotwork.android.domain.prompt.PromptVariableProvider
 import app.knotwork.android.domain.usecases.SavePipelineUseCase
 import app.knotwork.android.presentation.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -47,6 +49,7 @@ import javax.inject.Inject
  * @param transferUseCases The collaborators of [transfer].
  * @param presetUseCases The collaborators of [presets].
  * @param nodeSheetSources The collaborators of [nodeSheet].
+ * @param connectionActivity Live traversals shown only on the matching canvas.
  */
 @HiltViewModel
 class OrchestratorViewModel @Inject constructor(
@@ -55,6 +58,7 @@ class OrchestratorViewModel @Inject constructor(
     transferUseCases: OrchestratorTransferUseCases,
     presetUseCases: OrchestratorPresetUseCases,
     nodeSheetSources: OrchestratorNodeSheetSources,
+    private val connectionActivity: PipelineConnectionActivity,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -73,6 +77,9 @@ class OrchestratorViewModel @Inject constructor(
      * The current UI state of the Orchestrator screen.
      */
     val uiState: StateFlow<OrchestratorUiState> = _uiState.asStateFlow()
+
+    /** Emits the chosen edge for each live transition in [graph]. */
+    fun observeConnectionTraversals(graph: PipelineGraph): Flow<String> = connectionActivity.observe(graph)
 
     private val _focusNodeRequest = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
