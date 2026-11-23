@@ -95,15 +95,6 @@ private val ChatHorizontalPadding = 16.dp
 /** Vertical gap between consecutive chat-message rows. */
 private val ChatRowGap = 12.dp
 
-/**
- * Bottom clearance reserved under the message list so a short last message
- * (clamped to the bottom of the scroll range) clears the single-line
- * console entry strip sitting above the composer. Sized to the strip's fixed
- * height, which does not grow with font scale — only its status zone gives
- * ground.
- */
-private val ChatConsoleClearance = 40.dp
-
 /** Width of the drawer overlay panel (Material spec for navigation drawers). */
 private val DrawerWidth = 320.dp
 
@@ -358,17 +349,11 @@ private const val TOKEN_FORMAT_THRESHOLD = 1000
  * surface is paused, but typing is allowed so the user can prepare the
  * next turn.
  *
- * When [ChatHomeViewState.agentStatusLine] is non-null the console entry
- * strip is rendered above the composer — `console │ [NODE]  idle · ready ⌃`.
- * When the console is open the same strip renders as the sheet's header
- * instead, never both at once.
- *
  * The whole bar owns the taps that land on it. The message list is laid out
- * under it, so a tap on the strip's margin or on a run notice — neither of
- * which takes touches — used to reach the message scrolled behind, and open a
- * link in it. `internal` for [ChatHomeBottomBarTapTest].
+ * under it, so a tap on a run notice could otherwise open a link in the
+ * message scrolled behind it. `internal` for [ChatHomeBottomBarTapTest].
  *
- * @param state The screen state: status strip, run notices and composer.
+ * @param state The screen state: run notices and composer.
  * @param callbacks Where the bar's controls report.
  */
 @Composable
@@ -381,19 +366,6 @@ internal fun ChatHomeBottomBar(state: ChatHomeViewState, callbacks: ChatHomeCall
         return
     }
     Column(modifier = ownsItsTaps) {
-        if (state.agentStatusLine != null) {
-            AgentStatusStrip(
-                text = state.agentStatusLine,
-                // Closed here by construction: when the console is up it is the
-                // sheet's header instead, never both at once.
-                open = false,
-                onClick = callbacks.onAgentStatusClick,
-                modifier = Modifier.padding(
-                    horizontal = ChatHorizontalPadding,
-                    vertical = KnotworkTheme.spacing.sp1,
-                ),
-            )
-        }
         // Directly above the composer, where a remark about the run sits in the
         // reader's path without interrupting it. A run still going shows its
         // notice; a run the app stopped shows the short form of why — in the
@@ -467,22 +439,18 @@ private fun ChatHomeArchivedBar(onRestore: () -> Unit) {
 }
 
 /**
- * The console entry strip rendered above the composer.
+ * The console sheet's status and close control.
  *
- * Delegates to the catalog [ConsoleEntryStrip] so the chat body and the console
- * sheet's header are literally the same element — see that component for why the
- * strip carries the word `console` rather than a glyph. This wrapper only splits
- * the leading `[TAG]` off the status line so it can be tinted brand-primary
- * while the rest stays console foreground.
+ * The leading status tag gets an accent while the rest of the line uses
+ * the console foreground.
  */
 @Composable
-private fun AgentStatusStrip(text: String, open: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ConsoleStatusHeader(text: String, onClose: () -> Unit) {
     val (tag, rest) = splitAgentStatusTag(text)
     ConsoleEntryStrip(
         statusLine = rest,
-        open = open,
-        onClick = onClick,
-        modifier = modifier,
+        open = true,
+        onClick = onClose,
         leadingStatus = tag?.let {
             {
                 Text(
@@ -708,11 +676,7 @@ private fun ChatHomeMessageList(
         start = padding.calculateStartPadding(LocalLayoutDirection.current) + ChatHorizontalPadding,
         end = padding.calculateEndPadding(LocalLayoutDirection.current) + ChatHorizontalPadding,
         top = padding.calculateTopPadding() + KnotworkTheme.spacing.sp2,
-        // Extra bottom clearance so a short last message that clamps to the
-        // bottom of the scroll range rests clear of the single-line agent-status
-        // console entry strip that sits just above the composer, instead of tucking
-        // under it.
-        bottom = padding.calculateBottomPadding() + KnotworkTheme.spacing.sp2 + ChatConsoleClearance,
+        bottom = padding.calculateBottomPadding() + KnotworkTheme.spacing.sp2,
     )
     val confirmWord = stringResource(R.string.knotwork_typed_confirm_word)
     LazyColumn(
@@ -1028,16 +992,11 @@ private fun ChatHomeConsoleOverlay(state: ChatHomeViewState, callbacks: ChatHome
         sheetState = sheetState,
         containerColor = KnotworkTheme.extended.consoleBg,
         contentColor = KnotworkTheme.extended.consoleFg,
-        // The strip *becomes* the sheet's header rather than being replaced by a
-        // drag handle: one element with one name in two positions, so "where did
-        // the strip go" is never the next question. Tapping it here closes the
-        // console, which is what the flipped chevron promises.
         dragHandle = {
             if (state.agentStatusLine != null) {
-                AgentStatusStrip(
+                ConsoleStatusHeader(
                     text = state.agentStatusLine,
-                    open = true,
-                    onClick = { scope.launch { sheetState.hide() } },
+                    onClose = { scope.launch { sheetState.hide() } },
                 )
             } else {
                 BottomSheetDefaults.DragHandle(
