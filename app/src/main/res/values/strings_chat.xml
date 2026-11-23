@@ -134,6 +134,7 @@
 
 
     <!-- Overflow menu -->
+    <string name="chat_overflow_console">Console</string>
     <string name="chat_overflow_export">Export chat</string>
     <string name="chat_overflow_save_to_file">Save to file</string>
     <string name="chat_overflow_delete">Delete chat</string>

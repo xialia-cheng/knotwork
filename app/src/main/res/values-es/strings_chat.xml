@@ -55,6 +55,7 @@
     <string name="chat_home_suggestion_card_2_tools" />
     <string name="chat_home_suggestion_card_3_title">Divide un objetivo en pasos</string>
     <string name="chat_home_suggestion_card_3_tools" />
+    <string name="chat_overflow_console">Consola</string>
     <string name="chat_overflow_export">Exportar chat</string>
     <string name="chat_overflow_save_to_file">Guardar en archivo</string>
     <string name="chat_overflow_delete">Eliminar chat</string>

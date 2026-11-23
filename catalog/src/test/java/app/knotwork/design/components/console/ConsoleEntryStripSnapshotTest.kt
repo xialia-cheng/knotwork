@@ -21,14 +21,10 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Roborazzi baseline for the console entry strip in every status state.
+ * Roborazzi baselines for a closed or expanded chat console.
  *
- * It lives in its own class because until now the strip had **no** visual
- * coverage at all: no `ChatHomeContent` fixture set `agentStatusLine`, so every
- * chat baseline rendered the screen without it. The control the closed-test
- * tester could not find was the one control the snapshots never showed — the
- * same shape as the inert magnifier that survived every visual review because
- * it sat outside the captured frame.
+ * Status updates leave the closed chat layout alone, while the expanded
+ * panel displays the current status in its header.
  *
  * Reduced motion is pinned like the rest of the suite, so the chevron angle and
  * the generating loader are deterministic.
@@ -55,12 +51,6 @@ class ConsoleEntryStripSnapshotTest {
         ChatHomeContent(state = ChatHomePreview.consoleStrip(ChatHomePreview.StripStatus.GENERATING))
     }
 
-    /**
-     * The overflow case: at 360 dp this line does not fit, so the baseline is
-     * the record of WHICH end survives. The backend and the token count are the
-     * two things that exist nowhere else on screen; the word `generating`
-     * repeats the bubble directly above it.
-     */
     @Test
     fun chat_console_strip_generating_long() = snapshot(name = "generating_long", dark = false) {
         ChatHomeContent(state = ChatHomePreview.consoleStrip(ChatHomePreview.StripStatus.GENERATING_LONG))
@@ -76,11 +66,6 @@ class ConsoleEntryStripSnapshotTest {
         ChatHomeContent(state = ChatHomePreview.consoleStrip(ChatHomePreview.StripStatus.WAITING_IN_QUEUE))
     }
 
-    /**
-     * The strip keeps the END of an overflowing line, so this status puts the word that
-     * matters last: at 200 % only "…queued" survives, and that still says it. The first
-     * wording ("waiting for another run to finish") read "…finish" here.
-     */
     @Test
     fun chat_console_strip_waiting_in_queue_fontscale200() =
         snapshot(name = "waiting_in_queue_fontscale200", dark = false, fontScale = 2f) {
@@ -121,7 +106,6 @@ class ConsoleEntryStripSnapshotTest {
         ChatHomeContent(state = ChatHomePreview.consoleStrip(ChatHomePreview.StripStatus.IDLE))
     }
 
-    /** The longest status string, at the scale where the strip has to stay one line. */
     @Test
     fun chat_console_strip_preparing_fontscale200() =
         snapshot(name = "preparing_fontscale200", dark = false, fontScale = 2f) {
