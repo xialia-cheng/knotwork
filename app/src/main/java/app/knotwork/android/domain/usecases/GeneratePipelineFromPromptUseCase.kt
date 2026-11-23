@@ -5,6 +5,7 @@ import app.knotwork.android.domain.engine.structured.StructuredInferenceClient
 import app.knotwork.android.domain.engine.structured.StructuredOutputGate
 import app.knotwork.android.domain.models.GeneratedPipelineDraft
 import app.knotwork.android.domain.models.ImportProblem
+import app.knotwork.android.domain.models.NodeType
 import app.knotwork.android.domain.models.PipelineImportOutcome
 import app.knotwork.android.domain.models.PipelineValidationError
 import app.knotwork.android.domain.models.ToolSource
@@ -82,6 +83,11 @@ class GeneratePipelineFromPromptUseCase @Inject constructor(
         if (demandText.isEmpty()) return Result.failure(PipelineGenerationException(BLANK_DEMAND_MESSAGE))
 
         val mcpTools = availableMcpTools()
+        val allowedToolNames = mcpTools.asSequence()
+            .filter { it.name.isNotBlank() }
+            .take(PipelineGenerationPromptBuilder.MAX_LISTED_TOOLS)
+            .map { it.name }
+            .toSet()
         val inference = object : StructuredInferenceClient {
             override suspend fun infer(prompt: String, temperature: Float?): String = model.complete(prompt)
         }
@@ -107,7 +113,7 @@ class GeneratePipelineFromPromptUseCase @Inject constructor(
                     PipelineGenerationException("The model did not return readable JSON: ${outcome.lastError}"),
                 )
                 is GateResult.Success -> {
-                    when (val inspection = inspect(outcome.value)) {
+                    when (val inspection = inspect(outcome.value, allowedToolNames)) {
                         is Inspection.Accepted -> return Result.success(inspection.draft)
                         is Inspection.Rejected -> {
                             lastProblems = inspection.problems
@@ -154,12 +160,13 @@ class GeneratePipelineFromPromptUseCase @Inject constructor(
      * keys is corrected rather than silently stripped.
      *
      * @param reply The parsed reply.
+     * @param allowedToolNames Connected MCP tools listed in the prompt.
      * @return The draft, or the findings to feed back.
      */
-    private suspend fun inspect(reply: GeneratedPipelineJson): Inspection {
+    private suspend fun inspect(reply: GeneratedPipelineJson, allowedToolNames: Set<String>): Inspection {
         val outcome = PipelineJsonSerializer.parse(reply.toDocumentJson())
         return when (outcome) {
-            is PipelineImportOutcome.Success -> accept(outcome, reply.plan.trim())
+            is PipelineImportOutcome.Success -> accept(outcome, reply.plan.trim(), allowedToolNames)
             is PipelineImportOutcome.SchemaMismatch -> Inspection.Rejected(listOf(SCHEMA_VERSION_PROBLEM))
             is PipelineImportOutcome.Failure -> Inspection.Rejected(listOf(outcome.problem.describe()))
         }
@@ -170,12 +177,28 @@ class GeneratePipelineFromPromptUseCase @Inject constructor(
      *
      * @param success The importer's accepted outcome.
      * @param plan The reply's design rationale, carried into the draft untouched.
+     * @param allowedToolNames Connected MCP tools listed in the prompt.
      */
-    private suspend fun accept(success: PipelineImportOutcome.Success, plan: String): Inspection {
+    private suspend fun accept(
+        success: PipelineImportOutcome.Success,
+        plan: String,
+        allowedToolNames: Set<String>,
+    ): Inspection {
         if (success.droppedFields.isNotEmpty()) {
             return Inspection.Rejected(success.droppedFields.map { DROPPED_FIELD_PROBLEM_PREFIX + it })
         }
         val graph = success.graph
+        val unsupported = graph.nodes.mapNotNull { node ->
+            when (node.type) {
+                NodeType.PIPELINE, NodeType.SKILL -> "${node.type.name} is not supported in generated drafts"
+                NodeType.TOOL -> {
+                    if (node.toolName in allowedToolNames) null else "TOOL must reference a listed MCP tool"
+                }
+                else -> null
+            }
+        }
+        if (unsupported.isNotEmpty()) return Inspection.Rejected(unsupported.distinct())
+
         val errors = graph.validate() + compositionValidator.validate(graph)
         if (errors.isNotEmpty()) return Inspection.Rejected(errors.map { it.describe() })
         return Inspection.Accepted(

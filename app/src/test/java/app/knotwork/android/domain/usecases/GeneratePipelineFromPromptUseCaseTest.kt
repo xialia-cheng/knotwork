@@ -65,6 +65,40 @@ class GeneratePipelineFromPromptUseCaseTest {
     }
 
     @Test
+    fun `generated pipeline and skill references are rejected and corrected`() = runTest {
+        val pipeline = VALID_REPLY.replaceCloudNode("PIPELINE", "targetPipelineId", "existing-pipeline")
+        val skill = VALID_REPLY.replaceCloudNode("SKILL", "skillId", "existing-skill")
+        val model = ScriptedModel(listOf(pipeline, skill, VALID_REPLY))
+
+        val result = useCase(model)("Generate a short summary pipeline")
+
+        assertTrue(result.isSuccess)
+        assertEquals(3, model.prompts.size)
+        assertTrue(model.prompts[1].contains("PIPELINE is not supported in generated drafts"))
+        assertTrue(model.prompts[2].contains("SKILL is not supported in generated drafts"))
+    }
+
+    @Test
+    fun `generated tool nodes can only name a listed MCP tool`() = runTest {
+        val listedTool = AgentTool(
+            name = "search_web",
+            description = "Search the web",
+            parameters = "{}",
+            source = ToolSource.MCP,
+        )
+        val unavailable = VALID_REPLY.replaceCloudNode("TOOL", "toolName", "unavailable")
+        val available = VALID_REPLY.replaceCloudNode("TOOL", "toolName", "search_web")
+        val model = ScriptedModel(listOf(unavailable, available))
+
+        val result = useCase(model, tools = listOf(listedTool))("Find background information")
+
+        assertTrue(result.isSuccess)
+        assertEquals(2, model.prompts.size)
+        assertTrue(model.prompts[1].contains("TOOL must reference a listed MCP tool"))
+        assertEquals("search_web", result.getOrThrow().nodes.single { it.type == NodeType.TOOL }.toolName)
+    }
+
+    @Test
     fun `malformed JSON is repaired by the gate before it counts as a failure`() = runTest {
         val model = ScriptedModel(listOf(GARBAGE, GARBAGE, VALID_REPLY))
 
@@ -180,6 +214,10 @@ class GeneratePipelineFromPromptUseCaseTest {
         assertNotNull(thrown)
         assertTrue(thrown is CancellationException)
     }
+
+    private fun String.replaceCloudNode(type: String, key: String, value: String): String =
+        replace("\"type\": \"CLOUD\"", "\"type\": \"$type\"")
+            .replace("\"systemPrompt\": \"把输入总结成三点。\"", "\"$key\": \"$value\"")
 
     /** Builds the use case with a real gate, a scripted model and no-op collaborators. */
     private fun useCase(model: PipelineGenerationModel, tools: List<AgentTool> = emptyList()) =
