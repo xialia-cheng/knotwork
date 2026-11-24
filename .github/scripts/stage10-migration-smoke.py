@@ -183,8 +183,8 @@ class Smoke:
         self.click(name + "-save", labeled("Save"))
         return self.pipeline_state(name, name + "-pipeline-saved")
 
-    def pipeline_state(self, title, case, scroll_steps=0):
-        _, nodes = self.wait_ui(case, labeled(title), scroll_steps=scroll_steps)
+    def pipeline_state(self, title, case, scroll_steps=0, deny_again=False):
+        _, nodes = self.wait_ui(case, labeled(title), scroll_steps=scroll_steps, deny_again=deny_again)
         count = next((label(n) for n in nodes if re.match(r"^\d+ saved · \d+ default$", label(n))), None)
         check(count is not None, "The pipeline count is missing from the library")
         return count
@@ -388,7 +388,8 @@ class Smoke:
         check(self.pipeline_state(title, "legacy-json-imported", scroll_steps=-3) == expected, "Imported pipeline count changed")
         self.stop()
         self.launch("legacy-json-restart", shortcut="pipelines")
-        check(self.pipeline_state(title, "legacy-json-persisted", scroll_steps=3) == expected, "Imported graph did not survive restart")
+        restarted = self.pipeline_state(title, "legacy-json-persisted", scroll_steps=3, deny_again=True)
+        check(restarted == expected, "Imported graph did not survive restart")
         self.screenshot("legacy-json-persisted")
         return f"Imported the legacy bundle of {len(pipelines)} pipelines through DocumentsUI without replacing the default"
 
