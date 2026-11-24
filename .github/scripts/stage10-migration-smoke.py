@@ -142,6 +142,21 @@ class Smoke:
         node, _ = self.wait_ui(name, predicate, scroll_steps=scroll_steps)
         self.tap(node)
 
+    def save_document(self, name):
+        # The keyboard can still close as DocumentsUI opens, moving Save.
+        previous_bounds = None
+
+        def settled_save(node):
+            nonlocal previous_bounds
+            if label(node) not in ("Save", "SAVE") or "documentsui" not in node.get("package", ""):
+                return False
+            bounds = node.get("action-bounds")
+            settled = enabled_action(node) and bool(bounds) and bounds == previous_bounds
+            previous_bounds = bounds
+            return settled
+
+        self.click(name, settled_save)
+
     def app_shell(self, command):
         return shell(f"run-as {self.pkg} sh -c {shlex.quote(command)}")
 
@@ -234,8 +249,7 @@ class Smoke:
         check(len(fields) == 2, "Backup confirmation field was not available")
         self.type_into(fields[1], BACKUP_PASSPHRASE)
         self.click(name + "-create-document", labeled("Choose where to save"), scroll_steps=3)
-        self.click(name + "-save-document", lambda n: label(n) in ("Save", "SAVE") and
-                   "documentsui" in n.get("package", ""))
+        self.save_document(name + "-save-document")
         self.wait_ui(name + "-saved", labeled("Backup saved"), timeout=135)
         self.wait_ui(name + "-without-secrets", labeled("API keys and sign-ins are not in this file."))
         self.screenshot(name + "-saved")
@@ -359,8 +373,7 @@ class Smoke:
         self.rename_fixture_pipeline(title, "Showcase — full agent")
         self.click("legacy-json-actions", labeled("More actions for " + title))
         self.click("legacy-json-export", labeled("Export"))
-        self.click("legacy-json-save", lambda n: label(n) in ("Save", "SAVE") and
-                   "documentsui" in n.get("package", ""))
+        self.save_document("legacy-json-save")
         saved_file = "find /sdcard/Download -maxdepth 1 -type f -name 'knotwork-bundle-*.json' -size +0c"
         until = time.monotonic() + 35
         paths = []
