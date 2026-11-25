@@ -215,7 +215,15 @@ class TranslationCoverageTest {
             val clipped = MODULES.flatMap { module ->
                 val english = textsIn(defaultFolder(module))
                 textsIn(languageFolders(module).getValue(language))
-                    .filter { (key, text) -> english[key]?.let { edgeSpaces(it) != edgeSpaces(text) } == true }
+                    .filter { (key, text) ->
+                        val source = english[key]
+                        source != null &&
+                            edgeSpaces(source) != edgeSpaces(text) &&
+                            // Chinese and Japanese set their punctuation tight: `、`
+                            // between items takes no spaces where English's `, ` does,
+                            // and the build would trim the ones we added anyway.
+                            text.trim().trim('"').let { it.isEmpty() || !TIGHT_PUNCTUATION.contains(it.first()) }
+                    }
                     .keys.map { "$module:$it" }
             }.sorted()
             assertTrue(
@@ -271,6 +279,9 @@ class TranslationCoverageTest {
         val value = if (quoted) trimmed.substring(1, trimmed.length - 1) else trimmed
         return (value.firstOrNull()?.isWhitespace() == true) to (value.lastOrNull()?.isWhitespace() == true)
     }
+
+    /** Punctuation that Chinese and Japanese set without surrounding spaces. */
+    private val TIGHT_PUNCTUATION = "、。，；：！？）」』".toSet()
 
     /** Whether [text] has a letter outside its format specifiers: `%1$s: %2$s` has none. */
     private fun hasWords(text: String): Boolean = text.replace(FORMAT_SPECIFIER, "").any(Char::isLetter)
