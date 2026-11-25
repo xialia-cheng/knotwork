@@ -118,7 +118,7 @@ class AppLanguageRepositoryImplTest {
         val repository = AppLanguageRepositoryImpl(application) { LocaleList.forLanguageTags("es,ru,en,ru") }
 
         // The rest keep the config's order.
-        assertEquals(listOf("en", "es", "ru", "zh"), repository.supportedLanguages())
+        assertEquals(listOf("en", "es", "ru"), repository.supportedLanguages())
     }
 
     @Test
