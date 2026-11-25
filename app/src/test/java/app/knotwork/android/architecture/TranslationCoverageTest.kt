@@ -222,7 +222,7 @@ class TranslationCoverageTest {
                             // Chinese and Japanese set their punctuation tight: `、`
                             // between items takes no spaces where English's `, ` does,
                             // and the build would trim the ones we added anyway.
-                            text.trim().trim('"').let { it.isEmpty() || !TIGHT_PUNCTUATION.contains(it.first()) }
+                            text.trim().trim('"').let { it.isEmpty() || !tightPunctuation.contains(it.first()) }
                     }
                     .keys.map { "$module:$it" }
             }.sorted()
@@ -281,7 +281,7 @@ class TranslationCoverageTest {
     }
 
     /** Punctuation that Chinese and Japanese set without surrounding spaces. */
-    private val TIGHT_PUNCTUATION = "、。，；：！？）」』".toSet()
+    private val tightPunctuation = "、。，；：！？）」』".toSet()
 
     /** Whether [text] has a letter outside its format specifiers: `%1$s: %2$s` has none. */
     private fun hasWords(text: String): Boolean = text.replace(FORMAT_SPECIFIER, "").any(Char::isLetter)
