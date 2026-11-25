@@ -352,7 +352,7 @@ abstract class TranslatedScreensSnapshotTest {
         val HELP_DOCUMENTS = DocumentationLinks.DOCUMENTS.map { it.copy(lineCount = 500, sectionCount = 10) }
 
         /** The languages the interface ships, as the build's generated `LocaleConfig` lists them. */
-        val SUPPORTED_LANGUAGES = listOf("en", "es", "ru")
+        val SUPPORTED_LANGUAGES = listOf("en", "es", "ru", "zh")
 
         const val FONT_SCALE = 2f
         const val CHAT_ID = "chat-1"

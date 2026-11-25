@@ -35,7 +35,7 @@ class AppLanguageRepositoryInstrumentedTest {
         assertEquals(AppLanguageRepositoryImpl.DEFAULT_LANGUAGE, languages.first())
         // Only the first place is ours: `LocaleConfig` gathers the generated file's names into a
         // `HashSet`, so the rest come in that set's order, not the file's.
-        assertEquals(listOf("en", "es", "ru"), languages.sorted())
+        assertEquals(listOf("en", "es", "ru", "zh"), languages.sorted())
     }
 
     @Test
