@@ -16,7 +16,6 @@ app:string/models_performance_unit_tokens_per_second	# unit or identifier, the s
 app:string/models_section_hf	# unit or identifier, the same in Chinese
 app:string/monitoring_unit_ms	# unit or identifier, the same in Chinese
 app:string/prompt_preset_picker_tokens_suffix	# unit or identifier, the same in Chinese
-app:string/run_limits_number	# unit or identifier, the same in Chinese
 app:string/settings_cloud_retry_delay_value	# unit or identifier, the same in Chinese
 app:string/settings_identity_avatar_initials	# unit or identifier, the same in Chinese
 app:string/settings_memory_export_filename	# unit or identifier, the same in Chinese
@@ -28,7 +27,6 @@ app:string/settings_search_name_top_p	# unit or identifier, the same in Chinese
 app:string/settings_unit_kilobytes	# unit or identifier, the same in Chinese
 app:string/settings_unit_megabytes	# unit or identifier, the same in Chinese
 app:string/settings_unit_tokens	# unit or identifier, the same in Chinese
-app:string/settings_usage_duration	# unit or identifier, the same in Chinese
 app:string/settings_usage_export_filename	# unit or identifier, the same in Chinese
 app:string/unit_size_bytes	# unit or identifier, the same in Chinese
 app:string/unit_size_gigabytes	# unit or identifier, the same in Chinese
