@@ -228,14 +228,11 @@ class Smoke:
         return "Selected Chinese using Android App Language before first launch; onboarding and Chat remained usable"
 
     def no_local_model(self):
-        self.tap(self.chat("zh-chat-composer"))
-        self.wait_ui("zh-focused-composer", lambda n: edit_field(n) and n.get("focused") == "true")
-        for key in ("KEYCODE_P", "KEYCODE_R", "KEYCODE_O", "KEYCODE_B", "KEYCODE_E"):
-            shell("input", "keyevent", key)
-            time.sleep(0.2)
+        example = "讲讲日食是怎么发生的"
+        self.click("zh-sample-prompt", labeled(example))
         _, before = self.wait_ui("zh-send", labeled("发送消息"))
-        draft = next((n.get("text", "").strip() for n in before if edit_field(n) and n.get("text")), "")
-        check(bool(draft), "No text reached the composer before sending")
+        draft = next((n.get("text", "").strip() for n in before if edit_field(n)), "")
+        check(draft == example, f"The sample did not populate the composer: {draft!r}")
         self.tap(next(n for n in before if label(n) == "发送消息"))
         _, nodes = self.wait_ui("zh-no-model-error", lambda n: "没有已启用的模型" in label(n), timeout=35)
         self.screenshot("zh-no-model-error")
