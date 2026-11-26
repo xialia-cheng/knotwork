@@ -7,7 +7,7 @@ WHAT IT DOES
 - Tools, gated by you. Built-in tools and external servers through the Model Context Protocol (MCP). By default every sensitive or destructive call stops for explicit confirmation, enforced where the tool executes, not merely suggested to the model.
 - Reaches you from outside the app. A share target, launcher shortcuts and a Quick Settings tile run your chosen pipeline over shared text or images. Triggers (time, charging, Wi-Fi, network) fire a pipeline on their own and report back. Every entry surface stays inert until you bind a pipeline to it.
 - Remembers what matters. Long-term memory with semantic retrieval over past conversations, automatic fact extraction, search and export.
-- In your language. The screens, the bundled pipelines and the help come in English, Russian and Spanish. What a model reads stays in English.
+- In your language. The screens, the bundled pipelines and the help come in English, Russian, Spanish and Chinese. What a model reads stays in English.
 
 WHO IT IS FOR
 

@@ -171,7 +171,7 @@ twenty-three.
 
 ### 1.3. Interface language
 
-The screens come in English, Russian and Spanish (`localeFilters` in
+The screens come in English, Russian, Spanish and Chinese (`localeFilters` in
 `app/build.gradle.kts`). The choice is Android's per-app language:
 `AppLanguageRepository` in `domain`, on `LocaleManager` in `data`, so
 *Settings → About → Language* and the phone's own per-app language page

@@ -411,7 +411,7 @@ android {
         // translated into falls back to English throughout. A new interface
         // language is added here AND gets its `values-<lang>` folders in `app` and
         // `catalog`; `TranslationCoverageTest` reads this list.
-        localeFilters += listOf("en", "ru", "es")
+        localeFilters += listOf("en", "ru", "es", "zh")
         // Lists the app's languages in the system's per-app language settings
         // (Android 13+) and gives the in-app picker its choices, through the
         // generated `LocaleConfig`. The default locale comes from

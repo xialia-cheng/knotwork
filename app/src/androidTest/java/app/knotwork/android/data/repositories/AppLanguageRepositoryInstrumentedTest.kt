@@ -1,6 +1,7 @@
 package app.knotwork.android.data.repositories
 
 import android.app.LocaleManager
+import android.content.res.Configuration
 import android.os.LocaleList
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -16,6 +17,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Locale
+import app.knotwork.design.R as DesignR
 
 /**
  * [AppLanguageRepositoryImpl] on a device: the picker's languages come from the
@@ -35,7 +37,19 @@ class AppLanguageRepositoryInstrumentedTest {
         assertEquals(AppLanguageRepositoryImpl.DEFAULT_LANGUAGE, languages.first())
         // Only the first place is ours: `LocaleConfig` gathers the generated file's names into a
         // `HashSet`, so the rest come in that set's order, not the file's.
-        assertEquals(listOf("en", "es", "ru"), languages.sorted())
+        assertEquals(listOf("en", "es", "ru", "zh"), languages.sorted())
+    }
+
+    @Test
+    fun simplifiedChinesePreservesTheDebugAndOnboardingBrand() {
+        val configuration = Configuration(context.resources.configuration).apply {
+            setLocales(LocaleList.forLanguageTags("zh-Hans-CN"))
+        }
+        val chinese = context.createConfigurationContext(configuration)
+
+        assertEquals("zh", chinese.getString(R.string.interface_language_tag))
+        assertEquals("织问 Debug", chinese.getString(R.string.app_name))
+        assertEquals("织问", chinese.getString(DesignR.string.knotwork_onboarding_brand_title))
     }
 
     @Test
