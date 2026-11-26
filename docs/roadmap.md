@@ -92,7 +92,7 @@ end-to-end:
 - Model lists for OpenAI, Anthropic, Google and DeepSeek held against the
   client library's own catalogue by a test, so a library upgrade that adds or
   drops a model fails the build until the list is sorted.
-- The app in English, Russian and Spanish: the screens, the bundled pipelines
+- The app in English, Russian, Spanish and Chinese: the screens, the bundled pipelines
   and the in-app help. What a model reads stays in English.
 - A chat exports as one JSON file, shared or saved straight to a folder you
   pick.
@@ -185,7 +185,7 @@ migrations.
 
 ### Localization
 
-The app ships in English, Russian and Spanish. Another language is a
+The app ships in English, Russian, Spanish and Chinese. Another language is a
 natural, well-bounded addition and a good area for first-time
 contributors: it takes a translation of the interface strings, the
 bundled presets and the in-app help, and the build checks that none of

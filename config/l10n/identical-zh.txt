@@ -1,11 +1,13 @@
 # Simplified Chinese strings that are rightly the same as the English text.
 # One `module:kind/name` per line with the reason after `#`.
 #
-# Almost every entry here is a key whose *default* resources already hold the
-# Chinese text (appearance and canvas labels written in Chinese in `values/`):
-# the translation cannot differ without inventing wording that main does not
-# use yet. Making those defaults English is a separate change; until then this
-# list keeps the coverage test honest rather than special-casing Chinese.
+# Two groups live here. Fifty-five are keys whose *default* resources already
+# hold the Chinese text (appearance and canvas labels written in Chinese in
+# `values/`), so the translation cannot differ without inventing wording main
+# does not use yet; making those defaults English is a separate change, and this
+# list keeps the coverage test honest rather than special-casing Chinese. The
+# rest are units and identifiers (`ms`, `MB`, `tokens`, `Top K`) that read the
+# same in Chinese.
 
 app:string/external_automation_call_action_label	# unit or identifier, the same in Chinese
 app:string/external_automation_call_keys_label	# unit or identifier, the same in Chinese

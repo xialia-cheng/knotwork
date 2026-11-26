@@ -2568,7 +2568,7 @@ for the search results in action.
 
 ### Interface language
 
-The app is in English, Russian and Spanish. **About → Language** picks the language of
+The app is in English, Russian, Spanish and Chinese. **About → Language** picks the language of
 the app's screens: **Device language**, the default, follows your phone — the
 first of its languages the app is translated into, else English; the other
 entries are those languages, each named in itself. Your phone's per-app language

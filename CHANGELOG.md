@@ -13,6 +13,10 @@ details.
 
 ## [Unreleased]
 
+### Added
+
+- **Simplified Chinese.** The screens, the bundled pipelines, the presets and the in-app help are translated, and Chinese joins English, Russian and Spanish in the language picker and in the system's per-app language settings. What a model reads stays in English.
+
 ## [0.14.0] - 2026-11-08
 
 ### Added

@@ -7,7 +7,7 @@ QUÉ HACE
 - Herramientas bajo tu control. Herramientas integradas y servidores externos por Model Context Protocol (MCP). De forma predeterminada, cada llamada delicada o peligrosa espera tu confirmación, y la regla se aplica donde se ejecuta la herramienta, no como sugerencia al modelo.
 - Te alcanza desde fuera de la app. El menú Compartir, los accesos directos y un mosaico de Configuración rápida ejecutan el pipeline que elijas sobre texto o imágenes. Los activadores (hora, carga, Wi-Fi, red) inician un pipeline solos e informan del resultado. Ningún punto de entrada hace nada hasta que le asignas un pipeline.
 - Recuerda lo importante. Memoria a largo plazo con búsqueda semántica en conversaciones pasadas, extracción automática de datos, búsqueda y exportación.
-- En tu idioma. Las pantallas, los pipelines incluidos y la ayuda están en inglés, ruso y español. Lo que lee el modelo sigue en inglés.
+- En tu idioma. Las pantallas, los pipelines incluidos y la ayuda están en inglés, ruso, español y chino. Lo que lee el modelo sigue en inglés.
 
 PARA QUIÉN ES
 
