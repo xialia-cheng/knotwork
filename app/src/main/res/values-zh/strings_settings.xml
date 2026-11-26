@@ -171,7 +171,7 @@
     <string name="settings_reset_button">设置已恢复为默认值。</string>
     <string name="notifications_agent_foreground_channel_name">智能体服务</string>
     <string name="notifications_agent_foreground_channel_description">在智能体主动工作时显示状态；任务完成后自动关闭。</string>
-    <string name="notifications_agent_foreground_title">Knotwork 智能体</string>
+    <string name="notifications_agent_foreground_title">织问智能体</string>
     <string name="notifications_scheduled_running_title">计划任务</string>
     <string name="notifications_scheduled_running_body">智能体正在后台运行…</string>
     <string name="notifications_model_download_channel_name">模型下载</string>
@@ -254,7 +254,7 @@
     <string name="settings_usage_duration">%1$d:%2$02d</string>
     <string name="settings_usage_duration_none">—</string>
     <string name="settings_usage_export_filename">knotwork-usage.json</string>
-    <string name="settings_usage_share_title">Knotwork 使用统计</string>
+    <string name="settings_usage_share_title">织问使用统计</string>
     <string name="settings_usage_reset_title">重置使用统计？</string>
     <string name="settings_usage_reset_body">这将永久清除设备上的所有使用统计计数，但不会更改统计记录设置。</string>
     <string name="settings_usage_reset_confirm">重置</string>

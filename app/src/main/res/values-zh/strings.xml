@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">Knotwork</string>
+    <string name="app_name">织问</string>
     <string name="approval_channel_sensitive_name">智能体批准</string>
     <string name="approval_channel_sensitive_description">敏感工具执行的确认提示。</string>
     <string name="approval_channel_destructive_name">智能体批准：破坏性操作</string>

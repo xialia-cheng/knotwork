@@ -461,7 +461,7 @@
     <string name="knotwork_memory_add_title">添加记忆</string>
     <string name="knotwork_memory_add_placeholder">智能体应该记住什么？</string>
     <string name="knotwork_memory_add_save">保存</string>
-    <string name="knotwork_onboarding_brand_title">Knotwork</string>
+    <string name="knotwork_onboarding_brand_title">织问</string>
     <string name="knotwork_onboarding_skip">跳过</string>
     <string name="knotwork_onboarding_continue">继续</string>
     <string name="knotwork_onboarding_welcome_headline">运行在手机上的私密 AI 智能体。</string>

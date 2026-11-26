@@ -6,11 +6,9 @@
 # `values/`), so the translation cannot differ without inventing wording main
 # does not use yet; making those defaults English is a separate change, and this
 # list keeps the coverage test honest rather than special-casing Chinese. The
-# rest are units and identifiers (`ms`, `MB`, `tokens`, `Top K`) that read the
-# same in Chinese.
+# other entries are units, identifiers, and branding shared by all languages.
 
-app:string/external_automation_call_action_label	# unit or identifier, the same in Chinese
-app:string/external_automation_call_keys_label	# unit or identifier, the same in Chinese
+app:string/app_name	# the product name is 织问 in every language
 app:string/memory_detail_tokens	# unit or identifier, the same in Chinese
 app:string/models_field_url_placeholder	# unit or identifier, the same in Chinese
 app:string/models_performance_unit_ms	# unit or identifier, the same in Chinese
@@ -99,6 +97,7 @@ catalog:string/knotwork_mcp_auth_basic	# unit or identifier, the same in Chinese
 catalog:string/knotwork_mcp_auth_bearer	# unit or identifier, the same in Chinese
 catalog:string/knotwork_memory_sort_alphabetical	# unit or identifier, the same in Chinese
 catalog:string/knotwork_node_type_lite_rt_name	# unit or identifier, the same in Chinese
+catalog:string/knotwork_onboarding_brand_title	# the onboarding brand is 织问 in every language
 catalog:string/knotwork_onboarding_model_size_gb	# unit or identifier, the same in Chinese
 catalog:string/knotwork_onboarding_models_custom_url_placeholder	# unit or identifier, the same in Chinese
 catalog:string/knotwork_run_sampler_value	# unit or identifier, the same in Chinese
