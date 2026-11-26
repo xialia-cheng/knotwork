@@ -191,6 +191,29 @@ contributors: it takes a translation of the interface strings, the
 bundled presets and the in-app help, and the build checks that none of
 them is missing.
 
+Left for later, and known:
+
+- **A Chinese store listing.** The screens, presets and help are Chinese, but
+  `fastlane/metadata/android/zh-CN/` does not exist: it needs a title, a
+  short and a long description, the changelog, an icon, a feature graphic and
+  phone screenshots **of the Chinese interface**. The screenshots are why this
+  waits — an English screenshot in a Chinese listing is worse than none. When
+  the material exists, three places change together: the folder,
+  `StoreMetadataTest.LOCALES`, and the directory tree in `docs/release.md` §10.
+- **Traditional Chinese, if it is ever wanted.** `values-zh` is plain Chinese,
+  so a zh-TW/zh-HK phone reads the simplified text. Adding
+  `values-b+zh+Hant` later is more specific and wins for those phones without
+  touching the existing folder, so the current name does not block it; the
+  decision is whether the picker should offer both.
+- **One name per node type in Chinese.** The canvas calls the on-device node
+  本地模型 while the node picker keeps the engine name LiteRT — as Russian and
+  Spanish do. Unifying it is a product decision for every language, not a
+  Chinese fix, because the same name feeds the task monitor and the live
+  metrics.
+- **A translation may not be empty.** `TranslationCoverageTest` catches a
+  string that is missing or a copy of the English, but an empty translation
+  passes both and ships as a blank label.
+
 ## How to get involved
 
 - The [issue tracker](https://github.com/alexeyw/knotwork/issues) is the
