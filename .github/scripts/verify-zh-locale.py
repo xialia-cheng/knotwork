@@ -12,7 +12,6 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 CURRENT = "me.lcfuns.zhiwen.debug"
-DRAFT = "LocaleSmokeProbe"
 
 
 def adb(*args, timeout=35):
@@ -231,13 +230,18 @@ class Smoke:
     def no_local_model(self):
         self.tap(self.chat("zh-chat-composer"))
         self.wait_ui("zh-focused-composer", lambda n: edit_field(n) and n.get("focused") == "true")
-        shell("input", "text", DRAFT)
-        self.wait_ui("zh-draft-before-send", lambda n: edit_field(n) and label(n) == DRAFT)
-        self.click("zh-send", labeled("发送消息"))
+        for key in ("KEYCODE_P", "KEYCODE_R", "KEYCODE_O", "KEYCODE_B", "KEYCODE_E"):
+            shell("input", "keyevent", key)
+            time.sleep(0.2)
+        _, before = self.wait_ui("zh-send", labeled("发送消息"))
+        draft = next((n.get("text", "").strip() for n in before if edit_field(n) and n.get("text")), "")
+        check(bool(draft), "No text reached the composer before sending")
+        self.tap(next(n for n in before if label(n) == "发送消息"))
         _, nodes = self.wait_ui("zh-no-model-error", lambda n: "没有已启用的模型" in label(n), timeout=35)
         self.screenshot("zh-no-model-error")
         check(any("设置 → 模型" in label(n) for n in nodes), "The error omitted the model settings path")
-        check(any(edit_field(n) and DRAFT in label(n) for n in nodes), "The failed send cleared the draft")
+        check(any(edit_field(n) and n.get("text", "").strip() == draft for n in nodes),
+              f"The failed send changed the draft {draft!r}")
         self.settings("zh", "更多", "设置", "搜索设置")
         self.click("zh-models-setting", labeled("模型"), scroll_steps=4)
         self.click("zh-manage-models", labeled("管理"), scroll_steps=3)
