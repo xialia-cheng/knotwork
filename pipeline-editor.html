@@ -176,6 +176,7 @@
 
         #toolbar {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap: 8px;
             padding: 8px 12px;
@@ -184,6 +185,8 @@
         }
 
         #toolbar button {
+            flex: 0 0 auto;
+            white-space: nowrap;
             background: var(--surface-2);
             color: var(--text);
             border: 1px solid var(--border);
@@ -214,11 +217,14 @@
         #toolbar input[type="text"]#pipeline-memory-query { min-width: 150px; }
         #toolbar input[type="text"]#pipeline-name:focus,
         #toolbar input[type="text"]#pipeline-memory-query:focus { border-color: var(--accent); }
-        #toolbar .name-label {
+        #toolbar .toolbar-field {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
             font-size: 11px;
             color: var(--text-dim);
             letter-spacing: 0.02em;
-            margin-right: 4px;
         }
         #toolbar .seg {
             display: inline-flex;
@@ -1114,12 +1120,16 @@
             <input id="file-import" type="file" accept="application/json,.json" hidden>
             <input id="file-import-preset" type="file" accept="application/json,.json,.preset.json" hidden>
             <input id="file-import-bundle" type="file" accept="application/json,.json" hidden>
-            <span class="name-label">名称</span>
-            <input id="pipeline-name" type="text" placeholder="未命名流程">
-            <span class="name-label">记忆键</span>
-            <input id="pipeline-memory-query" type="text"
-                   placeholder="可选 · 后台运行"
-                   title="后台运行（触发 / 定时 / 桌面磁贴）用的长期记忆检索键。这类运行的提示词由你固定写死、不描述具体某次触发，所以拿它当检索键并不合适。支持 $DATE 等提示词变量。只给交互式流程用时留空即可。">
+            <label class="toolbar-field">
+                名称
+                <input id="pipeline-name" type="text" placeholder="未命名流程">
+            </label>
+            <label class="toolbar-field">
+                记忆键
+                <input id="pipeline-memory-query" type="text"
+                       placeholder="可选 · 后台运行"
+                       title="后台运行（触发 / 定时 / 桌面磁贴）用的长期记忆检索键。这类运行的提示词由你固定写死、不描述具体某次触发，所以拿它当检索键并不合适。支持 $DATE 等提示词变量。只给交互式流程用时留空即可。">
+            </label>
             <span class="spacer"></span>
             <span class="hint">从左侧拖入节点。双击连线可给它加标签。</span>
             <span class="seg" role="group" aria-label="浓度">
@@ -1379,23 +1389,23 @@
         SKILL: null,
     };
 
-    /* Display translation of branch labels. The stored value and the value the
-       engine matches on stay English (PORT_AUTO_LABELS must equal RouteLabels);
-       only the layer drawn on screen is Chinese. A user typing a Chinese branch
-       label into an edge gets it folded back to English before it is stored, so
-       import/export still carry True / False / Item / Done / Pass / Retry / Fail. */
+    /* Translate fixed branch names for display without interpreting labels on
+       other nodes, where the text can be a user-defined route. */
     const ROUTE_LABEL_ZH = {
         True: '是', False: '否', Item: '逐项', Done: '完成', Pass: '通过', Retry: '重试', Fail: '失败',
     };
-    const ROUTE_LABEL_BY_ZH = Object.fromEntries(
-        Object.entries(ROUTE_LABEL_ZH).map(([label, zh]) => [zh, label]),
-    );
-    /** Display: a built-in branch label becomes Chinese; a custom label is returned as is. */
-    function routeLabelForDisplay(label) { return ROUTE_LABEL_ZH[label] || label; }
-    /** Storage: a Chinese branch label folds back to English; anything else is returned as is. */
-    function routeLabelForStorage(text) {
-        const trimmed = String(text == null ? '' : text).trim();
-        return ROUTE_LABEL_BY_ZH[trimmed] || trimmed;
+
+    function routeLabelForDisplay(nodeType, label) {
+        const branch = canonicalBranchLabel(nodeType, label);
+        return branch ? ROUTE_LABEL_ZH[branch] : label;
+    }
+
+    function routeLabelForStorage(nodeType, text) {
+        const trimmed = text.trim();
+        const branches = PORT_AUTO_LABELS[nodeType];
+        if (!branches) return trimmed;
+        const translated = Object.values(branches).find(branch => ROUTE_LABEL_ZH[branch] === trimmed);
+        return translated ?? canonicalBranchLabel(nodeType, trimmed) ?? trimmed;
     }
 
     /* -------------------------------------------------------------------- *
@@ -5955,9 +5965,7 @@
         // The flat runtime fields are always derived from the rich `cfg` so the
         // two never drift; `cfg` is the source of truth the forms edit.
         return {
-            // A new node's default title is the Chinese display name. Only the
-            // value of this field changes; its name and the JSON shape do not.
-            label: nodeLabel(t),
+            label: t.label,
             cfg: cfg,
             ...richToFlat(typeId, cfg),
             contextConfig: defaultContextConfig(typeId),
@@ -6551,7 +6559,7 @@
         const sourceCfg = (data.cfg && typeof data.cfg === 'object')
             ? data.cfg
             : deriveRichFromFlat(typeId, data);
-        sourceCfg.title = data.label || sourceCfg.title || nodeLabel(t);
+        sourceCfg.title = data.label || sourceCfg.title || t.label;
 
         dialogNodeId = numericId;
         dialogTypeId = typeId;
@@ -6559,7 +6567,7 @@
         dialogCfg = JSON.parse(JSON.stringify(sourceCfg));
 
         dialogIcon.textContent = t.icon;
-        dialog.querySelector('.title').textContent = `配置节点：${dialogCfg.title || nodeLabel(t)}`;
+        dialog.querySelector('.title').textContent = `配置节点：${displayNodeTitle(typeId, dialogCfg.title)}`;
         dialogTypeBadge.textContent = nodeLabel(t);
         dialogBody.innerHTML = '';
         dialogBody.append(...renderFormFields(typeId, dialogCfg, data.contextConfig));
@@ -7409,7 +7417,7 @@
         // Derive the flat runtime fields from the rich cfg, then persist both.
         const flat = richToFlat(dialogTypeId, dialogCfg);
         const merged = Object.assign({}, internal.data || {}, flat, {
-            label: dialogCfg.title || nodeLabel(NODE_TYPE_BY_ID[dialogTypeId]),
+            label: dialogCfg.title || NODE_TYPE_BY_ID[dialogTypeId].label,
             cfg: dialogCfg,
             contextConfig: ctx,
         });
@@ -7535,24 +7543,22 @@
             const text = connectionLabels.get(key) || '';
             const labelEl = document.createElement('div');
             labelEl.className = 'conn-label' + (text ? '' : ' empty');
-            // Built-in branch labels (True/False/Item/Done/Pass/Retry/Fail) are
-            // drawn in Chinese only; the stored value stays English and the hover
-            // title spells it out so it can be matched against the pipeline JSON.
-            labelEl.textContent = text ? routeLabelForDisplay(text) : '＋ 标签';
+            const sourceType = editor.getNodeFromId(meta.outId)?.name;
+            labelEl.textContent = text ? routeLabelForDisplay(sourceType, text) : '＋ 标签';
             labelEl.title = text ? `标签（存储值：${text}）` : '双击给这条连线加标签';
             labelEl.style.left = x + 'px';
             labelEl.style.top  = y + 'px';
             labelEl.dataset.key = key;
             labelEl.addEventListener('dblclick', e => {
                 e.stopPropagation();
-                beginLabelEdit(labelEl, key);
+                beginLabelEdit(labelEl, key, sourceType);
             });
             labelsLayer.appendChild(labelEl);
         });
         applyCanvasSkin();
     }
 
-    function beginLabelEdit(labelEl, key) {
+    function beginLabelEdit(labelEl, key, sourceType) {
         const current = connectionLabels.get(key) || '';
         labelEl.classList.remove('empty');
         labelEl.textContent = '';
@@ -7567,18 +7573,10 @@
         const commit = (save) => {
             if (finished) return;
             finished = true;
-            // Display is Chinese, storage must be what the engine matches on: a
-            // Chinese branch label folds back to True/False/Item/Done/Pass/Retry/Fail,
-            // and a differently-cased one is normalised to the PORT_AUTO_LABELS
-            // spelling (the same rule as RouteLabels.canonical on the app side).
-            let next = save ? routeLabelForStorage(input.value) : current;
-            if (save && next) {
-                const src = editor.getNodeFromId(key.split('_')[0]);
-                if (src && PORT_AUTO_LABELS[src.name]) {
-                    next = canonicalBranchLabel(src.name, next) ?? next;
-                }
-            }
-            if (save && next !== current) {
+            const next = save && input.value !== current
+                ? routeLabelForStorage(sourceType, input.value)
+                : current;
+            if (next !== current) {
                 if (next) connectionLabels.set(key, next);
                 else connectionLabels.delete(key);
                 pushSnapshot();
@@ -8472,7 +8470,7 @@
             const cfg = (n.data && n.data.cfg && typeof n.data.cfg === 'object')
                 ? n.data.cfg
                 : deriveRichFromFlat(n.type, fullData);
-            cfg.title = fullData.label || cfg.title || nodeLabel(NODE_TYPE_BY_ID[n.type]);
+            cfg.title = fullData.label || cfg.title || NODE_TYPE_BY_ID[n.type].label;
             // Derive the flat block from cfg so `config` and `nodeConfig`
             // always agree (the runtime reads the flat block).
             const flat = richToFlat(n.type, cfg);
@@ -8539,7 +8537,7 @@
         const doc = {
             schemaVersion: CURRENT_SCHEMA_VERSION,
             id: currentPipelineId,
-            name: (nameInput.value || '').trim() || '未命名流程',
+            name: (nameInput.value || '').trim() || 'Untitled pipeline',
             updatedAt: Date.now(),
             nodes: jsonNodes,
             connections: jsonConnections,
@@ -8651,7 +8649,7 @@
                 const branch = canonicalBranchLabel(srcType, jc.label);
                 if (!branch) {
                     alert(`连线「${jc.id}」（${srcType} 节点「${jc.fromNodeId}」）上的标签是 ` +
-                        `「${jc.label}」，而它的分支只有 ${Object.values(PORT_AUTO_LABELS[srcType]).map(routeLabelForDisplay).join('、')}`);
+                        `「${jc.label}」，而它的分支只有 ${Object.values(PORT_AUTO_LABELS[srcType]).map(label => routeLabelForDisplay(srcType, label)).join('、')}`);
                     return;
                 }
                 branchLabels.set(i, branch);
@@ -8684,7 +8682,7 @@
                 // run reads is shown from these, with or without a nodeConfig
                 // envelope (deriveRichFromFlat / decodeRichEnvelope).
                 const flatIn = {
-                    label: jn.label || nodeLabel(t),
+                    label: jn.label || t.label,
                     systemPrompt: jn.config?.systemPrompt || '',
                     cloudProvider: jn.config?.cloudProvider || (jn.type === 'CLOUD' ? 'auto' : ''),
                     modelPath: jn.config?.modelPath || '',
@@ -9222,7 +9220,7 @@
         const pure = {
             schemaVersion: doc.schemaVersion || CURRENT_SCHEMA_VERSION,
             id: doc.id,
-            name: doc.name || '未命名流程',
+            name: doc.name || 'Untitled pipeline',
             updatedAt: doc.updatedAt || Date.now(),
             nodes: doc.nodes || [],
             connections: doc.connections || [],
