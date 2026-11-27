@@ -50,6 +50,8 @@ import app.knotwork.design.components.pipelineeditor.NodeError
 import app.knotwork.design.components.pipelineeditor.NodePortGeometry
 import app.knotwork.design.icons.AppIcons
 import app.knotwork.design.theme.KnotworkTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlin.math.max
 
 /**
@@ -77,6 +79,7 @@ import kotlin.math.max
  * @param editor screen-local state (transform, selection, drafts).
  * @param errorsByNodeId map of node-id → optional inline error for the catalog NodeCard.
  * @param reducedMotion reduced-motion flag — gates animations longer than `motionSm`.
+ * @param connectionTraversals edge IDs from live visits in the open graph.
  * @param onMoveNode invoked on drag-end with the committed canvas-space delta.
  * @param onAddNode invoked with the type picked in the "Add node" sheet and the snapped
  *   canvas-space point it lands at.
@@ -101,6 +104,7 @@ internal fun EditorCanvas(
     onStartWithInput: () -> Unit,
     onFromTemplate: () -> Unit,
     modifier: Modifier = Modifier,
+    connectionTraversals: Flow<String> = emptyFlow(),
     subtitleForNode: (NodeModel) -> String? = { null },
 ) {
     val density = LocalDensity.current
@@ -317,6 +321,7 @@ internal fun EditorCanvas(
             selectedNodeId = selectedNodeForHighlight(editor.selection, editor.multiSelectMode),
             reducedMotion = reducedMotion,
             measuredCards = editor.measuredCards,
+            connectionTraversals = connectionTraversals,
         )
 
         // Per-node ports are derived from the decoded NodeConfig (for IntentRouter

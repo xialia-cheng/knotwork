@@ -38,6 +38,8 @@ Only Kotlin files appear inside the generated blocks.
     - `MemoryLifecycleIntegrationTest.kt` - End-to-end integration coverage for the **whole long-term memory lifecycle**, wiring the real domain components over an in-memory Room database: auto-extraction → embedding/storage → cross-session retrieval → injection into a node's `--- Long-Term Memory ---` context block → survival across a background compaction pass.
 - `ExampleInstrumentedTest.kt` - Example instrumentation test.
 - `presentation/` - Instrumented tests for the presentation layer.
+  - `icon/` - Tests for launcher icon rendering and proportional scaling.
+    - `LauncherIconRenderingTest.kt` - Verifies PackageManager launcher icons and records Android framework renderings at several sizes.
   - `ui/` - Compose UI tests, one package per screen.
     - `chat/` - Compose tests for the chat surface.
       - `archive/` - Compose tests for the chat archive.
@@ -97,6 +99,9 @@ Only Kotlin files appear inside the generated blocks.
       - `SettingsScreenRestartRequiredTest.kt` - Covers the restart-required banner on the Settings surface (`compose/screens/README.md §C5 · Settings`).
       - `SettingsScreenTogglesTest.kt` - Covers a representative toggle row on the Background category sub-screen, exercising the clickable-row wiring that connects the catalog `IconToggleRow` to its ViewModel callback through the `SettingsCallbacks` bag.
       - `SettingsViewModelMockFactory.kt` - Mocked `SettingsViewModel` for screen tests, plus a no-op `SettingsNavActions` for tests that assert no navigation.
+    - `splash/` - Device coverage for splash frame handoff, short screens, and recovery actions.
+      - `SplashFrameDeviceTest.kt` - Confirms a hardware frame is committed and that its ink clears the short-screen footer.
+      - `SplashRecoveryDeviceTest.kt` - Exercises the actual Compose loading and recovery surfaces on the emulator.
     - `tools/` - Compose tests for the Tools surface.
       - `ToolDetailScreenTest.kt` - Tests for `ToolDetailScreen`.
       - `ToolsScreenLocalToolsTest.kt` - Covers the built-in (AppFunctions) section of the Tools screen: row names render with their per-risk pill, and tapping the row click target invokes the ViewModel's toggle hook with the inverted enabled flag.

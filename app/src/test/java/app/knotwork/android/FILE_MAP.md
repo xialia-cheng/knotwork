@@ -450,6 +450,8 @@ Only Kotlin files appear inside the generated blocks.
     - `MemorySupersedeJudgeTest.kt` - Unit tests for `MemorySupersedeJudge`: verdict parsing through the real `StructuredOutputGate`, the fail-to-keep-both contract, cancellation, and the prompt layout that keeps a fact from opening a line of its own.
     - `MemoryVectorSimilarityTest.kt` - Unit tests for `MemoryVectorSimilarity` — the metric every stage of the memory subsystem shares, plus the near-duplicate threshold expressed in it.
     - `PipelineCompositionValidatorTest.kt` - Tests for PipelineCompositionValidator (cycles, depth limit, dangling targets).
+    - `PipelineGenerationModelTest.kt` - Pins the production gateway's model choice: DeepSeek, its reply passthrough, and the typed "cannot be reached" failure naming the key to add.
+    - `PipelineGenerationPromptBuilderTest.kt` - Asserts the generation prompt names the demand, the node catalogue, the plan request and only the connected MCP tools, and that correction prompts carry the findings and a bounded previous reply.
     - `ScheduledTaskTagTest.kt` - Verifies `ScheduledTaskTag`: the label a scheduled task carries is the only thing the task monitor can say about it (a queued task's input data is not readable), so it has to survive a round trip through a plain tag string and degrade to `null` — never to a wrong label — on anything it does not recognise.
     - `WorkspaceGlobTest.kt` - Unit tests for `WorkspaceGlob`, pinning the documented glob semantics: `*` stays within a path segment, `**` crosses directories, `?` matches a single non-separator character, and everything else is literal.
     - `WorkspaceNamePolicyTest.kt` - Unit tests for `WorkspaceNamePolicy`: which characters a new name may not carry, the byte limits at their exact boundaries (in UTF-8, not characters), and the two renderings of a forbidden character — replaced on import, escaped in a listing.
@@ -506,6 +508,7 @@ Only Kotlin files appear inside the generated blocks.
     - `FindPipelineBindingsUseCaseTest.kt` - `FindPipelineBindingsUseCase` — every id-keyed binding, one source at a time.
     - `FindPipelinesUsingSkillUseCaseTest.kt` - The skill-usage scan is wired now but dormant until the SKILL node ships (no `PipelineGraph` node can reference a skill yet), so it must return empty for every skill regardless of the saved pipelines.
     - `FireTriggerUseCaseTest.kt` - Unit tests for `FireTriggerUseCase` — the worker-side orchestration that loads a trigger, defers the decision to `EvaluateTriggerFiringUseCase`, acts (resolve the bound session, enqueue, mark fired, disarm event triggers, re-arm, or auto-disable), and — the focus of the journal write-point tests — records exactly one evaluation verdict per evaluated trigger.
+    - `GeneratePipelineFromPromptUseCaseTest.kt` - The generation loop against a scripted gateway: a valid reply, malformed JSON retried then exhausted by the gate, validation findings fed back, both retry budgets spent, transport failure and cancellation.
     - `GetContextWindowUseCaseTest.kt` - Tests for GetContextWindowUseCase.
     - `GetDiscoverableModelDetailUseCaseTest.kt` - Unit tests for `GetDiscoverableModelDetailUseCase`.
     - `GetModelPerformanceUseCaseTest.kt` - Unit tests for `GetModelPerformanceUseCase`.
@@ -555,6 +558,7 @@ Only Kotlin files appear inside the generated blocks.
     - `RetrieveRelevantMemoryUseCaseTest.kt` - Tests for RetrieveRelevantMemoryUseCase.
     - `RunBenchmarkUseCaseTest.kt` - Unit tests for `RunBenchmarkUseCase`.
     - `RunRateCeilingTest.kt` - Unit tests for `RunRateCeiling` — the shared runaway-guard arithmetic.
+    - `SaveGeneratedPipelineUseCaseTest.kt` - The only write path: a fresh id per save, the ordinary validation gates, refusal of empty/unrunnable drafts, storage failure surfaced as `Result`, cancellation escaping.
     - `SaveMessageToMemoryUseCaseTest.kt` - Unit tests for `SaveMessageToMemoryUseCase` — the direct-wrapper manual save path behind the chat "Save to memory" action.
     - `SavePipelineAsPresetUseCaseTest.kt` - Unit tests for `SavePipelineAsPresetUseCase`.
     - `SavePipelineUseCaseTest.kt` - Tests for SavePipelineUseCase.
@@ -613,6 +617,8 @@ Only Kotlin files appear inside the generated blocks.
     - `ImportProblemTextTest.kt` - The sentences a refused import, export or input becomes.
     - `JsonLayoutLosslessTest.kt` - Guard: laying JSON out never changes what it says, and text that is not JSON is shown as it came.
     - `JsonLayoutTest.kt` - Cases of the shared JSON layout one by one; `JsonLayoutLosslessTest` holds the rule over generated documents.
+  - `icon/` - Tests for launcher icon rendering and proportional scaling.
+    - `LauncherForegroundScalingTest.kt` - Checks that adaptive icon foreground artwork scales proportionally across bounds, densities and themes.
   - `notifications/` - Tests for the notification channels and notifiers.
     - `ApprovalNotificationManagerTest.kt` - Robolectric coverage for `ApprovalNotificationManager` — the Human-in-the-loop gate that surfaces tool-approval prompts in the system shade when the user is not actively viewing the requesting chat session.
     - `ClarificationNotificationManagerTest.kt` - Robolectric coverage for `ClarificationNotificationManager`: the parked run's question is the model's, written from the conversation, so where the system hides sensitive content the notification shows its title alone.
@@ -627,6 +633,9 @@ Only Kotlin files appear inside the generated blocks.
   - `screenshots/` - Roborazzi baselines of app screens in a translation, drawn by the screens' own code without their ViewModels, and the guard on their comparison options.
     - `AppRoborazziOptions.kt` - Comparison options every screenshot of this module is captured with.
     - `AppSnapshotOptionsGuardTest.kt` - Fails a screenshot of this module captured without `AppRoborazziOptions`.
+    - `BottomNavigationSnapshotTest.kt` - Screenshots of the bottom navigation bar in both themes and of the scrolled state that draws its hairline.
+    - `ChineseScreensSnapshotTest.kt` - The shared app-screen screenshots (`TranslatedScreensSnapshotTest`) in Chinese, at font scale 200 %; baselines `src/test/snapshots/zh_*_fontscale200_light.png`.
+    - `EditorRunningConnectionSnapshotTest.kt` - Snapshots the selected runtime edge with motion enabled and with a stationary marker.
     - `RussianScreensSnapshotTest.kt` - The shared app-screen screenshots (`TranslatedScreensSnapshotTest`) in Russian, at font scale 200 %; baselines `src/test/snapshots/ru_*_fontscale200_light.png`.
     - `SpanishScreensSnapshotTest.kt` - The shared app-screen screenshots (`TranslatedScreensSnapshotTest`) in Spanish, at font scale 200 %; baselines `src/test/snapshots/es_*_fontscale200_light.png`.
     - `TranslatedScreensSnapshotTest.kt` - Screenshots of app screens in a translation, at font scale 200 % in the light theme.
@@ -701,17 +710,21 @@ Only Kotlin files appear inside the generated blocks.
       - `MoreFormattersTest.kt` - Unit tests for the pure-Kotlin formatter helpers feeding the More tab subtitle counters and footer pill.
       - `MoreViewModelTest.kt` - Unit tests for `MoreViewModel` — drives the `combine` + `reduceUiState` projection that powers the More tab's live subtitle counters and footer privacy pill.
     - `navigation/` - Tests for the navigation graph, routes and deep links.
+      - `BottomNavScrollTrackerTest.kt` - Unit tests for `BottomNavScrollTracker` — the travel arithmetic behind the bottom bar's conditional hairline, including the scroll sign convention.
       - `BottomNavVisibilityTest.kt` - Table-driven test for `shouldShowBottomNav`.
       - `DeepLinkRouterTest.kt` - JVM tests for the `knotwork://triggers/{id}` branch of `navigateToDeepLink` — the overdue-trigger notification's tap.
       - `NavRoutesTest.kt` - Unit tests for `NavRoutes` — guards against accidental route collisions, blank routes, and silently broken deep-link / argument contracts.
+      - `PostSplashDestinationTest.kt` - Pins the post-splash landing to the chat home: a returning user opens the conversation surface, only a first run is diverted to onboarding.
       - `TabOwnershipTest.kt` - Unit tests for `owningTabRoute` / `isTabRootStack` — the two pure functions that replaced the hand-maintained `route → tab` table.
     - `onboarding/` - Tests for the onboarding flow.
       - `OnboardingViewModelTest.kt` - Verifies the orchestrated scenario / download / warm flow layered on top of the `hasCompletedOnboarding` persistence.
     - `orchestrator/` - Tests for the pipeline-library surface.
       - `components/` - Tests for the pipeline-library components.
+        - `NodeContextConfigSnapshotTest.kt` - Production form plus the app-provided input-data group, including larger translated text.
         - `PromptPresetPickerDialogTest.kt` - Pure-logic tests for the filter helper backing `PromptPresetPickerDialog`.
       - `OrchestratorViewModelTest.kt` - Tests for OrchestratorViewModel.
       - `PipelineBindingsTextTest.kt` - The Replace confirmation's lines for what is bound to a pipeline.
+      - `PipelineGenerationViewModelTest.kt` - The dialog's ViewModel: the preview is positioned by `AutoLayout` and not saved, a blank demand is refused before any call, saving happens only on *Add to canvas*, a failed save keeps the draft, and dismissing cancels the in-flight generation without writing.
       - `presets/` - Tests for the preset gallery and its graph-flow preview.
         - `GraphFlowPreviewTest.kt` - Unit tests for the preset graph-flow preview.
         - `PipelinePresetsViewModelTest.kt` - Unit tests for `PipelinePresetsViewModel`.
@@ -744,6 +757,7 @@ Only Kotlin files appear inside the generated blocks.
     - `prompts/` - Tests for the prompt library.
       - `PromptLibraryViewModelTest.kt` - Unit tests for `PromptLibraryViewModel`.
     - `settings/` - Tests for the settings screens and their catalogues.
+      - `AppearanceSettingsViewModelTest.kt` - Checks local RGB previews, final saves, and delayed persistence acknowledgements.
       - `AppLanguageLabelsTest.kt` - Each language is named in itself, whatever language the app is shown in.
       - `backup/` - Tests for the *Backup & restore* screen's ViewModel.
         - `AfterRestoreViewModelTest.kt` - `AfterRestoreViewModel`: the sheet from the report, the snackbar when nothing is left to do, the downloads it starts — one at a time — and *Done*.
@@ -776,6 +790,7 @@ Only Kotlin files appear inside the generated blocks.
     - `splash/` - Tests for the splash and initialisation path.
       - `SplashStateMappingTest.kt` - Verifies the `SplashUiState.toViewState(...)` mapper that bridges the app-side cold-start projection to the catalog `SplashViewState` consumed by `SplashContent`.
       - `SplashViewModelTest.kt` - Verifies that `SplashViewModel` folds `InitProgress` emissions into the UI state correctly across the success path, the failed path, the retry path, and the data-locked recovery flow (typed-confirm full reset).
+    - `SplashExitCoordinatorTest.kt` - Verifies splash handoff ordering for slow startup and immediately completed initialization.
     - `taskmonitor/` - Tests for the task monitor.
       - `TaskMonitorViewModelTest.kt` - Tests for TaskMonitorViewModel.
     - `tools/` - Tests for the Tools surface, the MCP server editor and the domain allowlist.

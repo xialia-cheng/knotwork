@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
@@ -83,6 +84,32 @@ class ChatHomeMessageCopyTest {
         copyTheAnswer(RefusingClipboardManager())
 
         composeTestRule.onNodeWithText(tooLong()).assertExists()
+    }
+
+    @Test
+    fun streamingReply_hasNoMessageActionsUntilTheStoredAnswerArrives() {
+        val (viewModel, handles) = mockChatHomeViewModel(initialState = ChatHomeUiState.Generating())
+        composeTestRule.setContent {
+            MaterialTheme { ChatHomeScreen(viewModel = viewModel) }
+        }
+
+        composeTestRule.runOnIdle {
+            handles.state.value = handles.state.value.copy(streamingReply = StreamingChatReply("partial answer", 1L))
+        }
+        composeTestRule.onNodeWithText("partial answer").assertIsDisplayed().performTouchInput { longClick() }
+        val copy = InstrumentationRegistry.getInstrumentation().targetContext
+            .getString(KnotworkR.string.knotwork_chat_message_action_copy)
+        composeTestRule.onNodeWithText(copy).assertDoesNotExist()
+
+        composeTestRule.runOnIdle {
+            handles.state.value = handles.state.value.copy(
+                visual = ChatHomeUiState.Idle,
+                messages = listOf(answer),
+                streamingReply = null,
+            )
+        }
+        composeTestRule.onNodeWithText("partial answer").assertDoesNotExist()
+        composeTestRule.onNodeWithText("the answer on screen").assertIsDisplayed()
     }
 
     private fun copyTheAnswer(clipboard: ClipboardManager) {

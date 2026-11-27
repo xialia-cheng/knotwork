@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The platform splash shows the launch colour only.
+
+    The requirement is that the system stage and the in-app loading page share
+    one flat colour, and that the wordmark is drawn once, by the loading page.
+    Drawing a mark in both places made the hand-off jump: the platform icon is
+    a 288 dp plate with a 192 dp glyph, while the loading page draws the same
+    wordmark at min(288 dp, 45% of the screen height) and starts from a blank
+    frame — two sizes and two states for the same picture, 100 ms apart.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+</shape>

@@ -5,6 +5,7 @@ import app.knotwork.android.domain.repositories.ChatRepository
 import app.knotwork.android.domain.repositories.EntryPointSettings
 import app.knotwork.android.domain.repositories.PipelineRepository
 import app.knotwork.android.domain.repositories.PipelineRunRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -70,6 +71,13 @@ class ChatHomePipelineBindingDelegate(
 
     private var availablePipelinesObserved: Boolean = false
     private var defaultPipelineId: String? = null
+    private val initialPipelines = CompletableDeferred<Unit>()
+    private val initialDefault = CompletableDeferred<Unit>()
+
+    internal suspend fun awaitInitialBinding() {
+        initialPipelines.await()
+        initialDefault.await()
+    }
 
     /**
      * Pipeline of the most recent run of the active session, or `null` when it
@@ -102,6 +110,7 @@ class ChatHomePipelineBindingDelegate(
                 }
                 state.update { pipelineNameRefreshed(it.copy(availablePipelines = summaries)) }
                 availablePipelinesObserved = true
+                initialPipelines.complete(Unit)
                 handleDeletedBoundPipeline(summaries)
             }
         }
@@ -149,6 +158,7 @@ class ChatHomePipelineBindingDelegate(
             entryPointSettings.defaultPipelineId.collect { id ->
                 defaultPipelineId = id
                 state.update { pipelineNameRefreshed(it) }
+                initialDefault.complete(Unit)
             }
         }
     }

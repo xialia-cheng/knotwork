@@ -57,9 +57,13 @@ import app.knotwork.design.components.chat.ChatRole
 import app.knotwork.design.screens.chat.ChatHomeMessageRow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -208,6 +212,7 @@ constructor(
     }
 
     private var messagesJob: Job? = null
+    private val initialMessages = CompletableDeferred<Unit>()
 
     /**
      * Node type currently executing in the live run, taken from
@@ -453,6 +458,13 @@ constructor(
         initializeSession()
     }
 
+    /** Completes when the first chat body, header and suggestions can be shown together. */
+    internal val initialScreenReady: Deferred<Unit> = viewModelScope.async(start = CoroutineStart.LAZY) {
+        threads.awaitInitialSessions()
+        pipelineBinding.awaitInitialBinding()
+        initialMessages.await()
+    }
+
     /** Updates the composer input value. Hoisted to the VM so screen recompositions never own the text. */
     fun onComposerValueChange(value: String) {
         // Typing dismisses any blocked voice notice so it never wedges Send
@@ -646,6 +658,7 @@ constructor(
                 // its own budget and will raise its own if it needs to.
                 runNotice = null,
                 sendingUserTurn = sendingTurn,
+                streamingReply = null,
             )
         }
 
@@ -676,6 +689,7 @@ constructor(
                         it.copy(
                             visual = ChatHomeUiState.Error(failureText(error)),
                             sendingUserTurn = null,
+                            streamingReply = null,
                         )
                     }
                 }
@@ -912,7 +926,11 @@ constructor(
             // with nothing running is worse than no strip at all.
             // A queued turn cancelled here is still written to the thread by the
             // queue, so the stored row replaces the bubble a moment later.
-            val cleared = current.withPendingCleared().copy(runNotice = null, sendingUserTurn = null)
+            val cleared = current.withPendingCleared().copy(
+                runNotice = null,
+                sendingUserTurn = null,
+                streamingReply = null,
+            )
             if (current.visual is ChatHomeUiState.Generating) {
                 cleared.copy(visual = cleared.restingVisual())
             } else {
@@ -965,6 +983,8 @@ constructor(
                     // running in it.
                     runNotice = null,
                     sendingUserTurn = null,
+                    streamingReply = null,
+                    latestReplyAt = null,
                 ),
             )
         }
@@ -1022,23 +1042,28 @@ constructor(
             if (_state.value.thread.currentSessionId.isNotBlank()) return@launch
             val savedSessionId = appStateSettings.currentChatSessionId.first()
             if (_state.value.thread.currentSessionId.isNotBlank()) return@launch
-            val sessionId = if (savedSessionId.isNullOrBlank()) {
-                val newId = UUID.randomUUID().toString()
-                appStateSettings.setCurrentChatSessionId(newId)
-                chatRepository.saveSession(
-                    ChatSession(
-                        id = newId,
-                        name = defaultNames.newChat(),
-                        updatedAt = System.currentTimeMillis(),
-                    ),
+            val newSession = if (savedSessionId.isNullOrBlank()) {
+                val session = ChatSession(
+                    id = UUID.randomUUID().toString(),
+                    name = defaultNames.newChat(),
+                    updatedAt = System.currentTimeMillis(),
                 )
-                newId
+                appStateSettings.setCurrentChatSessionId(session.id)
+                chatRepository.saveSession(session)
+                session
             } else {
-                savedSessionId
+                null
             }
+            val sessionId = newSession?.id ?: savedSessionId.orEmpty()
             if (_state.value.thread.currentSessionId.isNotBlank()) return@launch
-            _state.update {
-                threads.sessionMetadataRefreshed(it.copy(thread = it.thread.copy(currentSessionId = sessionId)))
+            _state.update { current ->
+                // The message query can return before Room publishes the newly
+                // inserted session to the list observer. Show its known title now.
+                val thread = current.thread.copy(
+                    currentSessionId = sessionId,
+                    title = newSession?.name ?: current.thread.title,
+                )
+                threads.sessionMetadataRefreshed(current.copy(thread = thread))
             }
             observeMessages(sessionId)
             reattach.reattachToRun(sessionId)
@@ -1096,6 +1121,7 @@ constructor(
             // No session to load — settle Loading to Empty so the surface
             // renders the empty-state hero instead of spinning forever.
             rebalanceRestingState()
+            initialMessages.complete(Unit)
             return
         }
         // The thread's previews, each cut once; a new thread starts with none.
@@ -1104,13 +1130,24 @@ constructor(
             chatRepository.getDisplayMessagesForSession(sessionId).collect { incoming ->
                 // Off the main thread only when a long message has not been cut yet.
                 val previewById = previews.of(incoming)
+                val latestReplyAt = incoming.lastOrNull { it.role == Role.AGENT && it.writtenOnThisDevice }?.timestamp
                 _state.update { current ->
+                    val replyStored = current.streamingReply?.let {
+                        latestReplyAt != null && latestReplyAt >= it.startedAt
+                    } == true
                     current.copy(
                         // The stored row has arrived: it takes the bubble's place in
                         // the same emission, so the message is never shown twice or
                         // not at all.
                         sendingUserTurn = current.sendingUserTurn?.takeUnless { turn ->
                             incoming.any { it.role == Role.USER && it.timestamp >= turn.sentAtMillis }
+                        },
+                        latestReplyAt = latestReplyAt,
+                        streamingReply = current.streamingReply.takeUnless { replyStored },
+                        visual = if (replyStored && current.visual is ChatHomeUiState.Generating) {
+                            ChatHomeUiState.Idle
+                        } else {
+                            current.visual
                         },
                         messages = incoming.map { message ->
                             val attachment = message.attachment
@@ -1128,6 +1165,7 @@ constructor(
                     )
                 }
                 rebalanceRestingState()
+                initialMessages.complete(Unit)
                 tokenCounterJob?.cancel()
                 tokenCounterJob = launch {
                     val approx = try {
@@ -1190,12 +1228,21 @@ constructor(
                 // we use for the chat-level token meter.
                 updateStreamingTokens(state.partialText.length / TOKEN_CHARS_PER_TOKEN)
             is AgentOrchestratorState.Answering ->
-                updateStreamingTokens(state.partialText.length / TOKEN_CHARS_PER_TOKEN)
+                updateStreamingTokens(
+                    tokens = state.partialText.length / TOKEN_CHARS_PER_TOKEN,
+                    reply = state.chatReplyStartedAt?.let { startedAt ->
+                        StreamingChatReply(state.partialText, startedAt)
+                    },
+                )
+            AgentOrchestratorState.Queued, AgentOrchestratorState.Idle,
+            is AgentOrchestratorState.SuspendedInBackground,
+            -> _state.update { it.copy(streamingReply = null) }
             is AgentOrchestratorState.Completed -> {
                 _state.update { current ->
                     current.withPendingCleared().copy(
                         tokens = current.tokens.copy(streaming = 0),
-                        visual = current.restingVisual(),
+                        // Room may publish the saved answer just after completion.
+                        visual = if (current.streamingReply == null) current.restingVisual() else ChatHomeUiState.Idle,
                         // The run finished inside its limits after all. A
                         // warning about a limit it did not reach is noise, so
                         // it leaves no residue.
@@ -1217,6 +1264,7 @@ constructor(
                         // A run that failed before the queue stored the message never
                         // will; a stored one is already in the thread.
                         sendingUserTurn = null,
+                        streamingReply = null,
                         tokens = it.tokens.copy(streaming = 0),
                         // The typed cause travels into the visual state so the
                         // surface can render a sentence for it. `state.message`
@@ -1258,7 +1306,7 @@ constructor(
      * Re-reading it per token is a volatile field read, and an
      * unchanged value produces an equal state that `StateFlow` drops.
      */
-    private fun updateStreamingTokens(tokens: Int) {
+    private fun updateStreamingTokens(tokens: Int, reply: StreamingChatReply? = null) {
         // A cloud node's tokens are decoded by the provider, not here. Reporting the
         // device's GPU/CPU backend for them would misstate *where the prompt is being
         // processed* — the one thing a local-first app must not get wrong.
@@ -1267,7 +1315,16 @@ constructor(
         } else {
             llmInferenceEngine.activeBackend?.key
         }
-        _state.update { it.copy(tokens = it.tokens.copy(streaming = tokens, backend = backend)) }
+        _state.update { current ->
+            current.copy(
+                tokens = current.tokens.copy(streaming = tokens, backend = backend),
+                streamingReply = reply?.takeIf {
+                    current.visual is ChatHomeUiState.Generating &&
+                        it.text.isNotBlank() &&
+                        (current.latestReplyAt == null || current.latestReplyAt < it.startedAt)
+                },
+            )
+        }
     }
 
     /**
@@ -1290,7 +1347,7 @@ constructor(
             agentOrchestratorUseCase.observe(sessionId)
                 .catch { error ->
                     _state.update {
-                        it.copy(visual = ChatHomeUiState.Error(failureText(error)))
+                        it.copy(visual = ChatHomeUiState.Error(failureText(error)), streamingReply = null)
                     }
                 }
                 .collect { orchestratorState -> handleOrchestratorState(orchestratorState) }

@@ -102,6 +102,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -142,6 +143,7 @@ class GraphExecutionEngineTest {
     private lateinit var pipelineRepository: PipelineRepository
 
     private lateinit var engine: GraphExecutionEngine
+    private lateinit var connectionActivity: PipelineConnectionActivity
 
     // Retained from setup() so a test that needs a differently-wired engine
     // (e.g. with prompt-variable providers) can rebuild just the engine instead
@@ -281,6 +283,7 @@ class GraphExecutionEngineTest {
 
         promptTemplateEngine = PromptTemplateEngine()
         promptVariableProviders = emptySet()
+        connectionActivity = PipelineConnectionActivity()
         engine = testGraphExecutionEngine(
             nodeExecutorFactory,
             toolNodeExecutor,
@@ -300,6 +303,7 @@ class GraphExecutionEngineTest {
             ResolveRunCeilingsUseCase(settingsRepository),
             pendingInteractionRepository,
             ceilingNotifier,
+            connectionActivity = connectionActivity,
         )
 
         coEvery { getContextWindowUseCase(sessionId) } returns ""
@@ -325,6 +329,32 @@ class GraphExecutionEngineTest {
         coEvery { toolRepository.getAvailableTools() } returns emptyList()
 
         coEvery { loadModelUseCase(any()) } returns Result.Success(Unit)
+    }
+
+    @Test
+    fun `a live traversal reaches only the matching pipeline canvas`() = runTest {
+        val graph = PipelineGraph(
+            id = "pipeline",
+            name = "Pipeline",
+            nodes = listOf(
+                NodeModel("in", NodeType.INPUT, 0f, 0f),
+                NodeModel("out", NodeType.OUTPUT, 10f, 0f, systemPrompt = null),
+            ),
+            connections = listOf(ConnectionModel("edge", "in", "out")),
+        )
+        val visited = mutableListOf<String>()
+        val unrelated = mutableListOf<String>()
+        val changed = graph.copy(connections = emptyList())
+        backgroundScope.launch { connectionActivity.observe(graph).toList(visited) }
+        backgroundScope.launch { connectionActivity.observe(changed).toList(unrelated) }
+        backgroundScope.launch { connectionActivity.observe(graph.copy(id = "another")).toList(unrelated) }
+        runCurrent()
+
+        engine(sessionId, "test", graph).toList()
+        runCurrent()
+
+        assertEquals(listOf("edge"), visited)
+        assertTrue(unrelated.isEmpty())
     }
 
     @Test
@@ -3620,9 +3650,14 @@ class GraphExecutionEngineTest {
             memorySnapshot = null,
             nextSeq = 4L,
         )
+        val traversals = mutableListOf<String>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            connectionActivity.observe(graph).toList(traversals)
+        }
 
         val states = engine(sessionId, "prompt", graph, "run-r1", resume).toList()
 
+        assertEquals(listOf("c2"), traversals)
         // The LITE_RT node replays from the checkpoint: zero LLM calls, the
         // recorded output reaches OUTPUT (echo mode), and the compact replay
         // event lands in the console.

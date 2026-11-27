@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,7 +43,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,11 +57,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -76,6 +78,7 @@ import app.knotwork.design.components.chat.ChatComposer
 import app.knotwork.design.components.chat.ChatContent
 import app.knotwork.design.components.chat.ChatMessage
 import app.knotwork.design.components.chat.HitlConfirmationState
+import app.knotwork.design.components.chat.StreamingAssistantBubble
 import app.knotwork.design.components.chips.KnotworkSuggestionChip
 import app.knotwork.design.components.console.ConsoleEntryStrip
 import app.knotwork.design.components.console.ConsolePane
@@ -95,14 +98,7 @@ private val ChatHorizontalPadding = 16.dp
 /** Vertical gap between consecutive chat-message rows. */
 private val ChatRowGap = 12.dp
 
-/**
- * Bottom clearance reserved under the message list so a short last message
- * (clamped to the bottom of the scroll range) clears the single-line
- * console entry strip sitting above the composer. Sized to the strip's fixed
- * height, which does not grow with font scale — only its status zone gives
- * ground.
- */
-private val ChatConsoleClearance = 40.dp
+private const val STREAMING_REPLY_KEY = "streaming-assistant-reply"
 
 /** Width of the drawer overlay panel (Material spec for navigation drawers). */
 private val DrawerWidth = 320.dp
@@ -163,7 +159,14 @@ fun ChatHomeContent(
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             snackbarHost = snackbarHost,
-            containerColor = MaterialTheme.colorScheme.surface,
+            // The cold-start body wears the splash's own background: the two are
+            // one continuous surface across the hand-off, and a cool near-white
+            // after the warm startup cream read as a step in the colour.
+            containerColor = if (state.visualState == ChatHomeVisualState.Loading) {
+                colorResource(R.color.brand_startup_background)
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
             topBar = {
                 app.knotwork.design.components.topbar.KnotworkTopAppBarShell {
                     ChatHomeTopBar(state = state, callbacks = callbacks)
@@ -351,17 +354,11 @@ private const val TOKEN_FORMAT_THRESHOLD = 1000
  * surface is paused, but typing is allowed so the user can prepare the
  * next turn.
  *
- * When [ChatHomeViewState.agentStatusLine] is non-null the console entry
- * strip is rendered above the composer — `console │ [NODE]  idle · ready ⌃`.
- * When the console is open the same strip renders as the sheet's header
- * instead, never both at once.
- *
  * The whole bar owns the taps that land on it. The message list is laid out
- * under it, so a tap on the strip's margin or on a run notice — neither of
- * which takes touches — used to reach the message scrolled behind, and open a
- * link in it. `internal` for [ChatHomeBottomBarTapTest].
+ * under it, so a tap on a run notice could otherwise open a link in the
+ * message scrolled behind it. `internal` for [ChatHomeBottomBarTapTest].
  *
- * @param state The screen state: status strip, run notices and composer.
+ * @param state The screen state: run notices and composer.
  * @param callbacks Where the bar's controls report.
  */
 @Composable
@@ -374,19 +371,6 @@ internal fun ChatHomeBottomBar(state: ChatHomeViewState, callbacks: ChatHomeCall
         return
     }
     Column(modifier = ownsItsTaps) {
-        if (state.agentStatusLine != null) {
-            AgentStatusStrip(
-                text = state.agentStatusLine,
-                // Closed here by construction: when the console is up it is the
-                // sheet's header instead, never both at once.
-                open = false,
-                onClick = callbacks.onAgentStatusClick,
-                modifier = Modifier.padding(
-                    horizontal = ChatHorizontalPadding,
-                    vertical = KnotworkTheme.spacing.sp1,
-                ),
-            )
-        }
         // Directly above the composer, where a remark about the run sits in the
         // reader's path without interrupting it. A run still going shows its
         // notice; a run the app stopped shows the short form of why — in the
@@ -460,22 +444,18 @@ private fun ChatHomeArchivedBar(onRestore: () -> Unit) {
 }
 
 /**
- * The console entry strip rendered above the composer.
+ * The console sheet's status and close control.
  *
- * Delegates to the catalog [ConsoleEntryStrip] so the chat body and the console
- * sheet's header are literally the same element — see that component for why the
- * strip carries the word `console` rather than a glyph. This wrapper only splits
- * the leading `[TAG]` off the status line so it can be tinted brand-primary
- * while the rest stays console foreground.
+ * The leading status tag gets an accent while the rest of the line uses
+ * the console foreground.
  */
 @Composable
-private fun AgentStatusStrip(text: String, open: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ConsoleStatusHeader(text: String, onClose: () -> Unit) {
     val (tag, rest) = splitAgentStatusTag(text)
     ConsoleEntryStrip(
         statusLine = rest,
-        open = open,
-        onClick = onClick,
-        modifier = modifier,
+        open = true,
+        onClick = onClose,
         leadingStatus = tag?.let {
             {
                 Text(
@@ -522,10 +502,15 @@ private fun ChatHomeBody(
 }
 
 /**
- * Cold-start body — a centred [CircularProgressIndicator] on the chat
- * surface. Renders before the chat repository delivers its first snapshot
- * so the user never sees the [ChatHomeEmptyBody] hero flash for a frame
- * on every app launch.
+ * Cold-start body: the bare chat surface, deliberately drawing nothing.
+ *
+ * It used to centre a CircularProgressIndicator in the theme's primary — an
+ * ink-blue arc a few dozen pixels wide. On a cold start that arc lands right
+ * after the splash's wordmark completes, in the same colour family, and the
+ * record of a real launch read as "the logo drew itself again and got cut
+ * off". The splash already covers this wait, and the surface it leaves behind is
+ * the same one this body paints (see the container colour above), so the only
+ * change at the hand-off is that the first snapshot arrives a frame or two later.
  */
 @Composable
 private fun ChatHomeLoadingBody(padding: PaddingValues) {
@@ -533,10 +518,7 @@ private fun ChatHomeLoadingBody(padding: PaddingValues) {
         modifier = Modifier
             .fillMaxSize()
             .padding(padding),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-    }
+    )
 }
 
 /**
@@ -573,11 +555,11 @@ private fun ChatHomeEmptyBody(state: ChatHomeViewState, callbacks: ChatHomeCallb
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = stringResource(
-                    R.string.knotwork_chat_home_empty_caption,
-                    state.pipelineName,
-                    state.modelName,
-                ),
+                text = if (state.modelName == null) {
+                    stringResource(R.string.knotwork_chat_home_empty_caption_no_model, state.pipelineName)
+                } else {
+                    stringResource(R.string.knotwork_chat_home_empty_caption, state.pipelineName, state.modelName)
+                },
                 style = KnotworkTextStyles.BodyBase,
                 color = KnotworkTheme.extended.onSurfaceMuted,
             )
@@ -689,6 +671,30 @@ private fun ChatHomeMessageList(
     markdownRenderer: (@Composable (String) -> Unit)?,
     listState: LazyListState,
 ) {
+    if (state.streamingReply != null) {
+        // Follow new lines only while the reader is already at the end.
+        LaunchedEffect(listState) {
+            var previous: Pair<Int, Int>? = null
+            snapshotFlow {
+                val layout = listState.layoutInfo
+                layout.visibleItemsInfo.lastOrNull()?.takeIf { it.key == STREAMING_REPLY_KEY }?.let { item ->
+                    val hidden = item.offset + item.size + layout.afterContentPadding - layout.viewportEndOffset
+                    item.size to hidden.coerceAtLeast(0)
+                }
+            }.collect { measured ->
+                val before = previous
+                previous = measured
+                if (measured == null) return@collect
+                val (height, hiddenPixels) = measured
+                val wasAtEnd = before?.second == 0
+                val grew = before != null && height > before.first
+                if (wasAtEnd && grew && hiddenPixels > 0 && !listState.isScrollInProgress) {
+                    listState.scrollBy(hiddenPixels.toFloat())
+                    if (!listState.canScrollForward) previous = height to 0
+                }
+            }
+        }
+    }
     // Compose the Scaffold-provided insets with the surface's own 16dp
     // horizontal padding into a single `contentPadding` value. Applying
     // them via `Modifier.padding` would shrink the LazyColumn's
@@ -699,11 +705,7 @@ private fun ChatHomeMessageList(
         start = padding.calculateStartPadding(LocalLayoutDirection.current) + ChatHorizontalPadding,
         end = padding.calculateEndPadding(LocalLayoutDirection.current) + ChatHorizontalPadding,
         top = padding.calculateTopPadding() + KnotworkTheme.spacing.sp2,
-        // Extra bottom clearance so a short last message that clamps to the
-        // bottom of the scroll range rests clear of the single-line agent-status
-        // console entry strip that sits just above the composer, instead of tucking
-        // under it.
-        bottom = padding.calculateBottomPadding() + KnotworkTheme.spacing.sp2 + ChatConsoleClearance,
+        bottom = padding.calculateBottomPadding() + KnotworkTheme.spacing.sp2,
     )
     val confirmWord = stringResource(R.string.knotwork_typed_confirm_word)
     LazyColumn(
@@ -734,7 +736,10 @@ private fun ChatHomeMessageList(
                 onReadWholeMessage = { callbacks.onReadWholeMessage(row.id) },
             )
         }
-        if (state.visualState == ChatHomeVisualState.Generating) {
+        val streamingReply = state.streamingReply
+        if (streamingReply != null) {
+            item(key = STREAMING_REPLY_KEY) { StreamingAssistantBubble(streamingReply) }
+        } else if (state.visualState == ChatHomeVisualState.Generating) {
             item { GeneratingLoaderBubble(label = state.loaderLabel) }
         }
         // A stopped run gets exactly one tile. Which one depends on whether we
@@ -1019,16 +1024,11 @@ private fun ChatHomeConsoleOverlay(state: ChatHomeViewState, callbacks: ChatHome
         sheetState = sheetState,
         containerColor = KnotworkTheme.extended.consoleBg,
         contentColor = KnotworkTheme.extended.consoleFg,
-        // The strip *becomes* the sheet's header rather than being replaced by a
-        // drag handle: one element with one name in two positions, so "where did
-        // the strip go" is never the next question. Tapping it here closes the
-        // console, which is what the flipped chevron promises.
         dragHandle = {
             if (state.agentStatusLine != null) {
-                AgentStatusStrip(
+                ConsoleStatusHeader(
                     text = state.agentStatusLine,
-                    open = true,
-                    onClick = { scope.launch { sheetState.hide() } },
+                    onClose = { scope.launch { sheetState.hide() } },
                 )
             } else {
                 BottomSheetDefaults.DragHandle(

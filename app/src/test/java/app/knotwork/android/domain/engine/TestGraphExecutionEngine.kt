@@ -54,6 +54,7 @@ fun testGraphExecutionEngine(
     pendingInteractionRepository: PendingInteractionRepository,
     ceilingNotifier: CeilingNotifier,
     runHeaders: RunHeaders = fixedRunHeaders(),
+    connectionActivity: PipelineConnectionActivity = PipelineConnectionActivity(),
 ): GraphExecutionEngine = GraphExecutionEngine(
     nodeExecutorFactory = nodeExecutorFactory,
     toolNodeExecutor = toolNodeExecutor,
@@ -80,6 +81,7 @@ fun testGraphExecutionEngine(
         memoryRepository = memoryRepository,
     ),
     runHeaders = runHeaders,
+    connectionActivity = connectionActivity,
 )
 
 /** The header every run of a [fixedRunHeaders] factory starts with. */

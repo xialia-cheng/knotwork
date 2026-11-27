@@ -2,6 +2,7 @@ package app.knotwork.android.domain.engine
 
 import app.knotwork.android.domain.constants.DefaultPrompts
 import app.knotwork.android.domain.engine.structured.JsonPayloadExtractor
+import app.knotwork.android.domain.models.ConnectionModel
 import app.knotwork.android.domain.models.NodeModel
 import app.knotwork.android.domain.models.PipelineGraph
 import app.knotwork.android.domain.models.RouteLabels
@@ -52,18 +53,18 @@ class QueueCursor(private val graph: PipelineGraph) {
         results.clear()
         processorId = processor.id
         val ports = portsOf(processor.id)
-        val itemNodeId = ports.itemNodeId
-        if (remaining.isEmpty() || itemNodeId == null) {
+        val itemEdge = ports.item
+        if (remaining.isEmpty() || itemEdge == null) {
             processorId = null
-            return QueueEntry.Skipped(nodeById(ports.doneNodeId))
+            return QueueEntry.Skipped(nodeById(ports.done?.targetNodeId), ports.done?.id)
         }
-        val itemNode = nodeById(itemNodeId)
+        val itemNode = nodeById(itemEdge.targetNodeId)
         // Every item runs the item path once, then the walk takes the Done path:
         // counted now, while the whole list is still here.
         val remainingSteps =
             remaining.size * GraphRouting.countNodesOnPath(itemNode, graph, stopNodeIds = setOf(processor.id)) +
-                GraphRouting.countNodesOnPath(nodeById(ports.doneNodeId), graph)
-        return QueueEntry.FirstItem(itemNode, nextItemInput(), remainingSteps)
+                GraphRouting.countNodesOnPath(nodeById(ports.done?.targetNodeId), graph)
+        return QueueEntry.FirstItem(itemNode, nextItemInput(), remainingSteps, itemEdge.id)
     }
 
     /**
@@ -76,14 +77,14 @@ class QueueCursor(private val graph: PipelineGraph) {
     fun advance(result: String): QueueStep {
         results.add(result)
         val ports = portsOf(checkNotNull(processorId) { "advance outside a queue" })
-        val itemNodeId = ports.itemNodeId
-        if (remaining.isEmpty() || itemNodeId == null) {
+        val itemEdge = ports.item
+        if (remaining.isEmpty() || itemEdge == null) {
             processorId = null
             val summary = "Queue execution completed.\nResults:\n" +
                 results.mapIndexed { i, res -> "${i + 1}. $res" }.joinToString("\n")
-            return QueueStep(nodeById(ports.doneNodeId), summary)
+            return QueueStep(nodeById(ports.done?.targetNodeId), summary, ports.done?.id)
         }
-        return QueueStep(nodeById(itemNodeId), nextItemInput())
+        return QueueStep(nodeById(itemEdge.targetNodeId), nextItemInput(), itemEdge.id)
     }
 
     /**
@@ -122,22 +123,20 @@ class QueueCursor(private val graph: PipelineGraph) {
     private fun portsOf(processorId: String): Ports {
         val edges = graph.connections.filter { it.sourceNodeId == processorId }
         return Ports(
-            itemNodeId = edges.find { RouteLabels.matches(it.label, RouteLabels.ITEM) }?.targetNodeId
-                ?: edges.firstOrNull()?.targetNodeId,
-            doneNodeId = edges.find { RouteLabels.matches(it.label, RouteLabels.DONE) }?.targetNodeId,
+            item = edges.find { RouteLabels.matches(it.label, RouteLabels.ITEM) } ?: edges.firstOrNull(),
+            done = edges.find { RouteLabels.matches(it.label, RouteLabels.DONE) },
         )
     }
 
     private fun nodeById(id: String?): NodeModel? = graph.nodes.find { it.id == id }
 
     /**
-     * Where a queue's two edges lead.
+     * The queue's outgoing edges.
      *
-     * @property itemNodeId The `Item` edge's target, or the first edge's when none is
-     *   labelled `Item`; `null` when the queue has no outgoing edge.
-     * @property doneNodeId The `Done` edge's target, or `null` when it is unwired.
+     * @property item The `Item` edge, or the first outgoing edge when none is labelled `Item`.
+     * @property done The `Done` edge, or `null` when it is unwired.
      */
-    private class Ports(val itemNodeId: String?, val doneNodeId: String?)
+    private class Ports(val item: ConnectionModel?, val done: ConnectionModel?)
 
     private companion object {
         /** Lenient JSON used to parse a queue's seed list (see [parseList]). */
@@ -191,8 +190,9 @@ class QueueCursor(private val graph: PipelineGraph) {
  *
  * @property node The next node, or `null` when the edge it would take is unwired.
  * @property inputText The input for [node].
+ * @property connectionId The outgoing queue edge supplying this step.
  */
-data class QueueStep(val node: NodeModel?, val inputText: String)
+data class QueueStep(val node: NodeModel?, val inputText: String, val connectionId: String? = null)
 
 /** What happens when a QUEUE_PROCESSOR node hands the walk its list. */
 sealed interface QueueEntry {
@@ -205,14 +205,21 @@ sealed interface QueueEntry {
      * @property remainingSteps Steps the loop and the path after it are expected to
      *   take, for the progress indicator: the item path once per item, then the
      *   `Done` path.
+     * @property connectionId The selected `Item` connection.
      */
-    data class FirstItem(val node: NodeModel?, val inputText: String, val remainingSteps: Int) : QueueEntry
+    data class FirstItem(
+        val node: NodeModel?,
+        val inputText: String,
+        val remainingSteps: Int,
+        val connectionId: String,
+    ) : QueueEntry
 
     /**
      * Nothing to loop over — an empty list, or no `Item` edge. The walk leaves by
      * the `Done` edge with the run's input unchanged.
      *
      * @property node The node on the `Done` edge, or `null` when it is unwired.
+     * @property connectionId The selected `Done` connection, if wired.
      */
-    data class Skipped(val node: NodeModel?) : QueueEntry
+    data class Skipped(val node: NodeModel?, val connectionId: String? = null) : QueueEntry
 }

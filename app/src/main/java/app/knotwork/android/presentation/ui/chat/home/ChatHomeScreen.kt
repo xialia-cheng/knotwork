@@ -108,7 +108,7 @@ import app.knotwork.design.R as DesignR
  *  - console pane;
  *  - secondary affordances: new-chat / rename /
  *    favorite / import / model picker / overflow (export, delete,
- *    clear-console) and the deep-link to Settings + Models.
+ *    open console) and the deep-link to Settings + Models.
  *
  * Inset wiring:
  *  - `safeDrawing.horizontal` clears the side system bars in landscape.
@@ -560,9 +560,6 @@ fun ChatHomeScreen(
         onImportChat = { importLauncher.launch(arrayOf(CHAT_EXPORT_MIME_JSON)) },
         onOpenSettings = onOpenSettings,
         onSamplePromptCard = { card -> viewModel.onComposerValueChange(card.title) },
-        // Tapping the agent-status pill above the composer opens the
-        // console pane at the Partial snap — a one-tap drill-in affordance.
-        onAgentStatusClick = { viewModel.console.openConsole() },
         onReadWholeMessage = { rowId -> readerRowId = rowId },
         onMessageContextAction = { rowId, action ->
             when (action) {
@@ -656,6 +653,15 @@ fun ChatHomeScreen(
                 expanded = overflowExpanded,
                 onDismissRequest = { overflowExpanded = false },
             ) {
+                if (!viewState.archivedReadOnly) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.chat_overflow_console)) },
+                        onClick = {
+                            overflowExpanded = false
+                            viewModel.console.openConsole()
+                        },
+                    )
+                }
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.chat_overflow_export)) },
                     onClick = {

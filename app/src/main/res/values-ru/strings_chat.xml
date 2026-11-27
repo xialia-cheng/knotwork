@@ -75,6 +75,7 @@
     <string name="chat_home_suggestion_card_2_tools" />
     <string name="chat_home_suggestion_card_3_title">Разбей цель на шаги</string>
     <string name="chat_home_suggestion_card_3_tools" />
+    <string name="chat_overflow_console">Консоль</string>
     <string name="chat_overflow_export">Экспортировать чат</string>
     <string name="chat_overflow_save_to_file">Сохранить в файл</string>
     <string name="chat_overflow_delete">Удалить чат</string>

@@ -54,6 +54,7 @@ constructor(
     private val runRecords: RunRecordWriter.Factory,
     private val nodeInputs: NodeInputComposer.Factory,
     private val runHeaders: RunHeaders,
+    private val connectionActivity: PipelineConnectionActivity,
 ) {
 
     /**
@@ -365,6 +366,7 @@ constructor(
             replay = replay,
             live = live,
             noteUndeliveredImage = { noteUndeliveredImage() },
+            onConnectionEntered = connectionActivity.publisher(graph),
         ).walk(inputNode, userPrompt)
     }.onCompletion {
         // Terminal flush: completion, failure and cancellation all land here,

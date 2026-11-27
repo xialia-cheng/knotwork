@@ -381,6 +381,59 @@ class ChatHomeViewModelTest {
     }
 
     @Test
+    fun `startup waits for chat body and metadata before showing home`() = runTest(testDispatcher) {
+        val sessionId = "saved-session"
+        savedSessionIdFlow.value = sessionId
+        val sessions = MutableSharedFlow<List<ChatSession>>(replay = 1)
+        val pipelines = MutableSharedFlow<List<PipelineGraph>>(replay = 1)
+        val defaultPipeline = MutableSharedFlow<String?>(replay = 1)
+        val messages = MutableSharedFlow<List<ChatMessage>>(replay = 1)
+        every { chatRepository.getSessionsFlow(any()) } returns sessions
+        every { pipelineRepository.getAllPipelines() } returns pipelines
+        every { settingsRepository.defaultPipelineId } returns defaultPipeline
+        every { chatRepository.getDisplayMessagesForSession(sessionId) } returns messages
+
+        viewModel = createViewModel()
+        val firstScreen = async {
+            viewModel.initialScreenReady.await()
+            viewModel.state.value
+        }
+
+        messages.emit(emptyList())
+        runCurrent()
+        assertEquals(ChatHomeUiState.Empty, viewModel.state.value.visual)
+        assertFalse(firstScreen.isCompleted)
+
+        sessions.emit(listOf(ChatSession(id = sessionId, name = "Existing chat", updatedAt = 0)))
+        pipelines.emit(listOf(PipelineGraph(id = "local", name = "Local chat")))
+        runCurrent()
+        assertFalse(firstScreen.isCompleted)
+
+        defaultPipeline.emit("local")
+        val screen = firstScreen.await()
+        assertEquals(ChatHomeUiState.Empty, screen.visual)
+        assertEquals("Existing chat", screen.thread.title)
+        assertEquals("Local chat", screen.pipelineName)
+    }
+
+    @Test
+    fun `startup waits for messages when a restored run changes the visual state first`() = runTest(testDispatcher) {
+        val messages = MutableSharedFlow<List<ChatMessage>>(replay = 1)
+        every { chatRepository.getDisplayMessagesForSession(any()) } returns messages
+        viewModel = createViewModel()
+        val firstScreen = async { viewModel.initialScreenReady.await() }
+        runCurrent()
+
+        viewModel.forceState(ChatHomeUiState.Generating())
+        runCurrent()
+        assertFalse(firstScreen.isCompleted)
+
+        messages.emit(emptyList())
+        firstScreen.await()
+        assertEquals(ChatHomeUiState.Generating(), viewModel.state.value.visual)
+    }
+
+    @Test
     fun `messages flow projects ChatMessage rows when display flow emits`() = runTest(testDispatcher) {
         viewModel = createViewModel()
         advanceUntilIdle()
@@ -550,6 +603,59 @@ class ChatHomeViewModelTest {
         advanceUntilIdle()
 
         assertEquals(LocalBackend.GPU.key, viewModel.state.value.tokens.backend)
+    }
+
+    @Test
+    fun `only a terminal reply streams and its stored row replaces the preview`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        val sessionId = viewModel.state.value.thread.currentSessionId
+        val events = MutableSharedFlow<AgentOrchestratorState>(replay = 1)
+        coEvery { agentOrchestratorUseCase(sessionId, "hi", null) } returns events
+        viewModel.onComposerValueChange("hi")
+        viewModel.sendMessage()
+        advanceUntilIdle()
+
+        events.emit(AgentOrchestratorState.Answering("intermediate draft"))
+        advanceUntilIdle()
+        assertNull(viewModel.state.value.toViewState().streamingReply)
+
+        events.emit(AgentOrchestratorState.Answering("Part ", chatReplyStartedAt = 10L))
+        advanceUntilIdle()
+        assertEquals("Part ", viewModel.state.value.toViewState().streamingReply)
+
+        events.emit(AgentOrchestratorState.Answering("Part one.", chatReplyStartedAt = 10L))
+        advanceUntilIdle()
+        assertEquals("Part one.", viewModel.state.value.toViewState().streamingReply)
+
+        events.emit(AgentOrchestratorState.Completed("Part one."))
+        advanceUntilIdle()
+        assertEquals("Part one.", viewModel.state.value.toViewState().streamingReply)
+
+        messagesFlow.value = listOf(ChatMessage(8L, sessionId, Role.AGENT, "Part one.", timestamp = 11L))
+        advanceUntilIdle()
+        assertNull(viewModel.state.value.toViewState().streamingReply)
+        assertEquals(1, viewModel.state.value.toViewState().messages.count { it.role == ChatRole.Assistant })
+    }
+
+    @Test
+    fun `stopping a run discards its streamed reply`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        advanceUntilIdle()
+        val sessionId = viewModel.state.value.thread.currentSessionId
+        val events = MutableSharedFlow<AgentOrchestratorState>(replay = 1)
+        coEvery { agentOrchestratorUseCase(sessionId, "hi", null) } returns events
+        viewModel.onComposerValueChange("hi")
+        viewModel.sendMessage()
+        advanceUntilIdle()
+
+        events.emit(AgentOrchestratorState.Answering("Part ", chatReplyStartedAt = 10L))
+        advanceUntilIdle()
+        assertEquals("Part ", viewModel.state.value.toViewState().streamingReply)
+
+        viewModel.stopGeneration()
+        advanceUntilIdle()
+        assertNull(viewModel.state.value.toViewState().streamingReply)
     }
 
     @Test

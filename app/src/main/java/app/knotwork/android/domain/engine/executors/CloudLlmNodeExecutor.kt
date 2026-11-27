@@ -194,7 +194,10 @@ class CloudLlmNodeExecutor @Inject constructor(
                 // double-counting characters and inflating the recorded token total.
                 approximateTokenCount += 1
 
-                if (!emittedThinking) {
+                if (scope.publishesChatReply && selectedProvider == CloudProvider.DEEPSEEK) {
+                    // The native client delivers reasoning as a separate frame; this buffer holds only content.
+                    send(NodeOutput.State(AgentOrchestratorState.Answering(accumulatedResponse.toString(), startTime)))
+                } else if (!emittedThinking) {
                     send(NodeOutput.State(AgentOrchestratorState.Thinking(accumulatedResponse.toString())))
                     emittedThinking = true
                 } else {

@@ -248,6 +248,7 @@ Paths below are relative to `src/main/java/app/knotwork/design/`.
     - `Monitor.kt` - `I.monitor` glyph (monitoring / metrics) — single-stroke icon family.
     - `More.kt` - `I.more` glyph (overflow ⋮ (solid)) — single-stroke icon family.
     - `More2.kt` - `I.more2` glyph (horizontal overflow), idle and active — single-stroke icon family.
+    - `NavIcons.kt` - The bottom-nav glyph family: the four rounded single-line tab glyphs (chat, pipelines, tools, more), each with an idle 1.6-stroke and an active 2.0-stroke variant.
     - `NodeBranch.kt` - Pipeline `IF_CONDITION` node glyph — diamond with a check mark.
     - `NodeClarify.kt` - Pipeline `CLARIFICATION` node glyph — chat bubble with question mark.
     - `NodeCloud.kt` - Pipeline `CLOUD` node glyph — cloud shape with up-arrow.
@@ -407,6 +408,7 @@ Paths below are relative to `src/main/java/app/knotwork/design/`.
     - `SkillLibraryPreview.kt` - canonical sample states shared by the `@Preview`s and the Roborazzi baselines, so the two cannot drift.
     - `SkillLibraryViewState.kt` - visual-state and tab enums, the tool-indicator / tool-mode enums behind the tri-state allowlist, and the row / tool-option / context-flag / editor / delete models.
   - `splash/` - Splash page — content + view-state.
+    - `PixelStrokePainter.kt` - Experimental original-pixel reveal.
     - `SplashContent.kt` - splash surface (brand logo, app name, determinate progress or error + Retry CTA).
     - `SplashViewState.kt` - sealed Initializing / Loading / Error cold-start state.
   - `taskmonitor/` - Task-monitor page.
@@ -493,7 +495,7 @@ matters.
     - `ConsoleCatalogPageSnapshotTest.kt` - Roborazzi snapshot baseline for `ConsoleCatalogContent` in both themes.
     - `ConsoleCopyAffordanceTest.kt` - Behavioural tests for the console's long-press copy affordance on the Vars and Traces tabs.
     - `ConsoleEntryStripAffordanceTest.kt` - Pins what makes the console's entry point findable.
-    - `ConsoleEntryStripSnapshotTest.kt` - Roborazzi baseline for the console entry strip in every status state.
+    - `ConsoleEntryStripSnapshotTest.kt` - Roborazzi baselines for a closed or expanded chat console.
     - `ConsoleFilterTest.kt` - Pure-JVM tests for `ConsoleFilter` — the predicate used by `ConsolePane`'s Logs tab to drop filtered-out sources.
     - `ConsoleSearchAffordanceTest.kt` - Pins the console's Search action to the Logs tab.
     - `ConsoleSnapTest.kt` - Documents the discrete `ConsoleSnap` heights as preview-only fixtures.
@@ -567,6 +569,7 @@ matters.
     - `ChatHomeBottomBarTapTest.kt` - A tap on any part of the chat's bottom bar belongs to the bar, not to the message scrolled behind it.
     - `ChatHomeContentSnapshotTest.kt` - Roborazzi snapshot baseline for `ChatHomeContent` across every documented state of `compose/screens/README.md §C1`.
     - `ChatHomeEmptyFitTest.kt` - A new chat's suggestion cards must all be reachable, however little height the screen leaves them.
+    - `ChatHomeStreamingReplyTest.kt` - Covers the replacement of the loader with a live assistant bubble.
     - `HeroSnapshotTest.kt` - Roborazzi baselines for the README hero shots at the canonical pixel resolution promised in `README.md` (1080 × 2400, the de-facto-standard Pixel-class portrait viewport used by every modern Android-store marketing surface).
     - `HitlConfirmationFitTest.kt` - The tallest approval card fits on the screen whole.
     - `ReportResponseDialogSnapshotTest.kt` - Roborazzi baselines for the content-report dialog.
@@ -634,6 +637,7 @@ matters.
     - `SkillLibraryContentSnapshotTest.kt` - Roborazzi snapshot baselines for the Skill Library surfaces — the list (`SkillLibraryContent`), the full-screen editor (`SkillEditorContent`) and the delete dialog (`SkillDeleteDialogContent`) across their documented states in both themes.
   - `splash/` - the splash surface.
     - `SplashContentSnapshotTest.kt` - Roborazzi baseline for `SplashContent`.
+    - `SplashTimingTest.kt` - Verifies platform timing conversion and Compose animation scaling at supported system speeds.
   - `taskmonitor/` - the active-task monitor.
     - `TaskMonitorContentSnapshotTest.kt` - Roborazzi baseline for `TaskMonitorContent` — the active-task list and its empty state.
   - `tools/` - the Tools screen — collapsible groups, the allowed-domains editor, and the three rules the surface gained from the closed test.

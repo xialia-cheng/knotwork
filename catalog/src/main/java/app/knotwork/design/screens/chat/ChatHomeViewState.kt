@@ -265,7 +265,7 @@ class ChatHomeRunCallbacks(
  *
  * @property visualState which of the 9 documented states to render.
  * @property threadTitle text displayed as the TopAppBar title.
- * @property modelName text displayed beneath the title (model picker label).
+ * @property modelName name of the active local model in the empty-chat caption, or `null` when none is active.
  * @property messages chronological message list rendered inside the body
  *   `LazyColumn`. Empty when [visualState] is [ChatHomeVisualState.Empty].
  * @property composerValue current value of the composer text field.
@@ -296,7 +296,7 @@ class ChatHomeRunCallbacks(
 data class ChatHomeViewState(
     val visualState: ChatHomeVisualState,
     val threadTitle: String,
-    val modelName: String,
+    val modelName: String?,
     val messages: List<ChatHomeMessageRow> = emptyList(),
     val composerValue: String = "",
     val composerState: ComposerState = ComposerState.Idle,
@@ -322,7 +322,7 @@ data class ChatHomeViewState(
     val samplePromptCards: List<ChatHomeSamplePromptCard> = emptyList(),
     /**
      * Single-line agent status rendered in the console entry strip
-     * (`"[NODE]  idle · ready"`). `null` hides the pill.
+     * (`"[NODE]  idle · ready"`). `null` shows the console sheet's default drag handle.
      */
     val agentStatusLine: String? = null,
     /**
@@ -382,6 +382,8 @@ data class ChatHomeViewState(
      */
     val explainedInThread: Boolean = false,
     val run: ChatHomeRunState = ChatHomeRunState(),
+    /** Partial assistant text while the terminal model streams. */
+    val streamingReply: String? = null,
 ) {
     init {
         require(
@@ -506,13 +508,6 @@ class ChatHomeCallbacks(
     val onImportChat: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onSamplePromptCard: (ChatHomeSamplePromptCard) -> Unit = {},
-    /**
-     * Fired when the user taps the console entry strip above the composer.
-     * Hosts wire this to opening the console pane at the Partial snap so
-     * the user can drill into pipeline activity in one tap (the pill
-     * itself surfaces only a one-line summary).
-     */
-    val onAgentStatusClick: () -> Unit = {},
     /**
      * Fired when the user picks an action from a message-bubble's
      * long-press context menu (Copy / Rerun / Rate). The first argument

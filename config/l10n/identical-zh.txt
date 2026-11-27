@@ -1,0 +1,108 @@
+# Simplified Chinese strings that are rightly the same as the English text.
+# One `module:kind/name` per line with the reason after `#`.
+#
+# Two groups live here. Fifty-five are keys whose *default* resources already
+# hold the Chinese text (appearance and canvas labels written in Chinese in
+# `values/`), so the translation cannot differ without inventing wording main
+# does not use yet; making those defaults English is a separate change, and this
+# list keeps the coverage test honest rather than special-casing Chinese. The
+# other entries are units, identifiers, and branding shared by all languages.
+
+app:string/app_name	# the product name is 织问 in every language
+app:string/memory_detail_tokens	# unit or identifier, the same in Chinese
+app:string/models_field_url_placeholder	# unit or identifier, the same in Chinese
+app:string/models_performance_unit_ms	# unit or identifier, the same in Chinese
+app:string/models_performance_unit_tokens_per_second	# unit or identifier, the same in Chinese
+app:string/models_section_hf	# unit or identifier, the same in Chinese
+app:string/monitoring_unit_ms	# unit or identifier, the same in Chinese
+app:string/prompt_preset_picker_tokens_suffix	# unit or identifier, the same in Chinese
+app:string/settings_cloud_retry_delay_value	# unit or identifier, the same in Chinese
+app:string/settings_identity_avatar_initials	# unit or identifier, the same in Chinese
+app:string/settings_memory_export_filename	# unit or identifier, the same in Chinese
+app:string/settings_ollama_base_url_placeholder	# unit or identifier, the same in Chinese
+app:string/settings_row_top_k_title	# unit or identifier, the same in Chinese
+app:string/settings_row_top_p_title	# unit or identifier, the same in Chinese
+app:string/settings_search_name_top_k	# unit or identifier, the same in Chinese
+app:string/settings_search_name_top_p	# unit or identifier, the same in Chinese
+app:string/settings_unit_kilobytes	# unit or identifier, the same in Chinese
+app:string/settings_unit_megabytes	# unit or identifier, the same in Chinese
+app:string/settings_unit_tokens	# unit or identifier, the same in Chinese
+app:string/settings_usage_export_filename	# unit or identifier, the same in Chinese
+app:string/unit_size_bytes	# unit or identifier, the same in Chinese
+app:string/unit_size_gigabytes	# unit or identifier, the same in Chinese
+app:string/unit_size_kilobytes	# unit or identifier, the same in Chinese
+app:string/unit_size_megabytes	# unit or identifier, the same in Chinese
+catalog:string/appearance_black	# the default resources already carry this Chinese text
+catalog:string/appearance_blue_channel	# the default resources already carry this Chinese text
+catalog:string/appearance_custom	# the default resources already carry this Chinese text
+catalog:string/appearance_dark	# the default resources already carry this Chinese text
+catalog:string/appearance_green_channel	# the default resources already carry this Chinese text
+catalog:string/appearance_group_muted	# the default resources already carry this Chinese text
+catalog:string/appearance_group_vivid	# the default resources already carry this Chinese text
+catalog:string/appearance_intensity	# the default resources already carry this Chinese text
+catalog:string/appearance_light	# the default resources already carry this Chinese text
+catalog:string/appearance_mode	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_amber	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_blue	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_dusk_purple	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_graphite	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_green	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_mist_blue	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_orange	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_pink	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_purple	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_red	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_slate_cyan	# the default resources already carry this Chinese text
+catalog:string/appearance_preset_turquoise	# the default resources already carry this Chinese text
+catalog:string/appearance_presets	# the default resources already carry this Chinese text
+catalog:string/appearance_quiet	# the default resources already carry this Chinese text
+catalog:string/appearance_red_channel	# the default resources already carry this Chinese text
+catalog:string/appearance_source	# the default resources already carry this Chinese text
+catalog:string/appearance_system	# the default resources already carry this Chinese text
+catalog:string/appearance_title	# the default resources already carry this Chinese text
+catalog:string/appearance_version	# unit or identifier, the same in Chinese
+catalog:string/appearance_vivid	# the default resources already carry this Chinese text
+catalog:string/appearance_wallpaper	# the default resources already carry this Chinese text
+catalog:string/canvas_node_clarification	# the default resources already carry this Chinese text
+catalog:string/canvas_node_cloud	# the default resources already carry this Chinese text
+catalog:string/canvas_node_decomposition	# the default resources already carry this Chinese text
+catalog:string/canvas_node_evaluation	# the default resources already carry this Chinese text
+catalog:string/canvas_node_if_condition	# the default resources already carry this Chinese text
+catalog:string/canvas_node_if_condition_short	# the default resources already carry this Chinese text
+catalog:string/canvas_node_input	# the default resources already carry this Chinese text
+catalog:string/canvas_node_intent_router	# the default resources already carry this Chinese text
+catalog:string/canvas_node_intent_router_short	# the default resources already carry this Chinese text
+catalog:string/canvas_node_lite_rt	# the default resources already carry this Chinese text
+catalog:string/canvas_node_lite_rt_short	# the default resources already carry this Chinese text
+catalog:string/canvas_node_output	# the default resources already carry this Chinese text
+catalog:string/canvas_node_pipeline	# the default resources already carry this Chinese text
+catalog:string/canvas_node_queue_processor	# the default resources already carry this Chinese text
+catalog:string/canvas_node_queue_processor_short	# the default resources already carry this Chinese text
+catalog:string/canvas_node_skill	# the default resources already carry this Chinese text
+catalog:string/canvas_node_summary	# the default resources already carry this Chinese text
+catalog:string/canvas_node_tool	# the default resources already carry this Chinese text
+catalog:string/canvas_route_done	# the default resources already carry this Chinese text
+catalog:string/canvas_route_fail	# the default resources already carry this Chinese text
+catalog:string/canvas_route_false	# the default resources already carry this Chinese text
+catalog:string/canvas_route_item	# the default resources already carry this Chinese text
+catalog:string/canvas_route_pass	# the default resources already carry this Chinese text
+catalog:string/canvas_route_retry	# the default resources already carry this Chinese text
+catalog:string/canvas_route_true	# the default resources already carry this Chinese text
+catalog:string/knotwork_allowed_domains_add_placeholder	# unit or identifier, the same in Chinese
+catalog:string/knotwork_backup_confirm_keyword	# unit or identifier, the same in Chinese
+catalog:string/knotwork_chat_home_topbar_tokens	# unit or identifier, the same in Chinese
+catalog:string/knotwork_chat_message_token_count	# unit or identifier, the same in Chinese
+catalog:string/knotwork_discover_token_placeholder	# unit or identifier, the same in Chinese
+catalog:string/knotwork_mcp_auth_basic	# unit or identifier, the same in Chinese
+catalog:string/knotwork_mcp_auth_bearer	# unit or identifier, the same in Chinese
+catalog:string/knotwork_memory_sort_alphabetical	# unit or identifier, the same in Chinese
+catalog:string/knotwork_node_type_lite_rt_name	# unit or identifier, the same in Chinese
+catalog:string/knotwork_onboarding_brand_title	# the onboarding brand is 织问 in every language
+catalog:string/knotwork_onboarding_model_size_gb	# unit or identifier, the same in Chinese
+catalog:string/knotwork_onboarding_models_custom_url_placeholder	# unit or identifier, the same in Chinese
+catalog:string/knotwork_run_sampler_value	# unit or identifier, the same in Chinese
+catalog:string/knotwork_tools_add_form_placeholder	# unit or identifier, the same in Chinese
+catalog:string/knotwork_tools_detail_schema	# unit or identifier, the same in Chinese
+catalog:string/knotwork_tools_form_auth_bearer_placeholder	# unit or identifier, the same in Chinese
+catalog:string/knotwork_tools_form_header_key_placeholder	# unit or identifier, the same in Chinese
+catalog:string/knotwork_tools_form_header_value_placeholder	# unit or identifier, the same in Chinese
